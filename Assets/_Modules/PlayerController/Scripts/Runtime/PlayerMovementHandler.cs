@@ -98,25 +98,70 @@ public class PlayerMovementHandler : MonoBehaviour
         AssignCamera();
     }
 
+    bool isMobile;
+
     /// <summary>
     /// Initializing Input Actions for Player Movement
     /// </summary>
     private void AssignInputs()
     {
-        playerActions.KeyboardMouse.LeftMousePressed.canceled += _ =>
+        if (!CheckMobile.Instance.CheckIsMobile())
         {
-            movePosition = Input.mousePosition;
+            playerActions.KeyboardMouse.LeftMousePressed.canceled += _ =>
+            {
+                movePosition = Input.mousePosition;
 
-            StartCoroutine(ClickCoroutine());
-        };
+                StartCoroutine(ClickCoroutine());
+            };
 
-        playerActions.KeyboardMouse.RightMousePressed.performed += _ => { isChangeView = true; };
-        playerActions.KeyboardMouse.RightMousePressed.canceled += _ => { isChangeView = false; };
-        playerActions.KeyboardMouse.DoubleLeftPressed.performed += _ => { doubleClicked = true; };
-        playerActions.KeyboardMouse.DoubleLeftPressed.canceled += _ => { doubleClicked = false; };
+            playerActions.KeyboardMouse.RightMousePressed.performed += _ => { isChangeView = true; };
+            playerActions.KeyboardMouse.RightMousePressed.canceled += _ => { isChangeView = false; };
+            playerActions.KeyboardMouse.DoubleLeftPressed.performed += _ => { doubleClicked = true; };
+            playerActions.KeyboardMouse.DoubleLeftPressed.canceled += _ => { doubleClicked = false; };
 
-        playerActions.KeyboardMouse.MouseAxis.performed += _rotation => primaryTouchDelta = _rotation.ReadValue<Vector2>();
-        playerActions.KeyboardMouse.MouseScrollY.performed += _scrollAmount => mouseScrollY = _scrollAmount.ReadValue<float>();
+            playerActions.KeyboardMouse.MouseAxis.performed += _rotation => primaryTouchDelta = _rotation.ReadValue<Vector2>();
+            playerActions.KeyboardMouse.MouseScrollY.performed += _scrollAmount => mouseScrollY = _scrollAmount.ReadValue<float>();
+        }
+        else
+        {
+            playerActions.Touch.PrimaryTouchContact.canceled += _ => { if (primaryTouchDelta == Vector2.zero) ClickToMove(); };
+            playerActions.Touch.PrimaryTouchContact.performed += _position =>
+            {
+                movePosition = _position.ReadValue<Vector2>();
+            };
+
+            playerActions.Touch.PrimaryDoubleTap.performed += _ => { doubleClicked = true; };
+            playerActions.Touch.PrimaryDoubleTap.canceled += _ => { doubleClicked = false; };
+
+            playerActions.Touch.PrimaryTouchDelta.performed += _rotation =>
+            {
+                if(_rotation.ReadValue<Vector2>().sqrMagnitude > 1)
+                {
+                    isChangeView = true;
+                    primaryTouchDelta = _rotation.ReadValue<Vector2>();
+                }
+            };
+
+            playerActions.Touch.PrimaryTouchDelta.canceled += _rotation =>
+            {
+                isChangeView = false;
+                primaryTouchDelta = _rotation.ReadValue<Vector2>();
+            };
+
+            playerActions.Touch.PrimaryTouchPosition.performed += _position =>
+            {
+                primaryTouchPosition = _position.ReadValue<Vector2>();
+            };
+
+            playerActions.Touch.SecondaryTouchContact.started += _ => IsPinchZoom = true;
+            playerActions.Touch.SecondaryTouchContact.canceled += _ => IsPinchZoom = false;
+
+            playerActions.Touch.SecondaryTouchPosition.performed += _position =>
+            {
+                secondaryTouchPosition = _position.ReadValue<Vector2>();
+            };
+        }
+
     }
 
     /// <summary>
@@ -191,6 +236,7 @@ public class PlayerMovementHandler : MonoBehaviour
         if(playerVelocity.magnitude > 0.05f)
         {
             Quaternion lookRotation = Quaternion.LookRotation(playerVelocity.normalized);
+            lookRotation.x = 0;
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * lookRotationSpeed);
         }
 
