@@ -1,10 +1,14 @@
+using Newtonsoft.Json.Bson;
 using StarterAssets;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.Mathematics;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Rendering;
 
 public class PlayerMovementHandler : MonoBehaviour
 {
@@ -24,12 +28,22 @@ public class PlayerMovementHandler : MonoBehaviour
     private float _animationBlend;
     private int _animIDSpeed;
     private int _animIDMotionSpeed;
-
+    private int _animIDGrounded;
+    private int _animIDFreeFall;
+    private int _animIDJump;
+    [Header("Player Grounded")]
+    public float GroundedOffset = -0.14f;
+    public float GroundedRadius = 0.28f;
+    public LayerMask GroundLayers;
+    public bool Grounded = true;
+    
+    [Header("Player Speed")]
     [SerializeField] private float playerSpeed;
     [SerializeField] private float sprintSpeed = 5;
     [SerializeField] private float sprintTime;
     private float groundTimer;
     private float startSpeed;
+    private bool isCrouch;
 
     [Space(10)]
     [Header("Mouse Clicking")]
@@ -50,6 +64,7 @@ public class PlayerMovementHandler : MonoBehaviour
     private Vector2 primaryTouchPosition;
     private Vector2 secondaryTouchPosition;
     private float previousTouchDelta;
+    private float lastPinchDistance;
 
     [Space(10)]
     [Header("Zoom Settings")]
@@ -84,6 +99,9 @@ public class PlayerMovementHandler : MonoBehaviour
 
         _animIDSpeed = Animator.StringToHash("Speed");
         _animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
+        _animIDGrounded = Animator.StringToHash("Grounded");
+        _animIDFreeFall = Animator.StringToHash("FreeFall");
+        _animIDJump = Animator.StringToHash("Jump");
 
         startSpeed = thirdPersonController.MoveSpeed;
     }
@@ -96,9 +114,9 @@ public class PlayerMovementHandler : MonoBehaviour
     {
         AssignInputs();
         AssignCamera();
-    }
 
-    bool isMobile;
+        Grounded = thirdPersonController.Grounded;
+    }
 
     /// <summary>
     /// Initializing Input Actions for Player Movement
@@ -121,6 +139,11 @@ public class PlayerMovementHandler : MonoBehaviour
 
             playerActions.KeyboardMouse.MouseAxis.performed += _rotation => primaryTouchDelta = _rotation.ReadValue<Vector2>();
             playerActions.KeyboardMouse.MouseScrollY.performed += _scrollAmount => mouseScrollY = _scrollAmount.ReadValue<float>();
+
+            playerActions.KeyboardMouse.Crouch.performed += _ =>
+            {
+                ToggleCrouch();
+            };
         }
         else
         {
@@ -175,11 +198,66 @@ public class PlayerMovementHandler : MonoBehaviour
 
     private void Update()
     {
+        HandleController();
         HandleCameraRotate();
         HandleAnimation();
-        HandleController();
         HandleCameraZoom();
         HandleMovement();
+        HandleRotation();
+        GroundCheck();
+
+
+    }
+
+    private void ToggleCrouch()
+    {
+        bool unCrouchAllow = true;
+
+        if (isCrouch)
+        {
+            RaycastHit hit;
+            if (Physics.Raycast(transform.position, Vector3.up, out hit, characterController.height / 0.67f, GroundLayers))
+            {
+                if (hit.collider != null)
+                {
+                    unCrouchAllow = false;
+                }
+                else
+                {
+                    unCrouchAllow = true;
+                }
+            }
+        }
+
+        if (!unCrouchAllow) return;
+
+        isCrouch = !isCrouch;
+        animator.SetBool("Crouch", isCrouch);
+
+        if (isCrouch)
+        {
+            characterController.height = characterController.height * 0.67f;
+            characterController.center = new Vector3(0f, (characterController.height / 2) + 0.03f, 0f);
+        }
+        else
+        {
+            characterController.height = characterController.height / 0.67f;
+            characterController.center = new Vector3(0f, (characterController.height / 2) + 0.03f, 0f);
+        }
+    }
+
+    private void GroundCheck()
+    {
+        Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z);
+        Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers,
+            QueryTriggerInteraction.Ignore);
+
+        animator.SetBool(_animIDGrounded, Grounded);
+
+        if (!thirdPersonController.enabled)
+        {
+            thirdPersonController.Grounded = Grounded;
+        }
     }
 
     private void HandleMovement()
@@ -188,7 +266,6 @@ public class PlayerMovementHandler : MonoBehaviour
 
         if ((clickToMoveTarget - transform.position).sqrMagnitude < 0.1f)
         {
-            //playerVelocity = Vector3.Lerp(playerVelocity, Vector3.zero, _speedChangeRate * Time.deltaTime);
             playerVelocity = Vector2.zero;
             return;
         }
@@ -209,9 +286,7 @@ public class PlayerMovementHandler : MonoBehaviour
             playerSpeed = targetSpeed;
         }
 
-        bool groundedPlayer = characterController.isGrounded;
-
-        if(groundedPlayer)
+        if(Grounded)
         {
             groundTimer = 0.2f;
         }
@@ -221,35 +296,56 @@ public class PlayerMovementHandler : MonoBehaviour
             groundTimer -= Time.deltaTime;
         }
 
-        if (groundedPlayer && playerVerticalVelocity < 0)
+        if (Grounded && playerVerticalVelocity < 0)
         {
             playerVerticalVelocity = 0f;
         }
 
         playerVerticalVelocity += thirdPersonController.Gravity * Time.deltaTime;
 
+        playerVelocity = (clickToMoveTarget - transform.position).normalized * playerSpeed;
 
-        playerVelocity = (clickToMoveTarget - transform.position).normalized;
-
-        playerVelocity *= playerSpeed;
-
-        if(playerVelocity.magnitude > 0.05f)
-        {
-            Quaternion lookRotation = Quaternion.LookRotation(playerVelocity.normalized);
-            lookRotation.x = 0;
-            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * lookRotationSpeed);
-        }
-
-        playerVelocity.y = playerVerticalVelocity;
+        playerVelocity.y += playerVerticalVelocity;
 
         characterController.Move(playerVelocity * Time.deltaTime);
+    }
+
+    private void HandleRotation()
+    {
+        if (thirdPersonController.enabled) return;
+
+        if ((clickToMoveTarget - transform.position).sqrMagnitude < 0.1f)
+        {
+            playerVelocity = Vector2.zero;
+            return;
+        }
+
+        if (playerVelocity.sqrMagnitude > 0.01f)
+        {
+            Quaternion lookRotation = Quaternion.LookRotation(playerVelocity.normalized, Vector3.up);          
+            lookRotation.x = 0;
+            lookRotation.z = 0;
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * lookRotationSpeed);
+        }
     }
 
     private void HandleCameraZoom()
     {
         var zoomAmount = 0f;
 
-        zoomAmount = mouseScrollY;
+        if(CheckMobile.Instance && CheckMobile.Instance.CheckIsMobile() && IsPinchZoom)
+        {
+            var distance = Vector2.Distance(primaryTouchPosition, secondaryTouchPosition);
+
+            if (distance > lastPinchDistance) zoomAmount = 1;
+            else zoomAmount = -1;
+
+            lastPinchDistance = distance;
+        }
+        else
+        {
+            zoomAmount = mouseScrollY;
+        }
 
         if (zoomAmount > 0) targetDistance -= 0.5f;
         if (zoomAmount < 0) targetDistance += 0.5f;
@@ -308,6 +404,16 @@ public class PlayerMovementHandler : MonoBehaviour
 
         animator.SetFloat(_animIDSpeed, _animationBlend);
         animator.SetFloat(_animIDMotionSpeed, 1f);
+
+        if (Grounded)
+        {
+            animator.SetBool(_animIDJump, false);
+            animator.SetBool(_animIDFreeFall, false);
+        }
+        else
+        {
+            animator.SetBool(_animIDFreeFall, true);
+        }
     }
 
     private void HandleCameraRotate()
@@ -332,8 +438,7 @@ public class PlayerMovementHandler : MonoBehaviour
 
     private IEnumerator ClickCoroutine()
     {
-        yield return new WaitUntil(() => characterController.isGrounded);
-
+        yield return new WaitUntil(() => Grounded);
         ClickToMove();
     }
 
@@ -350,6 +455,7 @@ public class PlayerMovementHandler : MonoBehaviour
         if(Physics.Raycast(Camera.main.ScreenPointToRay(movePosition), out hit, 100, clickableLayers))
         {
             clickToMoveTarget = hit.point;
+            clickToMoveTarget.y = 0f;
 
             if (clickEffectPrefab == null) return;
             if(clickEffectPrefab != null && particleEffectReference == null)

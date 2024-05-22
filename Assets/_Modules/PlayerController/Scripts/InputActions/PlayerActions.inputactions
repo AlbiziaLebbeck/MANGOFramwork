@@ -1,5 +1,5 @@
 {
-    "name": "CustomActions",
+    "name": "PlayerActions",
     "maps": [
         {
             "name": "KeyboardMouse",
@@ -63,6 +63,15 @@
                     "name": "DoubleLeftPressed",
                     "type": "Button",
                     "id": "5479245d-f495-4a37-b6ca-73f8d8abb026",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Crouch",
+                    "type": "Button",
+                    "id": "8b9efe71-12b2-4b09-a8bd-e94f96932b3e",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -144,6 +153,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "DoubleLeftPressed",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "fe8a85fa-f085-471b-a6f2-57ab8927ad35",
+                    "path": "<Keyboard>/c",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Crouch",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "3d3585ed-1511-46e7-b169-7defff22126b",
+                    "path": "<Keyboard>/leftCtrl",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Crouch",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
