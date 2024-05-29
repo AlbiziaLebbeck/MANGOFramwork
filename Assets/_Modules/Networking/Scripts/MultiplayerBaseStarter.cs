@@ -1,6 +1,7 @@
 using FishNet;
 using FishNet.Connection;
 using FishNet.Managing;
+using FishNet.Managing.Scened;
 using FishNet.Object;
 using GameKit.Dependencies.Utilities.Types;
 using System;
@@ -10,42 +11,49 @@ using UnityEngine.SceneManagement;
 /// <summary>
 /// For Setup basic object for metaverse system.
 /// </summary>
-public class MultiplayerBaseStarter : Singleton<MultiplayerBaseStarter>
+public class MultiplayerBaseStarter : NetworkBehaviour
 {
     //SerializeField
     [SerializeField] private GameObject networkPlayerPrefab;
     [SerializeField, Scene] private string persistentScene;
-    [SerializeField] private AreaSpawner areaSpawner;
     [Space(5)]
     [Header("PlayerSpawnerSettings")]
     [SerializeField] private bool addToDefaultScene = true;
 
     //Private
     private NetworkManager networkManager;
+    private AreaSpawner areaSpawner;
 
     //Public
     public event Action<NetworkObject> OnSpawned;
 
-    protected override void Awake()
+    private void Start()
     {
-        base.Awake();
-
-        Initialize();
-    }
-
-    private void Initialize()
-    {
-        InitializePlayerSpawner(networkPlayerPrefab);
-
-        GameObject userRef = new GameObject();
-        userRef.name = "UserReferencePersistent";
-        userRef.AddComponent<UserReferencePersistent>();
-
         AsyncOperation loadSceneAsync = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(persistentScene, LoadSceneMode.Additive);
         loadSceneAsync.completed += LoadSceneAsync_completed;
     }
 
-    private void InitializePlayerSpawner(GameObject _PlayerPrefab)
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+
+        Initialize();
+    }
+
+    public void Initialize()
+    {
+        InitializePlayerSpawner();
+
+        if(FindObjectOfType<UserReferencePersistent>() == null)
+        {
+            GameObject userRef = new GameObject();
+            userRef.name = "UserReferencePersistent";
+            userRef.AddComponent<UserReferencePersistent>();
+        }
+
+    }
+
+    private void InitializePlayerSpawner()
     {
         networkManager = InstanceFinder.NetworkManager;
 
@@ -56,6 +64,7 @@ public class MultiplayerBaseStarter : Singleton<MultiplayerBaseStarter>
         }
 
         networkManager.SceneManager.OnClientLoadedStartScenes += SceneManager_OnClientLoadedStartScenes;
+
     }
 
     private void SceneManager_OnClientLoadedStartScenes(NetworkConnection connection, bool asServer)

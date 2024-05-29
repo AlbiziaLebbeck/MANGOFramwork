@@ -13,12 +13,12 @@ public class DestroyAsServer : MonoBehaviour
         connectionStarter = FindObjectOfType<ConnectionStarter>();
     }
 
-    private void Start()
+    private void OnEnable()
     {
         if(connectionStarter != null) connectionStarter.ConnectionStartedEvent += DestroyAsServer_ConnectionStartedEvent;
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
         if (connectionStarter != null) connectionStarter.ConnectionStartedEvent -= DestroyAsServer_ConnectionStartedEvent;
     }

@@ -24,7 +24,6 @@ public class ConnectionStarter : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log("Start server as:" + StartType.ToString());
         networkManager = GetComponent<NetworkManager>();
         if (networkManager == null)
         {
@@ -36,6 +35,20 @@ public class ConnectionStarter : MonoBehaviour
             networkManager.ServerManager.OnServerConnectionState += ServerManager_OnServerConnectionState;
             networkManager.ClientManager.OnClientConnectionState += ClientManager_OnClientConnectionState;
         }
+
+#if UNITY_EDITOR
+        if (ParrelSync.ClonesManager.IsClone())
+        {
+            StartType = StartType.Client;
+        }
+#endif
+
+#if UNITY_SERVER
+            StartType = StartType.Server;
+#elif !UNITY_EDITOR
+            StartType = StartType.Client;
+#endif
+        Debug.Log("Start server as:" + StartType.ToString());
 
         if (StartType == StartType.Host || StartType == StartType.Server)
         {
@@ -67,6 +80,18 @@ public class ConnectionStarter : MonoBehaviour
     private void ClientManager_OnClientConnectionState(ClientConnectionStateArgs obj)
     {
         clientState = obj.ConnectionState;
+
+        if(clientState == LocalConnectionState.Started)
+        {
+            EventHandler.OnClientConnected();
+        }
+
+        if (obj.ConnectionState == LocalConnectionState.Stopping)
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#endif
+        }
     }
 
     private void ServerManager_OnServerConnectionState(ServerConnectionStateArgs obj)

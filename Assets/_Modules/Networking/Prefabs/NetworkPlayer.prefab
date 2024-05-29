@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4552987406128017797}
+  - component: {fileID: 2252405277555443097}
   m_Layer: 0
   m_Name: Geometry
   m_TagString: Untagged
@@ -32,6 +33,51 @@ Transform:
   - {fileID: 2154760733489884952}
   m_Father: {fileID: 257107952586214050}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2252405277555443097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 118507540678643094}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c0b44d8496f9204abcf516e2958d1b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  avatarModel: {fileID: 0}
+  gltfLink: 
+  animator: {fileID: 6530508428910504068}
+  OnLoadCompleted:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 8661869628494164389}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  OnLoadFailed:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 8661869628494164389}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
 --- !u!1 &355488956585444834
 GameObject:
   m_ObjectHideFlags: 0
@@ -2712,7 +2758,7 @@ MonoBehaviour:
   _ownerInterpolation: 1
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 0
+  <PrefabId>k__BackingField: 1
   <SpawnableCollectionId>k__BackingField: 0
   _scenePathHash: 0
   <SceneId>k__BackingField: 0
@@ -2752,7 +2798,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _overrideType: 1
   _updateHostVisibility: 1
-  _observerConditions: []
+  _observerConditions:
+  - {fileID: 11400000, guid: 2033f54fd2794464bae08fa5a55c8996, type: 2}
+  - {fileID: 11400000, guid: efcd7f0dfd341ed4e8671079e91e0544, type: 2}
 --- !u!114 &3250969654892941500
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2769,7 +2817,10 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: 7537613859411478104}
   _networkObjectCache: {fileID: 7537613859411478104}
   nameText: {fileID: 1611093437056607288}
-  localObject: []
+  localObject:
+  - {fileID: 1007809595609014223}
+  - {fileID: 2435837202330743318}
+  avatarLoader: {fileID: 2252405277555443097}
 --- !u!1 &8194773232981660253
 GameObject:
   m_ObjectHideFlags: 0

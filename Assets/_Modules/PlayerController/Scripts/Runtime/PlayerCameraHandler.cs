@@ -22,30 +22,12 @@ public class PlayerCameraHandler : Singleton<PlayerCameraHandler>
             MainVirtualCamera = mainVirtualCamera.GetComponent<CinemachineVirtualCamera>();
             MainCameraFramingTransposer = MainVirtualCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
         }
-
-        var mainCameraList = GameObject.FindGameObjectsWithTag("MainCamera");
-        if (mainCameraList.Length > 1)
-        {
-            foreach (var mainCamera in mainCameraList)
-            {
-                if (mainCamera != MainCamera)
-                {
-                    Destroy(mainCamera);
-                }
-            }
-        }
-    }
-
-    private void Start()
-    {
-        if (GameObject.FindGameObjectWithTag("Player") == null) return;
-
-        Initialize();
     }
 
     public void Initialize()
     {
         if (!UserReferencePersistent.Instance.PlayerCameraRoot) return;
+
         AssignFollowCamera(MainVirtualCamera, UserReferencePersistent.Instance.PlayerCameraRoot);
         AssignCameraLookAt(MainVirtualCamera, UserReferencePersistent.Instance.PlayerCameraRoot);
     }

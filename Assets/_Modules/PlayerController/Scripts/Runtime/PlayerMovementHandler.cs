@@ -205,8 +205,6 @@ public class PlayerMovementHandler : MonoBehaviour
         HandleMovement();
         HandleRotation();
         GroundCheck();
-
-
     }
 
     private void ToggleCrouch()
