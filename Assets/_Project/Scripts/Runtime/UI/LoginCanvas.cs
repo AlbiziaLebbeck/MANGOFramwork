@@ -38,10 +38,24 @@ public class LoginCanvas : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        EventHandler.ClientLoginFailedEvent += EventHandler_ClientLoginFailedEvent;
+    }
+    private void OnDisable()
+    {
+        EventHandler.ClientLoginFailedEvent -= EventHandler_ClientLoginFailedEvent;
+    }
+
+    private void EventHandler_ClientLoginFailedEvent(string obj)
+    {
+        ShowErrorMessage(obj);
+    }
+
+
     public void OnClick_LoginButton()
     {
-        // do some logic;
-        EventHandler.RequestJoinWorld();
+        EventHandler.OnClientLogin();
     }
 
     private bool CheckInputField()

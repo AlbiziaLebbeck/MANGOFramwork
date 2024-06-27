@@ -458,9 +458,19 @@ public class PlayerMovementHandler : MonoBehaviour
             if (clickEffectPrefab == null) return;
             if(clickEffectPrefab != null && particleEffectReference == null)
             {
-                particleEffectReference = Instantiate(clickEffectPrefab, hit.point + new Vector3(0, 0.1f, 0), clickEffectPrefab.transform.rotation);
+                var particleObject = GameObject.Find($"{clickEffectPrefab.name}(Clone)");
+
+                if(particleObject == null)
+                {
+                    particleEffectReference = Instantiate(clickEffectPrefab, hit.point + new Vector3(0, 0.1f, 0), clickEffectPrefab.transform.rotation);
+                }
+                else
+                {
+                    particleEffectReference = particleObject.GetComponent<ParticleSystem>();
+                }
             }
-            else if (particleEffectReference)
+            
+            if (particleEffectReference)
             {
                 particleEffectReference.transform.position = hit.point + new Vector3(0, 0.1f, 0);
                 particleEffectReference.Play();

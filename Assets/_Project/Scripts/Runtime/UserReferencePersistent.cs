@@ -11,7 +11,7 @@ public class UserReferencePersistent : SingletonPersistent<UserReferencePersiste
     public string GLTF { get { return gltf; } }
     public GameObject PlayerGameObject { get {  return playerGameObject; } }
     public Transform PlayerCameraRoot { get { return playerCameraRoot; } }
- 
+
     public void SetUserName(string _name)
     {
         Debug.Log("Set Username to " + _name);

@@ -26,6 +26,7 @@ public class AvatarManager : Singleton<AvatarManager>
 
     private int showRoomAvatarCount = 0;
     private int collectionAvatarCount = 0;
+    private bool _subscribed;
 
     protected override void Awake()
     {
@@ -44,68 +45,22 @@ public class AvatarManager : Singleton<AvatarManager>
 
         avatarCanvas.Initialize();
 
-
-        //EventHandler.ClientConnectedEvent += EventHandler_ClientConnectedEvent;
+        //Set default avatar
+        UserReferencePersistent.Instance.SetGLTFLink(AvatarUrls[0]);
     }
-
-    //private void OnDestroy()
-    //{
-    //    EventHandler.ClientConnectedEvent -= EventHandler_ClientConnectedEvent;
-    //}
-
-    //private void EventHandler_ClientConnectedEvent()
-    //{
-    //    avatarCanvas.Initialize();
-    //}
 
     private void OnEnable()
     {
-        AvatarCanvasEvent.AvatarIconSpawnedEvent += OnIconSpawn;
-        AvatarCanvasEvent.OnClickAvatarIconEvent += OnClickIcon;
-        AvatarCanvasEvent.HoverEnterIconEvent += OnHoverEnterIcon;
-        AvatarCanvasEvent.HoverExitIconEvent += OnHoverExitIcon;
+        AvatarCanvasEventSubscribe(true);
 
         AvatarLoaderEvent.AvatarLoadedEvent += AvatarLoaderEvent_AvatarLoadedEvent;
     }
 
     private void OnDisable()
     {
-        AvatarCanvasEvent.AvatarIconSpawnedEvent -= OnIconSpawn;
-        AvatarCanvasEvent.OnClickAvatarIconEvent -= OnClickIcon;
-        AvatarCanvasEvent.HoverEnterIconEvent -= OnHoverEnterIcon;
-        AvatarCanvasEvent.HoverExitIconEvent -= OnHoverExitIcon;
+        AvatarCanvasEventSubscribe(false);
 
         AvatarLoaderEvent.AvatarLoadedEvent -= AvatarLoaderEvent_AvatarLoadedEvent;
-    }
-
-
-    private void OnHoverExitIcon(AvatarIcon icon)
-    {
-        if (selectedModel == null) return;
-
-        if(icon.AvatarModel != selectedModel)
-        {
-            HighlightAvatar(selectedModel);
-        }
-    }
-
-    private void OnHoverEnterIcon(AvatarIcon icon)
-    {
-        HighlightAvatar(icon.AvatarModel);
-    }
-
-    private void OnClickIcon(AvatarIcon icon)
-    {
-        selectedModel = icon.AvatarModel;
-        HighlightAvatar(selectedModel);
-
-        if (OnSelectedAvatarChange != null) OnSelectedAvatarChange.Invoke(icon.GLTFLink);
-    }
-
-
-    private void OnIconSpawn(AvatarIcon icon)
-    {
-        AddToCollections(icon);
     }
 
     private void AddToCollections(AvatarIcon avatarIcon)
@@ -155,7 +110,8 @@ public class AvatarManager : Singleton<AvatarManager>
 
         if (showRoomAvatarCount == AvatarUrls.Count)
         {
-            PersistentCanvas.Instance.loadingCanvas.gameObject.SetActive(false);
+            PersistentCanvas.LoadingCanvas?.ToggleLoadingScreen(false);
+
             selectedModel = AvatarCollection[0];
             HighlightAvatar(selectedModel);
         }
@@ -193,6 +149,54 @@ public class AvatarManager : Singleton<AvatarManager>
             AvatarShowroom[avatarIndex].gameObject.SetActive(true);
             previousHighlightModel = AvatarShowroom[avatarIndex];
         }
+    }
+    #endregion
+
+    #region AvatarCanvasEvent
+    private void AvatarCanvasEventSubscribe(bool subscribe)
+    {
+        if (subscribe == _subscribed) return;
+
+        _subscribed = subscribe;
+        
+        if (subscribe)
+        {
+            AvatarCanvasEvent.HoverExitIconEvent += OnHoverExitIcon;
+            AvatarCanvasEvent.HoverEnterIconEvent += OnHoverEnterIcon;
+            AvatarCanvasEvent.OnClickAvatarIconEvent += OnClickIcon;
+            AvatarCanvasEvent.AvatarIconSpawnedEvent += OnIconSpawn;
+        }
+        else
+        {
+            AvatarCanvasEvent.HoverExitIconEvent -= OnHoverExitIcon;
+            AvatarCanvasEvent.HoverEnterIconEvent -= OnHoverEnterIcon;
+            AvatarCanvasEvent.OnClickAvatarIconEvent -= OnClickIcon;
+            AvatarCanvasEvent.AvatarIconSpawnedEvent -= OnIconSpawn;
+        }
+    }
+    private void OnHoverExitIcon(AvatarIcon icon)
+    {
+        if (selectedModel == null) return;
+
+        if (icon.AvatarModel != selectedModel)
+        {
+            HighlightAvatar(selectedModel);
+        }
+    }
+    private void OnHoverEnterIcon(AvatarIcon icon)
+    {
+        HighlightAvatar(icon.AvatarModel);
+    }
+    private void OnClickIcon(AvatarIcon icon)
+    {
+        selectedModel = icon.AvatarModel;
+        HighlightAvatar(selectedModel);
+
+        if (OnSelectedAvatarChange != null) OnSelectedAvatarChange.Invoke(icon.GLTFLink);
+    }
+    private void OnIconSpawn(AvatarIcon icon)
+    {
+        AddToCollections(icon);
     }
     #endregion
 }

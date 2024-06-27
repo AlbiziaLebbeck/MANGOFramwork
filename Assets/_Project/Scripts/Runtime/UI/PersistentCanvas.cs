@@ -2,7 +2,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PersistentCanvas : SingletonPersistent<PersistentCanvas>
+public class PersistentCanvas : Singleton<PersistentCanvas>
 {
-    public LoadingCanvas loadingCanvas;
+    [SerializeField] private LoadingCanvas loadingCanvas;
+    public static LoadingCanvas LoadingCanvas { get; private set; }
+
+    protected override void Awake()
+    {
+        base.Awake();
+
+        LoadingCanvas = loadingCanvas;
+    }
 }

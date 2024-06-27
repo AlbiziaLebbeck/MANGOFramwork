@@ -19,6 +19,26 @@ public class AvatarCanvas : MonoBehaviour
         StartCoroutine(LoadAvatarIcon());
     }
 
+    private void OnEnable()
+    {
+        AvatarLoaderEvent.AvatarLoadedEvent += AvatarLoaderEvent_AvatarLoadedEvent;
+    }
+
+    private void AvatarLoaderEvent_AvatarLoadedEvent(GameObject arg1, string arg2)
+    {
+        var firstAvatar = AvatarIcons[0].GetComponent<AvatarIcon>();
+
+        if(arg2 == firstAvatar.GLTFLink)
+        {
+            Debug.Log("Click first icon");
+            firstAvatar.OnClick_Icon();
+        }
+
+        AvatarLoaderEvent.AvatarLoadedEvent -= AvatarLoaderEvent_AvatarLoadedEvent;
+    }
+
+
+
     private IEnumerator LoadAvatarIcon()
     {
         for (int i = 0; i < avatarManager.AvatarUrls.Count; i++)

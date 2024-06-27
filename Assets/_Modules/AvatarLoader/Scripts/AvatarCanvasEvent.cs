@@ -5,7 +5,6 @@ public static class AvatarCanvasEvent
     public static event Action<AvatarIcon> AvatarIconSpawnedEvent;
     public static event Action<AvatarIcon> HoverEnterIconEvent;
     public static event Action<AvatarIcon> HoverExitIconEvent;
-    public static event Action InitializeAvatarIconEvent;
     public static event Action<AvatarIcon> OnClickAvatarIconEvent;
     public static event Action OnUserLoginEvent;
 

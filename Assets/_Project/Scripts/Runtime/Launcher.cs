@@ -1,4 +1,5 @@
 using GameKit.Dependencies.Utilities.Types;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,6 +11,9 @@ public class Launcher : MonoBehaviour
 
     public void Launch()
     {
-        SceneManager.LoadScene(targetScene);
+        PersistentCanvas.LoadingCanvas?.ToggleLoadingScreen(true);
+
+        CustomSceneLoader.LoadScene(targetScene);
     }
+
 }

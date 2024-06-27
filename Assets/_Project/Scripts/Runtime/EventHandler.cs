@@ -7,9 +7,12 @@ public static class EventHandler
 {
     public static event Action<string> LoadSceneCompleteEvent;
     public static event Action ClientConnectedEvent;
-    public static event Action ClientConntectionFailedEvent;
-    public static event Action JoinWorldRequest;
+    public static event Action<string> ClientConntectionFailedEvent;
 
+    public static event Action ClientLoginEvent;
+    public static event Action ClientLoginSuccessEvent;
+    public static event Action<string> ClientLoginFailedEvent;
+    
     public static event Action ServerStartedEvent;
 
     public static void OnLoadSceneCompleted(string sceneName)
@@ -27,13 +30,23 @@ public static class EventHandler
         if (ClientConnectedEvent != null) ClientConnectedEvent();
     }
 
-    public static void OnClientConnectionFailed()
+    public static void OnClientConnectionFailed(string failedReason)
     {
-        if (ClientConntectionFailedEvent != null) ClientConntectionFailedEvent();
+        if (ClientConntectionFailedEvent != null) ClientConntectionFailedEvent(failedReason);
     }
 
-    public static void RequestJoinWorld()
+    public static void OnClientLogin()
     {
-        if(JoinWorldRequest != null) JoinWorldRequest();
+        if(ClientLoginEvent != null) ClientLoginEvent();
+    }
+
+    public static void OnClientLogInSuccess()
+    {
+        if (ClientLoginSuccessEvent != null) ClientLoginSuccessEvent();
+    }
+
+    public static void OnClientLogInFailed(string failedReason)
+    {
+        if (ClientLoginFailedEvent != null) ClientLoginFailedEvent(failedReason);
     }
 }
