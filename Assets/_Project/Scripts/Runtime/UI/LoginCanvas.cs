@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
@@ -20,6 +18,7 @@ public class LoginCanvas : MonoBehaviour
     public UnityEvent<string> OnClickLoginButton;
     #endregion
 
+    private TouchScreenKeyboard keyboard;
     private const string pattern = @"^[a-zA-Z0-9_.-]+$";
 
     private void Awake()
@@ -35,6 +34,26 @@ public class LoginCanvas : MonoBehaviour
 
                 OnClick_LoginButton();
             });
+
+            if (CheckMobile.Instance.CheckIsMobile())
+            {
+                keyboard = null;
+                userNameInputField.onSelect.RemoveAllListeners();
+                userNameInputField.onSelect.AddListener((text) =>
+                {
+                    Debug.Log(text);
+                    TouchScreenKeyboard.hideInput = true;
+                    keyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default);
+                });
+            }
+        }
+    }
+
+    private void OnGUI()
+    {
+        if (keyboard != null)
+        {
+            userNameInputField.text = keyboard.text;
         }
     }
 

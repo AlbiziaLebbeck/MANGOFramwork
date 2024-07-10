@@ -726,7 +726,7 @@ PlayerSettings:
   webGLDebugSymbols: 0
   webGLEmscriptenArgs: 
   webGLModulesDirectory: 
-  webGLTemplate: PROJECT:Better2020
+  webGLTemplate: PROJECT:AgoraTemplate2020
   webGLAnalyzeBuildSize: 0
   webGLUseEmbeddedResources: 0
   webGLCompressionFormat: 2
@@ -744,7 +744,7 @@ PlayerSettings:
   scriptingDefineSymbols:
     Server: FISHNET;FISHNET_V4
     Standalone: FISHNET_DISABLE_V3TOV4_HELPERS
-    WebGL: FISHNET;FISHNET_V4;FISHNET_DISABLE_V3TOV4_HELPERS
+    WebGL: FISHNET;FISHNET_V4;FISHNET_DISABLE_V3TOV4_HELPERS;ENABLE_INPUT_SYSTEM;STARTER_ASSETS_PACKAGES_CHECKED
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:

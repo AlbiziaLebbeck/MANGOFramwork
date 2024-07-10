@@ -24,6 +24,7 @@ public class AvatarIcon : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
 
     //private float reloadingTime = 5f;
     public string GLTFLink { get => gltfLink; }
+    public Texture AvatarTexture { get; private set; }
     public GameObject AvatarModel { get => avatarModel; private set { avatarModel = value; } }
 
     private void OnEnable()
@@ -89,7 +90,9 @@ public class AvatarIcon : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
         screenshotCameraReference.backgroundColor = Color.white;
         screenshotCameraReference.targetTexture = rt;
 
-        avatarImage.texture = AvatarImageGenerator.TakeScreenshot(screenshotCameraReference);
+        var genImage = AvatarImageGenerator.TakeScreenshot(screenshotCameraReference);
+        avatarImage.texture = genImage;
+        AvatarTexture = genImage;
 
         yield return new WaitForEndOfFrame();
 

@@ -1,7 +1,5 @@
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
-using System;
-using UnityEngine;
 
 public class NetworkedPlayerSettings : NetworkBehaviour
 {

@@ -3,11 +3,10 @@ using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using StarterAssets;
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class NetworkedPlayerComponent : NetworkBehaviour
 {
@@ -41,6 +40,8 @@ public class NetworkedPlayerComponent : NetworkBehaviour
             return;
         }
 
+        nameText.gameObject.SetActive(false);
+
         PlayerCameraHandler.Instance.Initialize();
         GetComponent<PlayerMovementHandler>().enabled = true;
         gameObject.tag = "Player";
@@ -50,7 +51,7 @@ public class NetworkedPlayerComponent : NetworkBehaviour
     }
 
     private void OnChangePlayerName(string prev, string next, bool asServer)
-    {
+    {       
         if(nameText != null) nameText.text = next;
     }
 
@@ -92,6 +93,23 @@ public class NetworkedPlayerComponent : NetworkBehaviour
     public void TargetUpdatePlayerInfo(NetworkConnection conn, string message)
     {
         Debug.Log($"From server: {message}");
+    }
+
+    [TargetRpc]
+    public void TargetJoinChat(NetworkConnection conn, string channelName)
+    {
+        if (AgoraManager.Instance.joinedChannel) return;
+
+        AgoraManager.Instance.JoinChannel(channelName, (uint)PlayerName.GetHashCode() % 1000);
+    }
+
+    [TargetRpc]
+    public void TargetLeaveChat(NetworkConnection conn, string channelName)
+    {
+        if (AgoraManager.Instance.joinedChannel)
+        {
+            AgoraManager.Instance.LeaveChannel();
+        }
     }
 
     public override void OnStartServer()

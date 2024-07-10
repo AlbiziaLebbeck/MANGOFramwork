@@ -1,14 +1,8 @@
-using Newtonsoft.Json.Bson;
 using StarterAssets;
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
-using Unity.Mathematics;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.Rendering;
 
 public class PlayerMovementHandler : MonoBehaviour
 {
@@ -118,6 +112,8 @@ public class PlayerMovementHandler : MonoBehaviour
         Grounded = thirdPersonController.Grounded;
     }
 
+    private bool IsDrag = false;
+
     /// <summary>
     /// Initializing Input Actions for Player Movement
     /// </summary>
@@ -147,10 +143,10 @@ public class PlayerMovementHandler : MonoBehaviour
         }
         else
         {
-            playerActions.Touch.PrimaryTouchContact.canceled += _ => { if (primaryTouchDelta == Vector2.zero) ClickToMove(); };
+            playerActions.Touch.PrimaryTouchContact.canceled += _ => { if (primaryTouchDelta == Vector2.zero || !IsDrag) ClickToMove(); };
             playerActions.Touch.PrimaryTouchContact.performed += _position =>
             {
-                movePosition = _position.ReadValue<Vector2>();
+                IsDrag = false;
             };
 
             playerActions.Touch.PrimaryDoubleTap.performed += _ => { doubleClicked = true; };
@@ -161,6 +157,7 @@ public class PlayerMovementHandler : MonoBehaviour
                 if(_rotation.ReadValue<Vector2>().sqrMagnitude > 1)
                 {
                     isChangeView = true;
+                    IsDrag = true;
                     primaryTouchDelta = _rotation.ReadValue<Vector2>();
                 }
             };
@@ -174,9 +171,14 @@ public class PlayerMovementHandler : MonoBehaviour
             playerActions.Touch.PrimaryTouchPosition.performed += _position =>
             {
                 primaryTouchPosition = _position.ReadValue<Vector2>();
+                movePosition = _position.ReadValue<Vector2>();
             };
 
-            playerActions.Touch.SecondaryTouchContact.started += _ => IsPinchZoom = true;
+            playerActions.Touch.SecondaryTouchContact.started += _ =>
+            {
+                IsPinchZoom = true;
+                IsDrag = true;
+            };
             playerActions.Touch.SecondaryTouchContact.canceled += _ => IsPinchZoom = false;
 
             playerActions.Touch.SecondaryTouchPosition.performed += _position =>

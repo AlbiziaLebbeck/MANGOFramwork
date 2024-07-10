@@ -64,24 +64,24 @@ public class WorldManager : SingletonNetworkBehaviour<WorldManager>
 
         EventHandler.ClientLoginEvent += EventHandler_ClientLoginEvent;
 
-        InstanceFinder.SceneManager.OnClientLoadedStartScenes += SceneManager_OnClientLoadedStartScenes;
-
         InstanceFinder.ClientManager.OnClientConnectionState += ClientManager_OnClientConnectionState;
 
         InstanceFinder.ServerManager.OnServerConnectionState += ServerManager_OnServerConnectionState;
         InstanceFinder.ServerManager.OnRemoteConnectionState += ServerManager_OnRemoteConnectionState;
+
+        InstanceFinder.SceneManager.OnClientLoadedStartScenes += SceneManager_OnClientLoadedStartScenes;
     }
 
     private void OnDestroy()
     {
         EventHandler.ClientLoginEvent -= EventHandler_ClientLoginEvent;
 
-        InstanceFinder.SceneManager.OnClientLoadedStartScenes -= SceneManager_OnClientLoadedStartScenes;
-
-        InstanceFinder.ClientManager.OnClientConnectionState -= ClientManager_OnClientConnectionState;
+        if (InstanceFinder.ClientManager) InstanceFinder.ClientManager.OnClientConnectionState -= ClientManager_OnClientConnectionState;
 
         InstanceFinder.ServerManager.OnServerConnectionState -= ServerManager_OnServerConnectionState;
         InstanceFinder.ServerManager.OnRemoteConnectionState -= ServerManager_OnRemoteConnectionState;
+
+        InstanceFinder.SceneManager.OnClientLoadedStartScenes -= SceneManager_OnClientLoadedStartScenes;
     }
 
     private void EventHandler_ClientLoginEvent()
@@ -96,6 +96,11 @@ public class WorldManager : SingletonNetworkBehaviour<WorldManager>
     private void ClientManager_OnClientConnectionState(ClientConnectionStateArgs obj)
     {
         if (obj.ConnectionState == LocalConnectionState.Started) return;
+
+        if(obj.ConnectionState == LocalConnectionState.Stopped)
+        {
+            AgoraManager.Instance.LeaveChannel();
+        }
 
         PersistentCanvas.LoadingCanvas?.SetInformationDisplay($"Client State: {obj.ConnectionState}");
         PersistentCanvas.LoadingCanvas?.ToggleLoadingScreen(true);

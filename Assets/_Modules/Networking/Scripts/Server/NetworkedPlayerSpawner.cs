@@ -1,12 +1,8 @@
 using FishNet.Component.Observing;
 using FishNet.Connection;
 using FishNet.Object;
-using Newtonsoft.Json.Bson;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnitySceneManager = UnityEngine.SceneManagement.SceneManager;
 
 
@@ -96,13 +92,17 @@ public class NetworkedPlayerSpawner : NetworkBehaviour
             MatchCondition.AddToMatch(worldDetails.ID, nob, replaceMatch: true);
         }
 
+        //Join Agora here?
+        //Maybe somewhere else
+        
+
         nob.transform.position = spawnPosition;
         ObserversTeleport(nob, spawnPosition);
 
-        SetupPlayer(nob);
+        SetupPlayer(nob, worldDetails);
 
     }
-    private void SetupPlayer(NetworkObject nob)
+    private void SetupPlayer(NetworkObject nob, WorldDetails worldDetails)
     {
         ClientInstance ci = ClientInstance.ReturnClientInstance(nob.Owner);
 
@@ -114,6 +114,7 @@ public class NetworkedPlayerSpawner : NetworkBehaviour
             netCom.ServerSetName(clientName);
             netCom.ServerSetAvatar(clientAvatar);
             netCom.TargetUpdatePlayerInfo(nob.Owner, $"Your name is {clientName}, your avatar link is {clientAvatar}");
+            netCom.TargetJoinChat(nob.Owner, worldDetails.ID.ToString());
         }
     }
 

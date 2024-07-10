@@ -1,6 +1,3 @@
-using Newtonsoft.Json.Bson;
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -18,6 +15,7 @@ public class AvatarManager : Singleton<AvatarManager>
 
     [Header("Events")]
     public UnityEvent<string> OnSelectedAvatarChange;
+    public UnityEvent<Texture> ReturnAvatarTexture;
 
     [Header("Debug Purpose Only")]
     [SerializeField] private List<GameObject> AvatarCollection = new List<GameObject>();
@@ -193,6 +191,7 @@ public class AvatarManager : Singleton<AvatarManager>
         HighlightAvatar(selectedModel);
 
         if (OnSelectedAvatarChange != null) OnSelectedAvatarChange.Invoke(icon.GLTFLink);
+        if (ReturnAvatarTexture != null) ReturnAvatarTexture.Invoke(icon.AvatarTexture);
     }
     private void OnIconSpawn(AvatarIcon icon)
     {

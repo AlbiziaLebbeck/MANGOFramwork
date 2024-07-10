@@ -9,23 +9,30 @@ public class UserReferencePersistent : SingletonPersistent<UserReferencePersiste
 
     public string Username { get { return username; } }
     public string GLTF { get { return gltf; } }
+    public Texture AvatarImage { get; private set; }
     public GameObject PlayerGameObject { get {  return playerGameObject; } }
     public Transform PlayerCameraRoot { get { return playerCameraRoot; } }
 
     public void SetUserName(string _name)
     {
-        Debug.Log("Set Username to " + _name);
-        username = _name;
+        this.username = _name;
+        PersistentCanvas.UserDataCanvas.SetUserNameText(username);
     }
 
     public void SetGLTFLink(string _link)
     {
-        gltf = _link;
+        this.gltf = _link;
+    }
+
+    public void SetAvatarImage(Texture newImage)
+    {
+        this.AvatarImage = newImage;
+        PersistentCanvas.UserDataCanvas.SetAvatarImage(AvatarImage);
     }
 
     public void AssignPlayerGameObject(GameObject _gameObject)
     {
-        playerGameObject = _gameObject;
-        playerCameraRoot = _gameObject.transform.Find("PlayerCameraRoot");
+        this.playerGameObject = _gameObject;
+        this.playerCameraRoot = _gameObject.transform.Find("PlayerCameraRoot");
     }
 }
