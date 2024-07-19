@@ -3,6 +3,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using agora_gaming_rtc;
 using System.Linq;
+using agora_utilities;
+using System.Collections;
+using static UnityEngine.UI.AspectRatioFitter;
 
 public class AgoraManager : Singleton<AgoraManager>
 {
@@ -14,7 +17,6 @@ public class AgoraManager : Singleton<AgoraManager>
     [SerializeField] private GameObject userVideoViewPrefab;
     [SerializeField] private Transform videoViewContainer;
     [SerializeField] private Transform selfViewContainer;
-    //[SerializeField] private Transform shareScreenContainer;
 
     [SerializeField] private Dropdown videoDropdown, recordingDropdown, playbackDropdown;
 
@@ -28,9 +30,10 @@ public class AgoraManager : Singleton<AgoraManager>
     private const uint UID_PREFIX = 1;
     private const uint SCREEN_PREFIX = 9;
     private uint uid;
-    private Dictionary<uint, GameObject> userVideoViews = new Dictionary<uint, GameObject>();
-    private GameObject localVideoView;
+    private uint screenId;
+    private Dictionary<uint, GameObject> videoViews = new Dictionary<uint, GameObject>();
     private bool isCameraOn;
+    private bool isSharing;
     #endregion
 
     #region Device
@@ -57,6 +60,7 @@ public class AgoraManager : Singleton<AgoraManager>
     public IRtcEngine mRtcEngine { get; set; }
     #endregion
 
+    #region MonoBehaviour
     private void Start()
     {
         if (!CheckAppId())
@@ -64,10 +68,6 @@ public class AgoraManager : Singleton<AgoraManager>
             Debug.Log("Your app id is empty.");
             return;
         }
-
-        joinedChannel = false;
-
-        LoadEngine(appId);
 
         if(videoDropdown != null)
         {
@@ -86,6 +86,13 @@ public class AgoraManager : Singleton<AgoraManager>
             playbackDropdown.onValueChanged.RemoveAllListeners();
             playbackDropdown.onValueChanged.AddListener((option) => OnPlaybackDeviceUpdate(option));
         }
+
+        joinedChannel = false;
+
+        LoadEngine(appId);
+
+        EventHandler.ClientSpawnSuccessEvent += EventHandler_ClientSpawnSuccessEvent;
+        EventHandler.ClientDisconnectedEvent += EventHandler_ClientDisconnectedEvent;
     }
 
     private bool CheckAppId()
@@ -98,25 +105,29 @@ public class AgoraManager : Singleton<AgoraManager>
 
         return appId.Length > 10;
     }
-
     private void OnDestroy()
     {
+        LeaveChannel();
         UnloadEngine();
-    }
 
+        EventHandler.ClientSpawnSuccessEvent -= EventHandler_ClientSpawnSuccessEvent;
+        EventHandler.ClientDisconnectedEvent -= EventHandler_ClientDisconnectedEvent;
+    }
     protected override void OnApplicationQuit()
     {
         base.OnApplicationQuit();
-
+        LeaveChannel();
         UnloadEngine();
-    }
 
+        EventHandler.ClientSpawnSuccessEvent -= EventHandler_ClientSpawnSuccessEvent;
+        EventHandler.ClientDisconnectedEvent -= EventHandler_ClientDisconnectedEvent;
+    }
     private void Update()
     {
-        if (!joinedChannel) return;
-
         PermissionHelper.RequestMicrophontPermission();
         PermissionHelper.RequestCameraPermission();
+
+        //if (!joinedChannel) return;
 
         List<MediaDeviceInfo> videoDevices = AgoraWebGLEventHandler.GetCachedCameras();
 
@@ -159,29 +170,24 @@ public class AgoraManager : Singleton<AgoraManager>
         recordingDropdown.interactable = recordingDevices > 0;
         playbackDropdown.interactable = playbackDevices > 0;
     }
+    #endregion
 
     #region Load, Unload Engine
     private void LoadEngine(string appId)
     {
         Debug.Log("initializeEngine");
-        if(mRtcEngine != null)
+
+        if(mRtcEngine == null)
         {
-            return;
+            mRtcEngine = IRtcEngine.GetEngine(appId);
+            mRtcEngine.SetLogFilter(LOG_FILTER.DEBUG | LOG_FILTER.INFO | LOG_FILTER.WARNING | LOG_FILTER.ERROR | LOG_FILTER.CRITICAL);
         }
 
-        mRtcEngine = IRtcEngine.GetEngine(appId);
-        // enable log
-        mRtcEngine.SetLogFilter(LOG_FILTER.DEBUG | LOG_FILTER.INFO | LOG_FILTER.WARNING | LOG_FILTER.ERROR | LOG_FILTER.CRITICAL);
-
-        //Set Callbacks
         mRtcEngine.OnJoinChannelSuccess = onJoinChannelSuccess;
-        mRtcEngine.OnLeaveChannel = OnLeaveChannelHandler;
-
         mRtcEngine.OnUserJoined += onUserJoined;
         mRtcEngine.OnUserOffline += onUserOffline;
 
-        mRtcEngine.OnUserMutedAudio += OnUserMutedAudio;
-        mRtcEngine.OnUserMuteVideo += OnUserMutedVideo;
+        mRtcEngine.OnLeaveChannel += OnLeaveChannelHandler;
 
         mRtcEngine.OnRemoteVideoStateChanged += handleOnUserEnableVideo;
 
@@ -189,18 +195,16 @@ public class AgoraManager : Singleton<AgoraManager>
         mRtcEngine.OnMicrophoneChanged += OnMicrophoneChangedHandler;
         mRtcEngine.OnPlaybackChanged += OnPlaybackChangedHandler;
 
-        //mRtcEngine.OnScreenShareStarted += screenShareStartedHandler;
-        //mRtcEngine.OnScreenShareStopped += screenShareStoppedHandler;
-        //mRtcEngine.OnScreenShareCanceled += screenShareCanceledHandler;
+        mRtcEngine.OnScreenShareStarted += screenShareStartedHandler;
+        mRtcEngine.OnScreenShareStopped += screenShareStoppedHandler;
+
+        mRtcEngine.OnVideoSizeChanged += OnVideoSizeChangedHandler;
     }
 
     private void UnloadEngine()
     {
         if(mRtcEngine != null)
         {
-            LeaveChannel();
-            mRtcEngine.DisableVideo();
-            mRtcEngine.DisableVideoObserver();
             IRtcEngine.Destroy();
             mRtcEngine = null;
         }
@@ -211,15 +215,10 @@ public class AgoraManager : Singleton<AgoraManager>
     public void JoinChannel(string _channelName, uint _uid)
     {
         Debug.Log("Calling join (channel = " + _channelName + ")");
-        if (mRtcEngine == null)
-        {
-            LoadEngine(appId);
-        }
 
-        this.uid = UID_PREFIX + _uid;
+        this.uid = _uid;
 
         //Cache devices
-        
         videoDropdown.value = 0;
         recordingDropdown.value = 0;
         playbackDropdown.value = 0;
@@ -227,6 +226,18 @@ public class AgoraManager : Singleton<AgoraManager>
         cacheRecordingDevices();
         cachePlaybackDevices();
         cacheVideoDevices();
+
+        //Config video
+        var _orientationMode = ORIENTATION_MODE.ORIENTATION_MODE_FIXED_LANDSCAPE;
+
+        VideoEncoderConfiguration config = new VideoEncoderConfiguration
+        {
+            orientationMode = _orientationMode,
+            degradationPreference = DEGRADATION_PREFERENCE.MAINTAIN_FRAMERATE,
+            mirrorMode = VIDEO_MIRROR_MODE_TYPE.VIDEO_MIRROR_MODE_DISABLED
+        };
+
+        mRtcEngine.SetVideoEncoderConfiguration(config);
 
         //Engine Setup
         mRtcEngine.EnableVideo();
@@ -252,7 +263,6 @@ public class AgoraManager : Singleton<AgoraManager>
             publishLocalAudio = pubAudio,
             publishLocalVideo = pubVideo,
         };
-
         mRtcEngine.JoinChannel("", ChannelName, "", this.uid, options);
     }
 
@@ -260,22 +270,52 @@ public class AgoraManager : Singleton<AgoraManager>
     {
         if(mRtcEngine == null) return;
 
+        recordingDropdown.ClearOptions();
+        audioRecordingDeviceDict.Clear();
+        audioRecordingDeviceNameDict.Clear();
+
+        playbackDropdown.ClearOptions();
+        audioPlaybackDeviceDict.Clear();
+        audioPlaybackDeviceNameDict.Clear();
+
+        videoDropdown.ClearOptions();   
+        videoDeviceManagerDict.Clear(); 
+        videoDeviceManagerNameDict.Clear();
+
         DestroyVideoView(0);
+
+        foreach (KeyValuePair<uint, GameObject> views in videoViews)
+        {
+            Destroy(views.Value);
+        }
+
+        videoViews.Clear();
 
         mRtcEngine.LeaveChannel();
         mRtcEngine.DisableVideoObserver();
+        joinedChannel = false;
     }
     #endregion
 
     #region Callback Handler
+    private void EventHandler_ClientSpawnSuccessEvent(string channelName, uint uid)
+    {
+        if (joinedChannel) return;
+        JoinChannel(channelName, uid);
+    }
+    private void EventHandler_ClientDisconnectedEvent()
+    {
+        //Question : when ever video is mute, Still camera/ camera light is active????
+        //Answer : when you mute the video track, it's still capturing the video stream data, which is why the light on the camera stays on.
+        //If you want to disable both the video track and the camera, you need to use enableLocalVideo from clientManager.js instead.
+        // follow this issues https://github.com/AgoraIO-Community/Agora_Unity_WebGL/issues/285
+
+        LeaveChannel();
+        UnloadEngine();
+    }
     private void onJoinChannelSuccess(string channelName, uint uid, int elapsed)
     {
         Debug.Log($"OnJoinChannelSuccess: {uid}, channel:{channelName}");
-
-        //Some how the engine need to set public option to true before join the channel.
-        //That's why we mute it after user join.
-        mRtcEngine.MuteLocalAudioStream(true);
-        mRtcEngine.MuteLocalVideoStream(true);
 
         joinedChannel = true;
         
@@ -283,6 +323,7 @@ public class AgoraManager : Singleton<AgoraManager>
 
         MakeVideoView(channelName, 0);
 
+        //Setup Chat canvas
         var chatCanvas = FindObjectOfType<ChatCanvas>();
 
         if(chatCanvas != null)
@@ -290,12 +331,17 @@ public class AgoraManager : Singleton<AgoraManager>
             chatCanvas.OnJoinChat();
             chatCanvas.OnChatReady(true);
         }
+
+        //Some how the engine need to set public option to true before join the channel.
+
+        //Let user mute themselves.
+
+        mRtcEngine.MuteLocalVideoStream(true);
+        mRtcEngine.MuteLocalAudioStream(true);
     }
     private void OnLeaveChannelHandler(RtcStats stats)
     {
         Debug.Log($"OnLeaveChannel: {stats}");
-        joinedChannel = false;
-        mRtcEngine.DisableVideo();
 
         var chatCanvas = FindObjectOfType<ChatCanvas>();
 
@@ -306,48 +352,49 @@ public class AgoraManager : Singleton<AgoraManager>
     }
     private void onUserOffline(uint uid, USER_OFFLINE_REASON reason)
     {
-        Debug.Log($"OnUserOffline: {uid}, with reason: {reason}");
         DestroyVideoView(uid);
+
+        uint firstUid = GetPrefix(uid);
+
+        if (firstUid == UID_PREFIX)
+        {
+            Debug.Log($"OnUserOffline: {uid}, with reason: {reason}");
+        }
+        else if(firstUid == SCREEN_PREFIX)
+        {
+            Debug.Log($"OnUserStopShareScreen: screen {uid} is removed");
+
+            EventHandler.OnUserShareScreenStopped(uid);
+        }
+        else
+        {
+            Debug.Log($"User with {uid} ,the uid is not valid. whether not from user or screen id.");
+        }
     }
     private void onUserJoined(uint uid, int elapsed)
     {
-        Debug.Log($"OnUserJoined: {uid}");
-
         MakeVideoView(ChannelName, uid);
-        //when user join sometimes they join just audio, so we turn user video view off. 
-        if (userVideoViews.ContainsKey(uid))
+
+        uint firstUid = GetPrefix(uid);
+
+        if(firstUid == UID_PREFIX)
         {
-            userVideoViews[uid].SetActive(false);
+            Debug.Log($"OnUserJoined: new user {uid}");
+        }
+        else if(firstUid == SCREEN_PREFIX)
+        {
+            Debug.Log($"OnUserShareScreen: new screen {uid}");
+
+            EventHandler.OnUserShareScreenStarted(uid);
+        }
+        else
+        {
+            Debug.Log($"UserJoined with {uid} ,the uid is not valid. whether not from user or screen id.");
         }
 
-        //will implement screen sharing next commit.
-        //if (uid != SCREEN_SHARE_ID)
-        //{
-        //    MakeVideoView(ChannelName, uid);
-        //    //when user join sometimes they join just audio, so we turn user video view off. 
-        //    if (userVideoViews.ContainsKey(uid))
-        //    {
-        //        userVideoViews[uid].SetActive(false);
-        //    }
-        //}
-        //else
-        //{
+        mRtcEngine.GetRemoteVideoStats();
+    }
 
-        //}
-    }
-    private void OnUserMutedAudio(uint uid, bool muted)
-    {
-        Debug.LogFormat("user {0} muted audio:{1}", uid, muted);
-    }
-    private void OnUserMutedVideo(uint uid, bool muted)
-    {
-        Debug.LogFormat("user {0} muted video:{1}", uid, muted);
-
-        if(userVideoViews.ContainsKey(uid))
-        {
-            userVideoViews[uid].SetActive(!muted);
-        }
-    }
     private void OnPlaybackChangedHandler(string state, string device)
     {
         GetAudioPlaybackDevice();
@@ -362,32 +409,57 @@ public class AgoraManager : Singleton<AgoraManager>
     }
     private void handleOnUserEnableVideo(uint uid, REMOTE_VIDEO_STATE state, REMOTE_VIDEO_STATE_REASON reason, int elapsed)
     {
-        Debug.Log("remote video state:" + state.ToString());
         if (state == REMOTE_VIDEO_STATE.REMOTE_VIDEO_STATE_STARTING)
         {
-            if (!userVideoViews.ContainsKey(uid))
+            if (!videoViews.ContainsKey(uid))
             {
+                Debug.Log($"[handleOnUserEnableVideo] user {uid} video view not found, creating new one.");
                 MakeVideoView(ChannelName, uid);
             }
         }
     }
-    
-    //private void screenShareStoppedHandler(string channelName, uint id, int elapsed)
-    //{
-    //    Debug.Log(string.Format("onScreenShareStarted channelId: {0}, uid: {1}, elapsed: {2}", channelName, uid,
-    //        elapsed));
-    //}
-    //private void screenShareStartedHandler(string channelName, uint id, int elapsed)
-    //{
-    //    Debug.Log(string.Format("onScreenShareStopped channelId: {0}, uid: {1}, elapsed: {2}", channelName, uid,
-    //elapsed));
-    //}
-    //private void screenShareCanceledHandler(string channelName, uint uid, int elapsed)
-    //{
-    //    Debug.Log(string.Format("onScreenShareCanceled channelId: {0}, uid: {1}, elapsed: {2}", channelName, uid,
-    //        elapsed));
-    //}
+    private void screenShareStoppedHandler(string channelName, uint id, int elapsed)
+    {
+        Debug.Log(string.Format("onScreenShareStarted channelId: {0}, uid: {1}, elapsed: {2}", channelName, id,
+            elapsed));
+        //this send to local only
+        EventHandler.OnUserShareScreenStopped(0);
+    }
+    private void screenShareStartedHandler(string channelName, uint id, int elapsed)
+    {
+        Debug.Log(string.Format("onScreenShareStopped channelId: {0}, uid: {1}, elapsed: {2}", channelName, id,
+    elapsed));
+        //this send to local only
+        EventHandler.OnUserShareScreenStarted(0);
+    }
+    #endregion
 
+    #region Tools
+    public GameObject RetriveVideoView(uint viewId)
+    {
+        return videoViews[viewId];
+    }
+    public uint GetUserUID(uint screenId)
+    {
+        var screenIdString = screenId.ToString();
+        var userid = uint.Parse(UID_PREFIX.ToString() + screenIdString.Substring(1, screenIdString.Length - 1));
+        return userid;
+    }
+    public uint GetScreenID(uint userId)
+    {
+        //remove user prefix then add new prefix
+        var userIdString = userId.ToString();
+        var screenId = uint.Parse(SCREEN_PREFIX.ToString() + userIdString.Substring(1, userIdString.Length - 1));
+        return screenId;
+    }
+    private uint GetPrefix(uint uid)
+    {
+        return uint.Parse($"{uid.ToString()[0]}");
+    }
+    public bool IsUserView(uint uid)
+    {
+        return GetPrefix(uid) == UID_PREFIX || uid == 0;
+    }
     #endregion
 
     #region Voice Video Controller
@@ -430,17 +502,19 @@ public class AgoraManager : Singleton<AgoraManager>
             videoDeviceManager.ReleaseAVideoDeviceManager();
         }
     }
-    
     public void OnMic(bool toggle)
     {
         if (!joinedChannel) return;
         mRtcEngine.MuteLocalAudioStream(!toggle);
+
+        EventHandler.OnUserMicMuteUpdate(0, !toggle);
     }
     public void OnVideo(bool toggle)
     {
         if (!joinedChannel) return;
-
         mRtcEngine.MuteLocalVideoStream(!toggle);
+
+        EventHandler.OnUserCamMuteUpdate(0, !toggle);
     }
     public void StartPreview()
     {
@@ -454,7 +528,6 @@ public class AgoraManager : Singleton<AgoraManager>
         mRtcEngine.StopPreview();
         ReleaseVideoDevice();
     }
-
     public void OnMuteRemoteVideo(bool mute)
     {
         mRtcEngine.MuteAllRemoteVideoStreams(mute);
@@ -466,51 +539,39 @@ public class AgoraManager : Singleton<AgoraManager>
 
     #endregion
 
-    #region SharingScreen Not Ready
-    //Will uncomment next commit.
-//    public void OnShareScreen(bool toggle, bool audioEnabled)
-//    {
-//        if (!joinedChannel) return;
+    #region SharingScreen
+    public void OnShareScreen(bool toggle, bool audioEnabled)
+    {
+        if (!joinedChannel) return;
 
-////        if (toggle)
-////        {
-////#if UNITY_EDITOR
-////            mRtcEngine.StartScreenCaptureByDisplayId(0, default, default);
-////            mRtcEngine.MuteLocalVideoStream(false);
-////#else
-////        mRtcEngine.StartScreenCaptureForWeb(audioEnabled);
-////#endif
-////        }
-////        else
-////        {
-////            mRtcEngine.StopScreenCapture();
-////            mRtcEngine.MuteLocalVideoStream(true);
-////        }
+#if UNITY_WEBGL
+        if (toggle)
+        {
+            if (isSharing) return;
+            updateScreenShareID();
+            mRtcEngine.StartNewScreenCaptureForWeb(this.screenId, audioEnabled);
+            isSharing = true;
+        }
+        else
+        {
+            if (!isSharing) return;
+            mRtcEngine.StopNewScreenCaptureForWeb();
+            isSharing = false;
+        }
+#endif
+    }
 
-//        if (toggle)
-//        {
-//            updateScreenShareID();
-//#if UNITY_EDITOR
-//            mRtcEngine.StartScreenCaptureByDisplayId(SCREEN_SHARE_ID, default, default);
-//#else
-//            mRtcEngine.StartNewScreenCaptureForWeb(SCREEN_SHARE_ID, audioEnabled);
-//#endif
-//        }
-//        else
-//        {
-//            mRtcEngine.StopNewScreenCaptureForWeb();
-//        }
-//    }
-
-//    public void updateScreenShareID()
-//    {
-//        uint.TryParse("testScreenShare", out SCREEN_SHARE_ID);
-//    }
-#endregion
+    public void updateScreenShareID()
+    {
+        this.screenId = GetScreenID(this.uid);
+    }
+    #endregion
 
     #region Video View
     private void MakeVideoView(string channalId, uint uid)
     {
+        string objName = channalId + "_" + uid.ToString();
+
         GameObject videoFrame;
 
         if (uid == 0)
@@ -523,35 +584,43 @@ public class AgoraManager : Singleton<AgoraManager>
             videoFrame = Instantiate(userVideoViewPrefab, videoViewContainer);
         }
 
-        string objName = channalId + "_" + uid.ToString();
-        GameObject go = GameObject.Find(objName);
-        if(!ReferenceEquals(go, null)) return;
-
         VideoSurface videoSurface = MakeImageSurface(objName, videoFrame.transform);
-        if (!ReferenceEquals(videoSurface, null))
-        {
-            videoSurface.SetForUser(uid);
-            videoSurface.SetEnable(true);
-            videoSurface.SetVideoSurfaceType(AgoraVideoSurfaceType.RawImage);
-            if(uid == 0)
-            {
-                localVideoView = videoFrame;
-            }
 
-            userVideoViews[uid] = videoFrame;
+        videoSurface.SetForUser(uid);
+        videoSurface.SetEnable(true);
+        videoSurface.SetVideoSurfaceType(AgoraVideoSurfaceType.RawImage);
+
+        videoViews[uid] = videoFrame;
+
+        videoFrame.GetComponent<UserVideoView>().RelocateOverlay();
+        videoFrame.GetComponent<UserVideoView>().AssignUid(uid);
+
+        EventHandler.OnCheckDeviceStatus(uid);
+
+        if (!IsUserView(uid))
+        {
+            videoFrame.transform.SetAsFirstSibling();
         }
+
     }
     private VideoSurface MakeImageSurface(string goName, Transform parent)
     {
         GameObject go = new GameObject();
-        if(go == null) return null;
 
         go.name = goName;
         go.AddComponent<RawImage>();
         go.transform.SetParent(parent);
         go.transform.localPosition = Vector3.zero;
         go.transform.Rotate(0f, 0f, 180f);
-        go.transform.localScale = new Vector3(1.6f, .9f, 1);
+        go.transform.localScale = Vector3.one;
+
+        if (!go.TryGetComponent(out AspectRatioFitter aspect))
+        {
+            aspect = go.AddComponent<AspectRatioFitter>();
+        }
+
+        aspect.aspectMode = AspectMode.FitInParent;
+        aspect.aspectRatio = 16f / 9f;
 
         VideoSurface videoSurface = go.AddComponent<VideoSurface>();
 
@@ -559,12 +628,53 @@ public class AgoraManager : Singleton<AgoraManager>
     }
     private void DestroyVideoView(uint _uid)
     {
-        if(userVideoViews.ContainsKey(_uid))
+        if (videoViews.ContainsKey(_uid))
         {
-            var view = userVideoViews[_uid];
-            userVideoViews.Remove(_uid);
+            var view = videoViews[_uid];
+            videoViews.Remove(_uid);
             Destroy(view);
         }
+    }
+
+    float EnforcingViewLength = 360f;
+    private void OnVideoSizeChangedHandler(uint uid, int width, int height, int rotation)
+    {
+        Debug.Log(string.Format("OnVideoSizeChangedHandler, uid:{0}, width:{1}, height:{2}, rotation:{3}", uid, width, height, rotation));
+
+        if(!IsUserView(uid))
+        {
+            //update aspect ratio for big screen
+            var aspectRatio = (float)width / height;
+            EventHandler.OnScreenResolutionUpdate(uid, aspectRatio);
+        }
+
+        if (videoViews.ContainsKey(uid))
+        {
+            GameObject go = videoViews[uid].gameObject.GetComponentInChildren<VideoSurface>().gameObject;
+
+            Vector2 v2 = new Vector2(width, height);
+            RawImage rawImage = go.GetComponent<RawImage>();
+
+            v2 = AgoraUIUtils.GetScaledDimension(width, height, EnforcingViewLength);
+
+            if (rotation == 90 || rotation == 270)
+            {
+                v2 = new Vector2(v2.y, v2.x);
+            }
+
+            rawImage.rectTransform.sizeDelta = v2;
+
+            // if (0,0) we will get a default dimension. but let's still check for the actual dimension
+            if (width == 0 && height == 0)
+            {
+                go.GetComponent<MonoBehaviour>().StartCoroutine(CoGetVideoResolutionDelayed(1));
+            }
+        }
+    }
+    private IEnumerator CoGetVideoResolutionDelayed(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        mRtcEngine.GetRemoteVideoStats();
     }
     #endregion
 

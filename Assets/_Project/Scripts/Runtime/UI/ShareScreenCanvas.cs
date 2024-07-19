@@ -1,17 +1,15 @@
 using agora_gaming_rtc;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ShareScreenCanvas : MonoBehaviour
 {
-    [Header("Engine Handler")]
-    [SerializeField] private AgoraManager agoraManager;
-
     [Header("References")]
     [SerializeField] private GameObject popUpScreenPanel;
     [SerializeField] private GameObject screenVideoSurface;
 
-    [SerializeField] private List<uint> uids = new List<uint>();
+    [SerializeField] private List<uint> sharingScreenIds = new List<uint>();
     [SerializeField] private int currentScreenIndex;
     
     private bool isPopped;
@@ -30,40 +28,48 @@ public class ShareScreenCanvas : MonoBehaviour
 
     private void OnEnable()
     {
-        //onprojectorOpen;
-        //onprojectorClose;
+        EventHandler.UserShareScreenStartedEvent += EventHandler_UserShareScreenStartedEvent;
+        EventHandler.UserShareScreenStoppedEvent += EventHandler_UserShareScreenStoppedEvent;
+        EventHandler.ScreenRatioUpdateEvent += EventHandler_ScreenResolutionUpdateEvent;
     }
 
     private void OnDisable()
     {
-        //onprojectorOpen;
-        //onprojectorClose;
+        EventHandler.UserShareScreenStartedEvent -= EventHandler_UserShareScreenStartedEvent;
+        EventHandler.UserShareScreenStoppedEvent -= EventHandler_UserShareScreenStoppedEvent;
+        EventHandler.ScreenRatioUpdateEvent -= EventHandler_ScreenResolutionUpdateEvent;
     }
 
-    private void OnProjectorOpen(uint _uid)
+    private void EventHandler_ScreenResolutionUpdateEvent(uint screenId, float aspectRatio)
     {
-        if (uids.Count < 1)
+        if (currentScreenIndex < 0) return;
+
+        if(sharingScreenIds[currentScreenIndex] == screenId)
         {
-            SetVideo(_uid);
+            if(videoSurface.TryGetComponent(out AspectRatioFitter fitter))
+            {
+                fitter.aspectRatio = aspectRatio;
+            }
+        }
+    }
+
+    private void EventHandler_UserShareScreenStartedEvent(uint _screenId)
+    {
+        if(sharingScreenIds.Count < 1)
+        {
+            SetVideo(_screenId);
         }
 
-        uids.Add(_uid);
+        sharingScreenIds.Add(_screenId);
     }
-
-    public bool IsSharing(uint _uid)
+    private void EventHandler_UserShareScreenStoppedEvent(uint _screenId)
     {
-        return uids.Contains(_uid);
-    }
+        sharingScreenIds.Remove(_screenId);
 
-    private void OnProjectorClose(uint _uid)
-    {
-        uids.Remove(_uid);
-
-        if (uids.Count == 0)
+        if(sharingScreenIds.Count == 0)
         {
             SetVideo(0);
-
-            if (isPopped)
+            if(isPopped)
             {
                 TogglePopUpScreen();
             }
@@ -72,6 +78,11 @@ public class ShareScreenCanvas : MonoBehaviour
         {
             OnClick_PreviousScreen();
         }
+    }
+
+    public bool IsSharing(uint _uid)
+    {
+        return sharingScreenIds.Contains(_uid);
     }
 
     public void TogglePopUpScreen()
@@ -96,18 +107,18 @@ public class ShareScreenCanvas : MonoBehaviour
     {
         currentScreenIndex += 1;
 
-        if (currentScreenIndex > uids.Count - 1) currentScreenIndex = 0;
+        if (currentScreenIndex > sharingScreenIds.Count - 1) currentScreenIndex = 0;
 
-        SetVideo(uids[currentScreenIndex]);
+        SetVideo(sharingScreenIds[currentScreenIndex]);
     }
 
     public void OnClick_PreviousScreen()
     {
         currentScreenIndex -= 1;
 
-        if (currentScreenIndex < 0) currentScreenIndex = uids.Count == 0 ? 0 : uids.Count - 1;
+        if (currentScreenIndex < 0) currentScreenIndex = sharingScreenIds.Count == 0 ? 0 : sharingScreenIds.Count - 1;
 
-        SetVideo(uids[currentScreenIndex]);
+        SetVideo(sharingScreenIds[currentScreenIndex]);
     }
 
     public void SetVideo(uint _uid)
@@ -116,8 +127,12 @@ public class ShareScreenCanvas : MonoBehaviour
         {
             videoSurface.SetForUser(_uid);
             videoSurface.SetEnable(true);
+            currentScreenIndex = sharingScreenIds.IndexOf(_uid);
 
-            currentScreenIndex = uids.FindIndex(x => uids.Equals(_uid));
+            if(currentScreenIndex < 0)
+            {
+                currentScreenIndex = 0;
+            }
         }
         else
         {

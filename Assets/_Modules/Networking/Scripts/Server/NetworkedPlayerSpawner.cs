@@ -92,11 +92,8 @@ public class NetworkedPlayerSpawner : NetworkBehaviour
             MatchCondition.AddToMatch(worldDetails.ID, nob, replaceMatch: true);
         }
 
-        //Join Agora here?
-        //Maybe somewhere else
-        
-
         nob.transform.position = spawnPosition;
+
         ObserversTeleport(nob, spawnPosition);
 
         SetupPlayer(nob, worldDetails);
@@ -108,13 +105,16 @@ public class NetworkedPlayerSpawner : NetworkBehaviour
 
         var clientName = ci.PlayerSettings.GetUserName();
         var clientAvatar = ci.PlayerSettings.GetGtfLink();
+        var clientUid = ci.PlayerSettings.GetUid();
 
         if(nob.TryGetComponent(out NetworkedPlayerComponent netCom))
         {
-            netCom.ServerSetName(clientName);
-            netCom.ServerSetAvatar(clientAvatar);
+            netCom.PlayerName.Value = clientName;
+            netCom.GLTFLink.Value = clientAvatar;
+            netCom.Uid.Value = clientUid;
+
             netCom.TargetUpdatePlayerInfo(nob.Owner, $"Your name is {clientName}, your avatar link is {clientAvatar}");
-            netCom.TargetJoinChat(nob.Owner, worldDetails.ID.ToString());
+            netCom.TargetSpawnedSuccess(nob.Owner, clientUid, worldDetails.ID.ToString());
         }
     }
 

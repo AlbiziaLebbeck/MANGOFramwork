@@ -242,7 +242,7 @@ public class video_encoder_configuration : MonoBehaviour
         go.transform.Rotate(0f, 0.0f, 180.0f);
         Vector2 pos = AgoraUIUtils.GetRandomPosition(60);
         go.transform.localPosition = new Vector3(pos.x, pos.y, 0f);
-        go.transform.localScale = Vector3.one;
+        go.transform.localScale = new Vector3(1.6f, 0.9f, 1);
 
         // configure videoSurface
         VideoSurface videoSurface = go.AddComponent<VideoSurface>();

@@ -15,6 +15,9 @@ public class ClientInstance : NetworkBehaviour
     #endregion
 
     #region Constants
+    /// <summary>
+    /// Find the way to update version later.
+    /// </summary>
     private const int VERSION_CODE = 0;
     #endregion
 

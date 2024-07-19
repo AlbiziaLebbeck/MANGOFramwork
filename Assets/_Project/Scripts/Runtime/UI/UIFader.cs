@@ -6,14 +6,27 @@ using UnityEngine;
 [RequireComponent(typeof(CanvasGroup))]
 public class UIFader : MonoBehaviour
 {
-    [SerializeField] private float lerpTime = 0.5f;
+    [SerializeField] private float lerpTime = 0.1f;
     private CanvasGroup canvasGroup;
 
-    private void Awake() => canvasGroup = GetComponent<CanvasGroup>();
+    private void Awake()
+    {
+        if(canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
+    }
 
-    public void FadeIn() => StartCoroutine(DoFadeCoroutine(canvasGroup.alpha, 1));
+    public void FadeIn()
+    {
+        if(canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
+
+        StartCoroutine(DoFadeCoroutine(canvasGroup.alpha, 1));
+    }
     public void FadeIn(CanvasGroup _cg, Action _callback) => StartCoroutine(DoFadeWithTargetCoroutine(_cg, _cg.alpha, 1, _callback));
-    public void FadeOut() => StartCoroutine(DoFadeCoroutine(canvasGroup.alpha, 0));
+    public void FadeOut()
+    {
+        if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
+
+        StartCoroutine(DoFadeCoroutine(canvasGroup.alpha, 0));
+    }
     public void FadeOut(CanvasGroup _cg, Action _callback) => StartCoroutine(DoFadeWithTargetCoroutine(_cg, _cg.alpha, 0, _callback));
 
     private IEnumerator DoFadeCoroutine(float _start, float _end)

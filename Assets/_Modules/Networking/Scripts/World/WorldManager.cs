@@ -78,10 +78,10 @@ public class WorldManager : SingletonNetworkBehaviour<WorldManager>
 
         if (InstanceFinder.ClientManager) InstanceFinder.ClientManager.OnClientConnectionState -= ClientManager_OnClientConnectionState;
 
-        InstanceFinder.ServerManager.OnServerConnectionState -= ServerManager_OnServerConnectionState;
-        InstanceFinder.ServerManager.OnRemoteConnectionState -= ServerManager_OnRemoteConnectionState;
+        if (InstanceFinder.ServerManager) InstanceFinder.ServerManager.OnServerConnectionState -= ServerManager_OnServerConnectionState;
+        if (InstanceFinder.ServerManager) InstanceFinder.ServerManager.OnRemoteConnectionState -= ServerManager_OnRemoteConnectionState;
 
-        InstanceFinder.SceneManager.OnClientLoadedStartScenes -= SceneManager_OnClientLoadedStartScenes;
+        if (InstanceFinder.SceneManager) InstanceFinder.SceneManager.OnClientLoadedStartScenes -= SceneManager_OnClientLoadedStartScenes;
     }
 
     private void EventHandler_ClientLoginEvent()
@@ -97,9 +97,9 @@ public class WorldManager : SingletonNetworkBehaviour<WorldManager>
     {
         if (obj.ConnectionState == LocalConnectionState.Started) return;
 
-        if(obj.ConnectionState == LocalConnectionState.Stopped)
+        if (obj.ConnectionState == LocalConnectionState.Stopped)
         {
-            AgoraManager.Instance.LeaveChannel();
+            EventHandler.OnClientDisconnected();
         }
 
         PersistentCanvas.LoadingCanvas?.SetInformationDisplay($"Client State: {obj.ConnectionState}");

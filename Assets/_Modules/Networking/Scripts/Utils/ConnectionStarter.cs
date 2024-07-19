@@ -1,11 +1,8 @@
 using FishNet.Managing;
 using FishNet.Object;
 using FishNet.Transporting;
-using GLTFast.Schema;
 using System;
-using Unity.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Scene = UnityEngine.SceneManagement.Scene;
 using UnitySceneManager = UnityEngine.SceneManagement.SceneManager;
 
@@ -57,7 +54,6 @@ public class ConnectionStarter : MonoBehaviour
 #elif !UNITY_EDITOR
             StartType = StartType.Client;
 #endif
-        Debug.Log("Start server as:" + StartType.ToString());
 
         PersistentCanvas.LoadingCanvas?.SetInformationDisplay("Starting connection.");
         PersistentCanvas.LoadingCanvas?.ToggleSpinner(true);
@@ -65,7 +61,6 @@ public class ConnectionStarter : MonoBehaviour
         if (StartType == StartType.Host || StartType == StartType.Server)
         {
             if (networkManager == null) return;
-
             if (serverState != LocalConnectionState.Stopped) networkManager.ServerManager.StopConnection(true);
             else networkManager.ServerManager.StartConnection();
         }
@@ -114,10 +109,10 @@ public class ConnectionStarter : MonoBehaviour
         serverState = obj.ConnectionState;
 
         if (obj.ConnectionState != LocalConnectionState.Started) return;
-        if (!networkManager.ServerManager.OneServerStarted()) return;
-
+#if UNITY_WEBGL
+         if (!networkManager.ServerManager.OneServerStarted()) return;
+#endif
         Scene scene = UnitySceneManager.GetSceneByName("NetworkBoostrapScene");
-
 
         NetworkObject serverPrewarmer = Instantiate(serverScenePrewarmerPrefab);
         UnitySceneManager.MoveGameObjectToScene(serverPrewarmer.gameObject, scene);
