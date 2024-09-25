@@ -60,6 +60,8 @@ namespace FishNet.Transporting.Bayou
         [Tooltip("Address to connect.")]
         [SerializeField]
         private string _clientAddress = "localhost";
+        [SerializeField]
+        private string _clientPath = "";
         #endregion
 
         #region Private.
@@ -397,7 +399,7 @@ namespace FishNet.Transporting.Bayou
         private bool StartClient(string address)
         {
             _client.Initialize(this, _mtu);
-            return _client.StartConnection(address, _port, _useWss);
+            return _client.StartConnection(address, _port, _useWss, _clientPath);
         }
 
         /// <summary>
