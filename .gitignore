@@ -70,3 +70,14 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# 3rd Party Assets Downloaded from Unity Assets Store
+/[Aa]ssets/_ThirdPartyAssets/
+/[Aa]ssets/_ThirdPartyAssets.meta
+
+# APPID
+/[Aa]ssets/_APPID/IntaniaVerse_Appid.asset
+/[Aa]ssets/_APPID/IntaniaVerse_Appid.asset.meta
+
+#Agora Plugins
+/[Aa]ssets/Plugins/Agora_Unity_WebGL_Refactor 10 Release/AgoraEngine/Plugins/*
