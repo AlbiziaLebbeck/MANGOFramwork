@@ -29,6 +29,10 @@ public static class EventHandler
 
     public static event Action<uint> CheckDeviceStatusEvent;
 
+    //Interactables
+    public static event Action InteractionEnterEvent;
+    public static event Action InteractionExitEvent;
+
     public static void OnLoadSceneCompleted(string sceneName)
     {
         if(LoadSceneCompleteEvent != null) LoadSceneCompleteEvent(sceneName);
@@ -96,7 +100,6 @@ public static class EventHandler
     {
         if(UserShareScreenStoppedEvent != null) UserShareScreenStoppedEvent(screenId);
     }
-
     public static void OnScreenResolutionUpdate(uint screenId, float aspectRatio)
     {
         if(ScreenRatioUpdateEvent != null) ScreenRatioUpdateEvent(screenId, aspectRatio);
@@ -105,6 +108,17 @@ public static class EventHandler
     public static void OnCheckDeviceStatus(uint uid)
     {
         if(CheckDeviceStatusEvent != null) CheckDeviceStatusEvent(uid);
+    }
+    #endregion
+
+    #region Interactions
+    public static void OnInteractionEnter()
+    {
+        if (InteractionEnterEvent != null) InteractionEnterEvent();
+    }
+    public static void OnInteractionExit()
+    {
+        if (InteractionExitEvent != null) InteractionExitEvent();
     }
     #endregion
 }

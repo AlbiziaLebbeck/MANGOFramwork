@@ -5,8 +5,8 @@ using UnityEngine.Events;
 
 public class SimpleTrigger : MonoBehaviour
 {
-    public UnityEvent OnEnter;
-    public UnityEvent OnExit;
+    public UnityEvent<GameObject> OnEnter;
+    public UnityEvent<GameObject> OnExit;
 
     public string TargetTag;
 
@@ -16,7 +16,7 @@ public class SimpleTrigger : MonoBehaviour
         {
             if(OnEnter != null)
             {
-                OnEnter.Invoke();
+                OnEnter.Invoke(other.gameObject);
             }
         }
     }
@@ -27,7 +27,7 @@ public class SimpleTrigger : MonoBehaviour
         {
             if (OnExit != null)
             {
-                OnExit.Invoke();
+                OnExit.Invoke(other.gameObject);
             }
         }
     }

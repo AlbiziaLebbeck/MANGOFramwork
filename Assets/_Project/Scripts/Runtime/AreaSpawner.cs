@@ -21,15 +21,31 @@ public class AreaSpawner : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        if(!debug) return;
+        //if(!debug) return;
+
+        //Gizmos.color = gizmoColor;
+        //var offsetPos = transform.position;
+        //offsetPos.y += boxHeight / 2f;
+
+        //var size = new Vector3(spawnSize.x, boxHeight, spawnSize.y);
+
+        //Gizmos.DrawCube(offsetPos, size);
+        if (!debug) return;
 
         Gizmos.color = gizmoColor;
-        var offsetPos = transform.position;
-        offsetPos.y += boxHeight / 2f;
 
+        // Save the original Gizmos matrix
+        Matrix4x4 originalMatrix = Gizmos.matrix;
+
+        // Apply transformation matrix with rotation
+        Gizmos.matrix = Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one);
+
+        // Draw the gizmo cube at the center with the given size
         var size = new Vector3(spawnSize.x, boxHeight, spawnSize.y);
+        Gizmos.DrawCube(Vector3.zero, size);
 
-        Gizmos.DrawCube(offsetPos, size);
+        // Restore the original Gizmos matrix
+        Gizmos.matrix = originalMatrix;
     }
 #endif
     #endregion

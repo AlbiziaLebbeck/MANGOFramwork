@@ -112,6 +112,12 @@ public class ConnectionStarter : MonoBehaviour
 #if UNITY_WEBGL
          if (!networkManager.ServerManager.OneServerStarted()) return;
 #endif
+        if (serverScenePrewarmerPrefab == null || worldManagerPrefab == null)
+        {
+            Debug.Log("ServerScenePrewarmerPrefab or WorldManagerPrefab is null, please assign both to ConnectionStarter");
+            return;
+        }
+
         Scene scene = UnitySceneManager.GetSceneByName("NetworkBoostrapScene");
 
         NetworkObject serverPrewarmer = Instantiate(serverScenePrewarmerPrefab);

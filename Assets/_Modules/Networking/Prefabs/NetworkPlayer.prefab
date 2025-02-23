@@ -78,6 +78,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 1
         m_CallState: 2
+  LoadOnStart: 0
 --- !u!1 &355488956585444834
 GameObject:
   m_ObjectHideFlags: 0
@@ -2605,6 +2606,7 @@ GameObject:
   - component: {fileID: 8750996931754928808}
   - component: {fileID: 3250969654892941500}
   - component: {fileID: 4052251722453416511}
+  - component: {fileID: 8591730409984040595}
   m_Layer: 8
   m_Name: NetworkPlayer
   m_TagString: Player
@@ -2717,7 +2719,7 @@ MonoBehaviour:
   GroundedRadius: 0.28
   GroundLayers:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 2177
   CinemachineCameraTarget: {fileID: 8025848598219501254}
   TopClamp: 70
   BottomClamp: -30
@@ -2874,14 +2876,14 @@ MonoBehaviour:
   GroundedRadius: 0.28
   GroundLayers:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 2049
   Grounded: 1
   playerSpeed: 0
   sprintSpeed: 5
   sprintTime: 1
   clickableLayers:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 2049
   clickEffectPrefab: {fileID: 8911176422333684163, guid: f5232fa4ab1fa00488568bdd80c58a4a, type: 3}
   minCameraDistance: 1.2
   maxCameraDistance: 10
@@ -2890,6 +2892,8 @@ MonoBehaviour:
   rotationSpeed: 15
   rotationThreshold: 0.1
   isChangeView: 0
+  smoothingFactor: 100
+  _lockToPlatformTarget: {fileID: 0}
 --- !u!114 &456589385153110915
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2955,6 +2959,7 @@ MonoBehaviour:
   - {fileID: 3973350046435024460}
   - {fileID: 3250969654892941500}
   - {fileID: 4052251722453416511}
+  - {fileID: 0}
   <SerializedRootNetworkBehaviour>k__BackingField: {fileID: 0}
   <NestedRootNetworkBehaviours>k__BackingField: []
   SerializedTransformProperties:
@@ -2975,7 +2980,7 @@ MonoBehaviour:
   _ownerInterpolation: 1
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 1
+  <PrefabId>k__BackingField: 2
   <SpawnableCollectionId>k__BackingField: 0
   _scenePathHash: 0
   <SceneId>k__BackingField: 0
@@ -3061,6 +3066,26 @@ MonoBehaviour:
   _networkObjectCache: {fileID: 7537613859411478104}
   controller: {fileID: 7713726441618763725}
   freeFalllimit: -100
+--- !u!114 &8591730409984040595
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8090593447119784538}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f31a9a40a52bc3546a363a28031dccfc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _componentIndexCache: 255
+  _addedNetworkObject: {fileID: 7537613859411478104}
+  _networkObjectCache: {fileID: 0}
+  interactDistance: 3
+  interactableLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  IsInteracting: 0
 --- !u!1 &8194773232981660253
 GameObject:
   m_ObjectHideFlags: 0

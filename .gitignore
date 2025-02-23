@@ -81,3 +81,7 @@ crashlytics-build.properties
 
 #Agora Plugins
 /[Aa]ssets/Plugins/Agora_Unity_WebGL_Refactor 10 Release/AgoraEngine/Plugins/*
+
+#Exclude Assets
+/[Aa]ssets/_ExcludeAssets/
+/[Aa]ssets/_ExcludeAssets.meta

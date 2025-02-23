@@ -119,7 +119,7 @@ public class PlayerMovementHandler : MonoBehaviour
     /// </summary>
     private void AssignInputs()
     {
-        if (!CheckMobile.Instance.CheckIsMobile())
+        if (!CheckMobile.CheckIsMobile())
         {
             playerActions.KeyboardMouse.LeftMousePressed.canceled += _ =>
             {
@@ -200,13 +200,50 @@ public class PlayerMovementHandler : MonoBehaviour
 
     private void Update()
     {
-        HandleController();
         HandleCameraRotate();
-        HandleAnimation();
         HandleCameraZoom();
+        GroundCheck();
+
+        if (_lockToPlatformTarget != null) return;
+
+        if (isInSpecialAnimation) return;
+
+        HandleController();
+        HandleAnimation();
         HandleMovement();
         HandleRotation();
-        GroundCheck();
+    }
+
+    private void LateUpdate()
+    {
+        HandleMovingPlatform();
+    }
+
+    [SerializeField] private float smoothingFactor = 0.1f;
+    private Vector3 smoothedPosition;
+    private Quaternion smoothedRotation;
+    [SerializeField] private Transform _lockToPlatformTarget;
+    private bool isInSpecialAnimation;
+
+    private void HandleMovingPlatform()
+    {
+        if (_lockToPlatformTarget == null) return;
+
+        smoothedPosition = Vector3.Lerp(smoothedPosition, _lockToPlatformTarget.position, Time.deltaTime * smoothingFactor);
+        transform.position = smoothedPosition;
+
+        smoothedRotation = Quaternion.Lerp(transform.rotation, _lockToPlatformTarget.rotation, Time.deltaTime * smoothingFactor);
+        transform.rotation = smoothedRotation;
+    }
+
+    public void SetLockToPlatformTarget(Transform _LockToPlatformTarget)
+    {
+        _lockToPlatformTarget = _LockToPlatformTarget;
+    }
+
+    public void SetSpecialAnimation(bool specialAnimationOn)
+    {
+        isInSpecialAnimation = specialAnimationOn;
     }
 
     private void ToggleCrouch()
@@ -333,7 +370,7 @@ public class PlayerMovementHandler : MonoBehaviour
     {
         var zoomAmount = 0f;
 
-        if(CheckMobile.Instance && CheckMobile.Instance.CheckIsMobile() && IsPinchZoom)
+        if(CheckMobile.CheckIsMobile() && IsPinchZoom)
         {
             var distance = Vector2.Distance(primaryTouchPosition, secondaryTouchPosition);
 

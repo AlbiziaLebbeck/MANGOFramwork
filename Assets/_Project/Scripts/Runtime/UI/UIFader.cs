@@ -20,14 +20,14 @@ public class UIFader : MonoBehaviour
 
         StartCoroutine(DoFadeCoroutine(canvasGroup.alpha, 1));
     }
-    public void FadeIn(CanvasGroup _cg, Action _callback) => StartCoroutine(DoFadeWithTargetCoroutine(_cg, _cg.alpha, 1, _callback));
+    public void FadeIn(Action _callback) => StartCoroutine(DoFadeWithTargetCoroutine(canvasGroup, canvasGroup.alpha, 1, _callback));
     public void FadeOut()
     {
         if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
 
         StartCoroutine(DoFadeCoroutine(canvasGroup.alpha, 0));
     }
-    public void FadeOut(CanvasGroup _cg, Action _callback) => StartCoroutine(DoFadeWithTargetCoroutine(_cg, _cg.alpha, 0, _callback));
+    public void FadeOut(Action _callback) => StartCoroutine(DoFadeWithTargetCoroutine(canvasGroup, canvasGroup.alpha, 0, _callback));
 
     private IEnumerator DoFadeCoroutine(float _start, float _end)
     {
