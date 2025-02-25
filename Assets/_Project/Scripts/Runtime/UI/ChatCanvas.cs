@@ -74,7 +74,7 @@ public class ChatCanvas : MonoBehaviour
         OnChatReady(false);
         OnLeaveChat();
 
-        if (CheckMobile.Instance.CheckIsMobile())
+        if (CheckMobile.CheckIsMobile())
         {
             screenSharingButton.interactable = false;
         }

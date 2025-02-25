@@ -15,6 +15,15 @@ public class AvatarLoader : MonoBehaviour
 
     public string GLTFLink { get => gltfLink; set {  gltfLink = value; } }
 
+    public bool LoadOnStart;
+
+    private void Start()
+    {
+        if (LoadOnStart)
+        {
+            LoadAvatar();
+        }
+    }
     public async void LoadAvatar()
     {
         if (avatarModel != null)
@@ -33,28 +42,55 @@ public class AvatarLoader : MonoBehaviour
     private async Task LoadAvatarAsync(string _url)
     {
         var gltf = new GltfImport();
-        var success = await gltf.Load(_url);
+        var loadSuccess = await gltf.Load(_url);
 
-        if (_url.Contains("default")) success = false;
+        if (_url.Contains("default")) loadSuccess = false;
 
-        if (success)
+        if (loadSuccess)
         {
-            var instantiator = new GameObjectInstantiator(gltf, this.transform);
+            #region Old
+            //var instantiator = new GameObjectInstantiator(gltf, this.transform);
 
-            await gltf.InstantiateMainSceneAsync(instantiator);
+            //await gltf.InstantiateMainSceneAsync(instantiator);
 
-            avatarModel = instantiator.SceneTransform.gameObject;
-            avatarModel.transform.localEulerAngles = new Vector3(0, 0, 0);
+            //avatarModel = instantiator.SceneTransform.gameObject;
 
-            Destroy(avatarModel.GetComponent<Animation>());
+            //avatarModel.transform.localEulerAngles = new Vector3(0, 0, 0);
 
-            SetupAnimator(avatarModel);
+            //Destroy(avatarModel.GetComponent<Animation>());
 
-            Debug.Log("Loading glTF successfully.");
+            //SetupAnimator(avatarModel);
 
-            AvatarLoaderEvent.OnAvatarLoaded(avatarModel, _url);
+            //Debug.Log("Loading glTF successfully.");
 
-            if(OnLoadCompleted != null) OnLoadCompleted.Invoke();
+            //AvatarLoaderEvent.OnAvatarLoaded(avatarModel, _url);
+
+            //if (OnLoadCompleted != null) OnLoadCompleted.Invoke();
+            #endregion
+
+            var newModel = new GameObject("AvatarModel");
+
+            newModel.transform.SetParent(this.transform);
+            newModel.transform.localPosition = Vector3.zero;
+            
+            var instantiateSuccess = await gltf.InstantiateMainSceneAsync(newModel.transform);
+
+            if(instantiateSuccess)
+            {
+                avatarModel = newModel;
+               
+                avatarModel.transform.localEulerAngles = new Vector3(0, 0, 0);
+
+                Destroy(avatarModel.GetComponent<Animation>());
+
+                SetupAnimator(avatarModel);
+
+                Debug.Log("Loading glTF successfully.");
+
+                AvatarLoaderEvent.OnAvatarLoaded(avatarModel, _url);
+
+                if (OnLoadCompleted != null) OnLoadCompleted.Invoke();
+            }
         }
         else
         {
@@ -119,8 +155,12 @@ public class AvatarLoader : MonoBehaviour
             }
         }
 
-        if (avatarModel.transform.Find("bone_masque0_root/hips/spine.001") || avatarModel.transform.Find("amature_masque0/hips/spine.001"))
+        if (avatarModel.transform.Find("Scene/bone_masque0_root/hips/spine.001") || avatarModel.transform.Find("Scene/amature_masque0/hips/spine.001"))
             animator.avatar = Resources.Load<Avatar>("AvatarLoader/MasqueAvatar_CU");
+        else if (avatarModel.transform.Find("Armature/Hips/LeftUpLeg"))
+        {
+            animator.avatar = Resources.Load<Avatar>("AvatarLoader/AvaternRig");
+        }
         else
             animator.avatar = Resources.Load<Avatar>("AvatarLoader/BaseAvatar");
 

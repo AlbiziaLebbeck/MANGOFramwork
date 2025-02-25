@@ -35,7 +35,7 @@ public class LoginCanvas : MonoBehaviour
                 OnClick_LoginButton();
             });
 
-            if (CheckMobile.Instance.CheckIsMobile())
+            if (CheckMobile.CheckIsMobile())
             {
                 keyboard = null;
                 userNameInputField.onSelect.RemoveAllListeners();

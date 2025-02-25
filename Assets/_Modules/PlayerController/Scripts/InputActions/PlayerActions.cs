@@ -98,6 +98,15 @@ public partial class @PlayerActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""EnterPressed"",
+                    ""type"": ""Button"",
+                    ""id"": ""387b0599-8768-4624-83c4-9c445910cf84"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -191,12 +200,23 @@ public partial class @PlayerActions: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
-                    ""id"": ""3d3585ed-1511-46e7-b169-7defff22126b"",
-                    ""path"": ""<Keyboard>/leftCtrl"",
+                    ""id"": ""5d68d829-9b16-4ff8-9f62-6ef92210f00d"",
+                    ""path"": ""<Keyboard>/enter"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Crouch"",
+                    ""action"": ""EnterPressed"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d3fefec1-705e-4d30-b81a-7ee1e35a4cb3"",
+                    ""path"": ""<Keyboard>/numpadEnter"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""EnterPressed"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -363,6 +383,7 @@ public partial class @PlayerActions: IInputActionCollection2, IDisposable
         m_KeyboardMouse_RightMousePressed = m_KeyboardMouse.FindAction("RightMousePressed", throwIfNotFound: true);
         m_KeyboardMouse_DoubleLeftPressed = m_KeyboardMouse.FindAction("DoubleLeftPressed", throwIfNotFound: true);
         m_KeyboardMouse_Crouch = m_KeyboardMouse.FindAction("Crouch", throwIfNotFound: true);
+        m_KeyboardMouse_EnterPressed = m_KeyboardMouse.FindAction("EnterPressed", throwIfNotFound: true);
         // Touch
         m_Touch = asset.FindActionMap("Touch", throwIfNotFound: true);
         m_Touch_PrimaryTouchDelta = m_Touch.FindAction("PrimaryTouchDelta", throwIfNotFound: true);
@@ -441,6 +462,7 @@ public partial class @PlayerActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_KeyboardMouse_RightMousePressed;
     private readonly InputAction m_KeyboardMouse_DoubleLeftPressed;
     private readonly InputAction m_KeyboardMouse_Crouch;
+    private readonly InputAction m_KeyboardMouse_EnterPressed;
     public struct KeyboardMouseActions
     {
         private @PlayerActions m_Wrapper;
@@ -453,6 +475,7 @@ public partial class @PlayerActions: IInputActionCollection2, IDisposable
         public InputAction @RightMousePressed => m_Wrapper.m_KeyboardMouse_RightMousePressed;
         public InputAction @DoubleLeftPressed => m_Wrapper.m_KeyboardMouse_DoubleLeftPressed;
         public InputAction @Crouch => m_Wrapper.m_KeyboardMouse_Crouch;
+        public InputAction @EnterPressed => m_Wrapper.m_KeyboardMouse_EnterPressed;
         public InputActionMap Get() { return m_Wrapper.m_KeyboardMouse; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -486,6 +509,9 @@ public partial class @PlayerActions: IInputActionCollection2, IDisposable
             @Crouch.started += instance.OnCrouch;
             @Crouch.performed += instance.OnCrouch;
             @Crouch.canceled += instance.OnCrouch;
+            @EnterPressed.started += instance.OnEnterPressed;
+            @EnterPressed.performed += instance.OnEnterPressed;
+            @EnterPressed.canceled += instance.OnEnterPressed;
         }
 
         private void UnregisterCallbacks(IKeyboardMouseActions instance)
@@ -514,6 +540,9 @@ public partial class @PlayerActions: IInputActionCollection2, IDisposable
             @Crouch.started -= instance.OnCrouch;
             @Crouch.performed -= instance.OnCrouch;
             @Crouch.canceled -= instance.OnCrouch;
+            @EnterPressed.started -= instance.OnEnterPressed;
+            @EnterPressed.performed -= instance.OnEnterPressed;
+            @EnterPressed.canceled -= instance.OnEnterPressed;
         }
 
         public void RemoveCallbacks(IKeyboardMouseActions instance)
@@ -635,6 +664,7 @@ public partial class @PlayerActions: IInputActionCollection2, IDisposable
         void OnRightMousePressed(InputAction.CallbackContext context);
         void OnDoubleLeftPressed(InputAction.CallbackContext context);
         void OnCrouch(InputAction.CallbackContext context);
+        void OnEnterPressed(InputAction.CallbackContext context);
     }
     public interface ITouchActions
     {

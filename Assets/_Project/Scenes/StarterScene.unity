@@ -1318,8 +1318,6 @@ MonoBehaviour:
   AvatarUrls:
   - https://chulaverse-avatar-bucket.s3.ap-southeast-1.amazonaws.com/6493e38c56bfb71dbd50d9f9.gltf
   - https://chulaverse-avatar-bucket.s3.ap-southeast-1.amazonaws.com/f1.gltf
-  - https://chulaverse-avatar-bucket.s3.ap-southeast-1.amazonaws.com/6493e4ca56bfb7079050da1e.gltf
-  - https://chulaverse-avatar-bucket.s3.ap-southeast-1.amazonaws.com/f2.gltf
   avatarsShowRoomTransform: {fileID: 858171770}
   avatarCollectionsTransform: {fileID: 1720260966}
   baseAvatarPrefab: {fileID: 7621679669630170471, guid: f0543948a959cec4b84e84014dfdf71f, type: 3}

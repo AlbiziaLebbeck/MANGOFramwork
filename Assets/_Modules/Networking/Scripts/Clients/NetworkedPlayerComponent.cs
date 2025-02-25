@@ -30,7 +30,7 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         
     public readonly SyncVar<bool> OnMic = new SyncVar<bool>();
     public readonly SyncVar<bool> OnVideo = new SyncVar<bool>();
-    public readonly SyncVar<uint> OnScreen = new SyncVar<uint>(); 
+    public readonly SyncVar<uint> OnProjector = new SyncVar<uint>(); 
 
     private void Awake()
     {
@@ -39,7 +39,7 @@ public class NetworkedPlayerComponent : NetworkBehaviour
 
         OnMic.OnChange += OnMic_OnChange;
         OnVideo.OnChange += OnVideo_OnChange;
-        OnScreen.OnChange += OnScreen_OnChange;
+        OnProjector.OnChange += OnProjector_OnChange;
 
         EventHandler.CheckDeviceStatusEvent += EventHandler_CheckDeviceStatusEvent;
     }
@@ -67,6 +67,8 @@ public class NetworkedPlayerComponent : NetworkBehaviour
 
         EventHandler.UserCamMuteUpdateEvent += EventHandler_UserCamMuteUpdateEvent;
         EventHandler.UserMicMuteUpdateEvent += EventHandler_UserMicMuteUpdateEvent;
+        EventHandler.UserShareScreenStartedEvent += EventHandler_UserShareScreenStartedEvent;
+        EventHandler.UserShareScreenStoppedEvent += EventHandler_UserShareScreenStoppedEvent;
         
         nameText.gameObject.SetActive(false);
         micStatusIcon.gameObject.SetActive(false);
@@ -78,6 +80,11 @@ public class NetworkedPlayerComponent : NetworkBehaviour
 
         gameObject.tag = "Player";
 
+        if(UserReferencePersistent.Instance == null)
+        {
+            GameObject userRef = new GameObject("UserReferncePresistent");
+            userRef.AddComponent<UserReferencePersistent>();
+        }
         UserReferencePersistent.Instance.AssignPlayerGameObject(gameObject);
 
         PersistentCanvas.LoadingCanvas.ToggleLoadingScreen(false);
@@ -91,11 +98,22 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         {
             EventHandler.UserCamMuteUpdateEvent -= EventHandler_UserCamMuteUpdateEvent;
             EventHandler.UserMicMuteUpdateEvent -= EventHandler_UserMicMuteUpdateEvent;
+            EventHandler.UserShareScreenStartedEvent -= EventHandler_UserShareScreenStartedEvent;
+            EventHandler.UserShareScreenStoppedEvent -= EventHandler_UserShareScreenStoppedEvent;
         }
     }
     #endregion
 
     #region Callbacks
+    private void EventHandler_UserShareScreenStoppedEvent(uint _uid)
+    {
+        
+    }
+
+    private void EventHandler_UserShareScreenStartedEvent(uint _uid)
+    {
+        
+    }
     private void EventHandler_CheckDeviceStatusEvent(uint _uid)
     {
         if (_uid == Uid.Value)
@@ -162,9 +180,12 @@ public class NetworkedPlayerComponent : NetworkBehaviour
 
         EventHandler.OnUserMicMuteUpdate(Uid.Value, !next);
     }
-    private void OnScreen_OnChange(uint prev, uint next, bool asServer)
+    private void OnProjector_OnChange(uint prev, uint next, bool asServer)
     {
         //later
+        if (asServer) return;
+
+        
     }
     #endregion
 
@@ -182,7 +203,7 @@ public class NetworkedPlayerComponent : NetworkBehaviour
     [ServerRpc]
     public void RPCServerSetProjector(uint projectorId)
     {
-        OnScreen.Value = projectorId;
+        OnProjector.Value = projectorId;
     }
     [TargetRpc]
     public void TargetUpdatePlayerInfo(NetworkConnection conn, string message)
@@ -192,6 +213,7 @@ public class NetworkedPlayerComponent : NetworkBehaviour
     [TargetRpc]
     public void TargetSpawnedSuccess(NetworkConnection conn, uint _uid, string _worldId)
     {
+
         if (!string.IsNullOrEmpty(_worldId))
         {
             EventHandler.OnClientSpawnSuccess(_worldId, _uid);

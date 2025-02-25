@@ -10,7 +10,7 @@ public class NetworkedPlayerSettings : NetworkBehaviour
     private const uint UID_PREFIX = 1;
     #endregion
 
-    public void SetUserName(string value)
+    public void RPCSetUserName(string value)
     {
         _userName.Value = value;
 
@@ -18,7 +18,7 @@ public class NetworkedPlayerSettings : NetworkBehaviour
         var userId = uint.Parse($"{UID_PREFIX}{(uint)value.GetHashCode() % 1000}");
         _uid.Value = userId;
     }
-    public void SetGtfLink(string value)
+    public void RPCSetGtfLink(string value)
     {
         _gltfLink.Value = value;
     }

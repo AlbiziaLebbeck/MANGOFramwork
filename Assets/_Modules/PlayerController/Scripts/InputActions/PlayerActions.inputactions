@@ -76,6 +76,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "EnterPressed",
+                    "type": "Button",
+                    "id": "387b0599-8768-4624-83c4-9c445910cf84",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -169,12 +178,23 @@
                 },
                 {
                     "name": "",
-                    "id": "3d3585ed-1511-46e7-b169-7defff22126b",
-                    "path": "<Keyboard>/leftCtrl",
+                    "id": "5d68d829-9b16-4ff8-9f62-6ef92210f00d",
+                    "path": "<Keyboard>/enter",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Crouch",
+                    "action": "EnterPressed",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d3fefec1-705e-4d30-b81a-7ee1e35a4cb3",
+                    "path": "<Keyboard>/numpadEnter",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "EnterPressed",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

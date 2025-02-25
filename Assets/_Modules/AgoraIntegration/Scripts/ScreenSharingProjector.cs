@@ -1,25 +1,33 @@
 using agora_gaming_rtc;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class ScreenSharingProjector : MonoBehaviour
+public class ScreenSharingProjector : NetworkInteractable
 {
-    public static Dictionary<int, ScreenSharingProjector> projectors = new Dictionary<int, ScreenSharingProjector>();
-    public static Dictionary<uint, ScreenSharingProjector> usedProjectors = new Dictionary<uint, ScreenSharingProjector>();
-
+    [SerializeField] private Transform screenFrame;
     private VideoSurface videoSurface;
-    public static int currentProject = 0;
-
-    public bool IsProjected;
 
     private void Awake()
     {
-        projectors[gameObject.GetInstanceID()] = this;
-        currentProject = 0;
+        SetupVideoSurface();
     }
 
-    private void OnDestroy()
+    private void SetupVideoSurface()
     {
-        projectors.Remove(gameObject.GetInstanceID());
+        videoSurface = screenFrame.gameObject.AddComponent<VideoSurface>();
+        SetVideo(0);
+    }
+
+    public void SetVideo(uint uid)
+    {
+        if (uid > 0)
+        {
+            videoSurface.SetForUser(uid);
+            videoSurface.SetEnable(true);
+        }
+        else
+        {
+            videoSurface.SetForUser(0);
+            videoSurface.SetEnable(false);
+        }
     }
 }

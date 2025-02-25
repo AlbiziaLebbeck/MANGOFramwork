@@ -189,7 +189,6 @@ public class WorldManager : SingletonNetworkBehaviour<WorldManager>
                 AllowStacking = false,
                 LocalPhysics = LocalPhysicsMode.Physics3D
             },
-            //PreferredActiveScene = new PreferredScene(baseWorldLookup)
         };
 
         InstanceFinder.SceneManager.LoadConnectionScenes(baseWorld);
@@ -214,6 +213,18 @@ public class WorldManager : SingletonNetworkBehaviour<WorldManager>
                     break;
                 }
             }
+
+            ////Why twice?
+
+            //for (int i = 0; i < gos.Length; i++)
+            //{
+            //    if (gos[i].TryGetComponent(out NetworkedObjectSpawner spawner))
+            //    {
+            //        //Initialize NetworkPlayerSpawner In the scene.
+            //        spawner.FirstInitialize(this);
+            //        break;
+            //    }
+            //}
         }
     }
     private void SceneManager_OnClientPresenceChangeEnd(ClientPresenceChangeEventArgs obj)
@@ -260,8 +271,8 @@ public class WorldManager : SingletonNetworkBehaviour<WorldManager>
             //Add to usernames on server.
             LoggedInUsernames[ci.Owner] = username;
 
-            ci.PlayerSettings.SetUserName(username);
-            ci.PlayerSettings.SetGtfLink(gltf);
+            ci.PlayerSettings.RPCSetUserName(username);
+            ci.PlayerSettings.RPCSetGtfLink(gltf);
             OnClientLoggedIn?.Invoke(ci.NetworkObject);
             TargetSignInSuccess(ci.Owner, username);
         }
@@ -576,14 +587,7 @@ public class WorldManager : SingletonNetworkBehaviour<WorldManager>
 
             worldDetails.RemoveMember(clientId);
             ConnectionWorlds.Remove(clientId.Owner);
-
             OnClientLeftWorld?.Invoke(worldDetails, clientId);
-
-            //If not disconnecting then tell client to unload currentworld assets.
-            //if (!clientDisconnected)
-            //{
-
-            //}
         }
 
         return worldDetails;

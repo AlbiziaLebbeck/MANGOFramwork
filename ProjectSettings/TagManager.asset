@@ -6,6 +6,7 @@ TagManager:
   tags:
   - CinemachineTarget
   - RemotePlayer
+  - Interactable
   layers:
   - Default
   - TransparentFX
@@ -17,8 +18,8 @@ TagManager:
   - Interactable
   - 
   - 
-  - 
-  - 
+  - Player
+  - Environment
   - 
   - 
   - 
