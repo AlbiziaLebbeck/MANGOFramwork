@@ -1800,7 +1800,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 1258ac417dd158a48b05eeedb739c469, type: 3}
+  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
   m_Type: 1
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -2008,8 +2008,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: a689281f545979940b5cedad12ec31a8, type: 3}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: 07352c5bbdbf1b1449bc17af6b1fac39, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -2999,7 +2999,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 978266778773065142, guid: 56e4228092121844e853e856d6484f30, type: 3}
       propertyPath: StartType
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 978266778773065142, guid: 56e4228092121844e853e856d6484f30, type: 3}
       propertyPath: worldManagerPrefab
@@ -3019,7 +3019,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2979975497055759263, guid: 56e4228092121844e853e856d6484f30, type: 3}
       propertyPath: _clientAddress
-      value: localhost
+      value: 118.174.9.154
       objectReference: {fileID: 0}
     - target: {fileID: 6184931544333067124, guid: 56e4228092121844e853e856d6484f30, type: 3}
       propertyPath: m_Name
@@ -7096,7 +7096,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ec4bdce4d4d4ca4b9e8edfdf3603857, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  appInfo: {fileID: 11400000, guid: 962ef3b4d65055b4cb2346438ee0e2d6, type: 2}
+  appInfo: {fileID: 11400000, guid: 287b2868ad6831a4399949d1cb8910d3, type: 2}
   appId: 
   channelForTest: TestChannel
   userVideoViewPrefab: {fileID: 7775353583340660634, guid: 00760ae04b5605c40bea8e9f18699b54, type: 3}
