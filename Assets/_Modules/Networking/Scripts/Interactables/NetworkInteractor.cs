@@ -37,7 +37,10 @@ public class NetworkInteractor : NetworkBehaviour
         {
             if (hit.collider.TryGetComponent(out NetworkInteractable interactable))
             {
-                if (!interactable.IsInteracted.Value)
+                //bool canInteract = !interactable.IsInteracted.Value;
+                bool canInteract = interactable.CheckValidity();
+
+                if (canInteract)
                 {
                     detectedInteractable = interactable;
                 }
@@ -83,7 +86,9 @@ public class NetworkInteractor : NetworkBehaviour
         {
             if (hit.TryGetComponent(out NetworkInteractable networkInteractable))
             {
-                if (!networkInteractable.IsInteracted.Value)
+                bool canInteract = networkInteractable.CheckValidity();
+
+                if (canInteract)
                 {
                     float distance = Vector3.Distance(transform.position, hit.transform.position);
 

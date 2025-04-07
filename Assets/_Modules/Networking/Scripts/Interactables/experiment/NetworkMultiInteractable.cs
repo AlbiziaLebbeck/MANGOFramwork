@@ -3,12 +3,13 @@ using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using UnityEngine;
 
-public abstract class NetworkInteractable : NetworkBehaviour
+public class NetworkMultiInteractable : NetworkBehaviour
 {
     public Transform ButtonAnchor;
     public string InteractionPrompt = "Press E to interact";
-    public readonly SyncVar<NetworkConnection> CurrentPlayer = new SyncVar<NetworkConnection>();
-    public readonly SyncVar<NetworkObject> CurrentInteractingNetworkObject = new SyncVar<NetworkObject>();
+    public int MaximumInteratorCount = 2;
+    public readonly SyncList<NetworkConnection> CurrentPlayer = new SyncList<NetworkConnection>();
+    public readonly SyncList<NetworkObject> CurrentInteractingNetworkObject = new SyncList<NetworkObject>();
 
     public override void OnStartServer()
     {
@@ -34,13 +35,13 @@ public abstract class NetworkInteractable : NetworkBehaviour
 
     private void WorldManager_OnClientLeftWorld(WorldDetails worldDetails, NetworkObject leftPlayer)
     {
-        if (CurrentPlayer.Value == leftPlayer.Owner)
+        if (CurrentPlayer.Contains(leftPlayer.Owner))
         {
             HandlePlayerLeftWorld(leftPlayer);
 
-            CurrentPlayer.Value = null;
-
-            CurrentInteractingNetworkObject.Value = null;
+            //Clear player from list
+            CurrentPlayer.Remove(leftPlayer.Owner);
+            CurrentInteractingNetworkObject.RemoveAll(x => x.Owner == leftPlayer.Owner);
         }
     }
 
@@ -70,38 +71,36 @@ public abstract class NetworkInteractable : NetworkBehaviour
 
     public bool CheckValidity()
     {
-        return CurrentInteractingNetworkObject.Value == null;
+        return CurrentInteractingNetworkObject.Count < MaximumInteratorCount;
     }
+
     public virtual void HandlePlayerLeftWorld(NetworkObject leftPlayer) { }
     public virtual void Server_PerformInteractEnter(NetworkObject latestPlayer = null) { }
     public virtual void Server_PerformInteractExit(NetworkObject latestPlayer = null) { }
     public virtual void Client_PerformInteractEnter(NetworkObject latestPlayer = null) { }
     public virtual void Client_PerformInteractExit(NetworkObject latestPlayer = null) { }
 
-
     [ServerRpc(RequireOwnership = false)]
     public void ServerRpcInteractEnter(NetworkObject player)
     {
-        if (CheckValidity())
-        {
-            CurrentPlayer.Value = player.Owner;
+        if (!CheckValidity()) return;
 
-            CurrentInteractingNetworkObject.Value = player;
+        CurrentPlayer.Add(player.Owner);
+        CurrentInteractingNetworkObject.Add(player);
 
-            Server_PerformInteractEnter(player);
+        Server_PerformInteractEnter(player);
 
-            TargetInteractEnter(player.Owner, player);
-        }
+        TargetInteractEnter(player.Owner, player);
     }
 
     [ServerRpc(RequireOwnership = false)]
     public void ServerRpcInteractExit(NetworkObject player)
     {
-        if (CurrentPlayer.Value != player.Owner) return;
+        if (!CurrentPlayer.Contains(player.Owner)) return;
 
-        CurrentPlayer.Value = null;
+        CurrentPlayer.Remove(player.Owner);
 
-        CurrentInteractingNetworkObject.Value = null;
+        CurrentInteractingNetworkObject.Remove(player);
 
         Server_PerformInteractExit(player);
 

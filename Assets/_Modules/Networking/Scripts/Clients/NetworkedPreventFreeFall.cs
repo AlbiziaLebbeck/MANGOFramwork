@@ -5,6 +5,7 @@ public class NetworkedPreventFreeFall : NetworkBehaviour
 {
     [SerializeField] private CharacterController controller;
     [SerializeField] private float freeFalllimit = -100;
+    [SerializeField] private AreaSpawner spawner;
 
     private void Awake()
     {
@@ -23,7 +24,21 @@ public class NetworkedPreventFreeFall : NetworkBehaviour
             {
                 PersistentCanvas.LoadingCanvas.ToggleLoadingScreen(true);
                 PersistentCanvas.LoadingCanvas.SetInformationDisplay("Respawning...");
-                transform.position = FindObjectOfType<AreaSpawner>().GetRandomSpawn();
+                if(spawner == null)
+                {
+                    spawner = GameObject.Find("PlayerAreaSpawner").GetComponent<AreaSpawner>();
+                }
+
+                if(spawner != null)
+                {
+                    transform.position = spawner.GetRandomSpawn();
+                }
+                else
+                {
+                    spawner = FindObjectOfType<AreaSpawner>();
+                    transform.position = spawner.GetRandomSpawn();
+                }
+
                 PersistentCanvas.LoadingCanvas.ToggleLoadingScreen(false);
             }
         }
