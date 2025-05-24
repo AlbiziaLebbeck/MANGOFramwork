@@ -158,13 +158,18 @@ public class AvatarLoader : MonoBehaviour
         if (avatarModel.transform.Find("Scene/bone_masque0_root/hips/spine.001") || avatarModel.transform.Find("Scene/amature_masque0/hips/spine.001"))
             animator.avatar = Resources.Load<Avatar>("AvatarLoader/MasqueAvatar_CU");
         else if (avatarModel.transform.Find("Armature/Hips/LeftUpLeg"))
-        {
             animator.avatar = Resources.Load<Avatar>("AvatarLoader/AvaternRig");
-        }
+        else if (avatarModel.transform.Find("Armature/mixamorig:Hips/mixamorig:Spine"))
+            animator.avatar = Resources.Load<Avatar>("AvatarLoader/RajPatternAvatar");
+        else if (avatarModel.transform.Find("Armature/ThaiAvatar:Hips/mixamorig:LeftUpLeg"))
+            animator.avatar = Resources.Load<Avatar>("AvatarLoader/ThaiAvatar");
         else
+        {
+            Debug.Log("AvatarLoader/BaseAvatar is selected.");
             animator.avatar = Resources.Load<Avatar>("AvatarLoader/BaseAvatar");
+        }
 
-        if(animator.runtimeAnimatorController == null)
+        if (animator.runtimeAnimatorController == null)
         {
             animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>("AvatarLoader/AvatarController");
         }
