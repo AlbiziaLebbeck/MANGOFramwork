@@ -19,6 +19,7 @@ public class PersistentCanvas : Singleton<PersistentCanvas>
         base.Awake();
 
         LoadingCanvas = this.loadingCanvas;
+        if(!loadingCanvas.gameObject.activeInHierarchy) loadingCanvas.gameObject.SetActive(true);
         UserDataCanvas = this.userDataCanvas;
         ChatCanvas = this.chatCanvas;
         ShareScreenCanvas = this.shareScreenCanvas;

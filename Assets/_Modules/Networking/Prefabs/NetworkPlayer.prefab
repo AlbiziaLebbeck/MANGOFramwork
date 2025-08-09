@@ -48,6 +48,7 @@ MonoBehaviour:
   avatarModel: {fileID: 0}
   gltfLink: 
   animator: {fileID: 6530508428910504068}
+  basicAvatar: {fileID: 8661869628494164389}
   OnLoadCompleted:
     m_PersistentCalls:
       m_Calls:
@@ -2959,7 +2960,7 @@ MonoBehaviour:
   - {fileID: 3973350046435024460}
   - {fileID: 3250969654892941500}
   - {fileID: 4052251722453416511}
-  - {fileID: 0}
+  - {fileID: 8591730409984040595}
   <SerializedRootNetworkBehaviour>k__BackingField: {fileID: 0}
   <NestedRootNetworkBehaviours>k__BackingField: []
   SerializedTransformProperties:
@@ -3078,9 +3079,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f31a9a40a52bc3546a363a28031dccfc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _componentIndexCache: 255
+  _componentIndexCache: 4
   _addedNetworkObject: {fileID: 7537613859411478104}
-  _networkObjectCache: {fileID: 0}
+  _networkObjectCache: {fileID: 7537613859411478104}
   interactDistance: 3
   interactableLayer:
     serializedVersion: 2

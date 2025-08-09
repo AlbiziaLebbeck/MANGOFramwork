@@ -7096,7 +7096,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ec4bdce4d4d4ca4b9e8edfdf3603857, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  appInfo: {fileID: 11400000, guid: 287b2868ad6831a4399949d1cb8910d3, type: 2}
+  appInfo: {fileID: 0}
   appId: 
   channelForTest: TestChannel
   userVideoViewPrefab: {fileID: 7775353583340660634, guid: 00760ae04b5605c40bea8e9f18699b54, type: 3}

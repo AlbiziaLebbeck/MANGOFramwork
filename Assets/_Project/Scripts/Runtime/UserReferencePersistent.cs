@@ -1,3 +1,5 @@
+using MANGOsFramework.Experiment;
+using System;
 using UnityEngine;
 
 public class UserReferencePersistent : SingletonPersistent<UserReferencePersistent>
@@ -12,6 +14,29 @@ public class UserReferencePersistent : SingletonPersistent<UserReferencePersiste
     public Texture AvatarImage { get; private set; }
     public GameObject PlayerGameObject { get {  return playerGameObject; } }
     public Transform PlayerCameraRoot { get { return playerCameraRoot; } }
+
+    private void OnEnable()
+    {
+        AvatarLoaderEvent.AvatarLoadedEvent += AvatarLoaderEvent_AvatarLoadedEvent;
+
+    }
+    private void OnDisable()
+    {
+        AvatarLoaderEvent.AvatarLoadedEvent -= AvatarLoaderEvent_AvatarLoadedEvent;
+    }
+
+    private void AvatarLoaderEvent_AvatarLoadedEvent(GameObject _avatarModel, string _url)
+    {
+        if (!string.IsNullOrEmpty(gltf) && _url == gltf)
+        {
+            var avatarTexture  = AvatarSystem.Instance.GetAvatarTexture(_url);
+
+            if(avatarTexture != null)
+            {
+                SetAvatarImage(avatarTexture);
+            }
+        }
+    }
 
     public void SetUserName(string _name)
     {

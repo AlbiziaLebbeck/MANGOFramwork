@@ -7,7 +7,7 @@ public static class AvatarLoaderEvent
     public static event Action AvatarStartLoadingEvent;
     public static event Action AvatarFinishLoadingEvent;
     public static event Action<GameObject, string> AvatarLoadedEvent;
-    public static event Action<string> AvatarLoadFailedEvent;
+    public static event Action<AvatarLoader, string> AvatarLoadFailedEvent;
     public static event Action ReloadAvatarEvent;
 
     public static void OnAvatarStartLoading()
@@ -22,9 +22,9 @@ public static class AvatarLoaderEvent
     {
         if (AvatarLoadedEvent != null) AvatarLoadedEvent(_loadedAvatar, _url);
     }
-    public static void OnAvatarLoadFailed(string _url)
+    public static void OnAvatarLoadFailed(AvatarLoader _loader, string _url)
     {
-        if (AvatarLoadFailedEvent != null) AvatarLoadFailedEvent(_url);
+        if (AvatarLoadFailedEvent != null) AvatarLoadFailedEvent(_loader, _url);
     }
     public static void ReloadAvatar()
     {

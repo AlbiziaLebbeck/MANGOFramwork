@@ -1,11 +1,8 @@
-﻿using FishNet.Connection;
-using FishNet.Object;
+﻿using FishNet.Object;
 using UnityEngine;
 
 namespace FishNet.Example.Scened
 {
-
-
     public class PlayerController : NetworkBehaviour
     {
         [SerializeField]

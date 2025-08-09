@@ -104,6 +104,7 @@ public class PlayerMovementHandler : MonoBehaviour
 
     private void OnDisable() => playerActions.Disable();
 
+
     private void Start()
     {
         AssignInputs();
@@ -186,7 +187,6 @@ public class PlayerMovementHandler : MonoBehaviour
                 secondaryTouchPosition = _position.ReadValue<Vector2>();
             };
         }
-
     }
 
     /// <summary>

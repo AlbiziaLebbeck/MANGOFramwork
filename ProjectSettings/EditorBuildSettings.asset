@@ -5,15 +5,24 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/_Project/Scenes/NetworkBoostrapScene.unity
     guid: f6dee348ae399d44498fe3d3060eec57
-  - enabled: 1
+  - enabled: 0
     path: Assets/_Project/Scenes/StarterScene.unity
     guid: 610b52092e0795f47950eb7dfd21d70a
-  - enabled: 1
+  - enabled: 0
     path: Assets/_Project/Scenes/BaseWorldScene.unity
     guid: ad66afe3346869b408f8092c9250d525
+  - enabled: 1
+    path: Assets/_Experiment/Scenes/Bootstrap.unity
+    guid: f8415561dcf09c549bb1d2a8f6ff3d7f
+  - enabled: 1
+    path: Assets/_Experiment/Scenes/Launcher.unity
+    guid: 4176f354699f2484592e046774acfc95
+  - enabled: 1
+    path: Assets/_Experiment/Scenes/SimpleWorld.unity
+    guid: eddf330dbe01e864b8e2a900316abf53
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 47a3c28971784ec4b981b404672f9620, type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: 9e7be553448fa2546aea5752021cbcf7, type: 2}

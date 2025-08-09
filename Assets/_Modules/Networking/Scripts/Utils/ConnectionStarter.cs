@@ -28,6 +28,15 @@ public class ConnectionStarter : MonoBehaviour
 
     public event Action<StartType> ConnectionStartedEvent;
 
+    public static string VERSION { get; private set; }
+
+    public string gameVersion = "0.01";
+
+    private void Awake()
+    {
+        VERSION = gameVersion;
+    }
+
     private void Start()
     {
         networkManager = GetComponent<NetworkManager>();
@@ -118,7 +127,7 @@ public class ConnectionStarter : MonoBehaviour
             return;
         }
 
-        Scene scene = UnitySceneManager.GetSceneByName("NetworkBoostrapScene");
+        Scene scene = UnitySceneManager.GetSceneByName("Bootstrap");
 
         NetworkObject serverPrewarmer = Instantiate(serverScenePrewarmerPrefab);
         UnitySceneManager.MoveGameObjectToScene(serverPrewarmer.gameObject, scene);

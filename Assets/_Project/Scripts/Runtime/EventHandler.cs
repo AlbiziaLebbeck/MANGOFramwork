@@ -14,6 +14,8 @@ public static class EventHandler
 
     public static event Action<string, uint> ClientSpawnSuccessEvent;
     public static event Action ClientSpawnFailedEvent;
+
+    public static event Action LocalClientCompleteSetupEvent;
     
     public static event Action ServerStartedEvent;
 
@@ -76,6 +78,11 @@ public static class EventHandler
     public static void OnClientSpawnSuccess(string channelName, uint uid)
     {
         if(ClientSpawnSuccessEvent != null) ClientSpawnSuccessEvent(channelName, uid);
+    }
+
+    public static void OnLocalClientCompleteSetup()
+    {
+        if(LocalClientCompleteSetupEvent != null) LocalClientCompleteSetupEvent();
     }
 
     public static void OnClientSpawnFailed()

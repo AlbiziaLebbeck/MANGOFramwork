@@ -3,17 +3,22 @@ using UnityEngine;
 using System.Threading.Tasks;
 using UnityEngine.Events;
 using System.Collections.Generic;
+using MANGOsFramework.Experiment;
+using System.Collections;
 
 public class AvatarLoader : MonoBehaviour
 {
     [SerializeField] private GameObject avatarModel;
     [SerializeField] private string gltfLink;
     [SerializeField] private Animator animator;
+    [SerializeField] private GameObject basicAvatar;
 
     public UnityEvent OnLoadCompleted;
     public UnityEvent OnLoadFailed;
 
-    public string GLTFLink { get => gltfLink; set {  gltfLink = value; } }
+    public string GLTFLink { get => gltfLink; set { gltfLink = value; } }
+    public GameObject Model => avatarModel;
+    public Animator Animator => animator;
 
     public bool LoadOnStart;
 
@@ -26,10 +31,14 @@ public class AvatarLoader : MonoBehaviour
     }
     public async void LoadAvatar()
     {
+        if (basicAvatar != null)
+        {
+            basicAvatar.SetActive(false);
+        }
+
         if (avatarModel != null)
         {
             var objectToDestroy = avatarModel.gameObject;
-
             Destroy(objectToDestroy);
 
             avatarModel = null;
@@ -37,6 +46,39 @@ public class AvatarLoader : MonoBehaviour
 
         if (!string.IsNullOrEmpty(GLTFLink)) await LoadAvatarAsync(GLTFLink);
         else Debug.LogError("GLTF Link is null or empty", this.gameObject);
+    }
+
+    public void LoadAvatarFromCache()
+    {
+        var model = AvatarSystem.Instance.LoadAvatarFromCached(this.gltfLink);
+
+        if (model == null)
+        {
+            LoadAvatar();
+            return;
+        }
+
+        if (avatarModel != null)
+        {
+            var objectToDestroy = avatarModel.gameObject;
+            Destroy(objectToDestroy);
+
+            avatarModel = null;
+        }
+        avatarModel = Instantiate(model, this.transform);
+        avatarModel.transform.localPosition = Vector3.zero;
+        avatarModel.transform.localEulerAngles = new Vector3(0, 0, 0);
+
+        if(avatarModel.TryGetComponent(out Animation animation))
+        {
+            Destroy(animation);
+        }
+
+        SetupAnimator(avatarModel);
+        Debug.Log("Loading glTF successfully.");
+
+        AvatarLoaderEvent.OnAvatarLoaded(avatarModel, this.gltfLink);
+        if (OnLoadCompleted != null) OnLoadCompleted.Invoke();
     }
 
     private async Task LoadAvatarAsync(string _url)
@@ -48,40 +90,23 @@ public class AvatarLoader : MonoBehaviour
 
         if (loadSuccess)
         {
-            #region Old
-            //var instantiator = new GameObjectInstantiator(gltf, this.transform);
-
-            //await gltf.InstantiateMainSceneAsync(instantiator);
-
-            //avatarModel = instantiator.SceneTransform.gameObject;
-
-            //avatarModel.transform.localEulerAngles = new Vector3(0, 0, 0);
-
-            //Destroy(avatarModel.GetComponent<Animation>());
-
-            //SetupAnimator(avatarModel);
-
-            //Debug.Log("Loading glTF successfully.");
-
-            //AvatarLoaderEvent.OnAvatarLoaded(avatarModel, _url);
-
-            //if (OnLoadCompleted != null) OnLoadCompleted.Invoke();
-            #endregion
-
             var newModel = new GameObject("AvatarModel");
 
             newModel.transform.SetParent(this.transform);
             newModel.transform.localPosition = Vector3.zero;
-            
+
             var instantiateSuccess = await gltf.InstantiateMainSceneAsync(newModel.transform);
 
-            if(instantiateSuccess)
+            if (instantiateSuccess)
             {
                 avatarModel = newModel;
-               
+
                 avatarModel.transform.localEulerAngles = new Vector3(0, 0, 0);
 
-                Destroy(avatarModel.GetComponent<Animation>());
+                if (avatarModel.TryGetComponent(out Animation animation))
+                {
+                    Destroy(animation);
+                }
 
                 SetupAnimator(avatarModel);
 
@@ -95,24 +120,10 @@ public class AvatarLoader : MonoBehaviour
         else
         {
             Debug.LogError("Loading glTF failed!");
-
-            avatarModel = Instantiate(Resources.Load<GameObject>("AvatarLoader/BaseAvatar"), this.transform);
-
-            avatarModel.transform.localEulerAngles = new Vector3(0, 180, 0);
-            avatarModel.name = avatarModel.name + "-Failed";
-            SetupAnimator(avatarModel);
-
-            AvatarLoaderEvent.OnAvatarLoaded(avatarModel, _url);
-
-            AvatarLoaderEvent.OnAvatarLoadFailed(_url);
-
+            AvatarLoaderEvent.OnAvatarLoadFailed(this, _url);
             if (OnLoadFailed != null) OnLoadFailed.Invoke();
         }
     }
-
-    private Dictionary<string, float> floatParameters;
-    private Dictionary<string, bool> boolParameters;
-    private Dictionary<string, int> intParameters;
 
     private void SetupAnimator(GameObject avatarModel)
     {
@@ -132,61 +143,123 @@ public class AvatarLoader : MonoBehaviour
 
         if (animator == null) animator = avatarModel.AddComponent<Animator>();
 
-
-        floatParameters = new Dictionary<string, float>();
-        boolParameters = new Dictionary<string, bool>();
-        intParameters = new Dictionary<string, int>();
-
-        foreach (var parameter in animator.parameters)
-        {
-            switch (parameter.type)
-            {
-                case AnimatorControllerParameterType.Float:
-                    floatParameters.Add(parameter.name, animator.GetFloat(parameter.nameHash));
-                    break;
-                case AnimatorControllerParameterType.Int:
-                    intParameters.Add(parameter.name, animator.GetInteger(parameter.nameHash));
-                    break;
-                case AnimatorControllerParameterType.Bool:
-                    boolParameters.Add(parameter.name, animator.GetBool(parameter.nameHash));
-                    break;
-                default:
-                    break;
-            }
-        }
+        var targetAvatar = "";
+        var targetController = "";
 
         if (avatarModel.transform.Find("Scene/bone_masque0_root/hips/spine.001") || avatarModel.transform.Find("Scene/amature_masque0/hips/spine.001"))
-            animator.avatar = Resources.Load<Avatar>("AvatarLoader/MasqueAvatar_CU");
-        else if (avatarModel.transform.Find("Armature/Hips/LeftUpLeg"))
         {
-            animator.avatar = Resources.Load<Avatar>("AvatarLoader/AvaternRig");
+            targetAvatar = "AvatarLoader/MasqueAvatar_CU";
+        }
+        else if (avatarModel.transform.Find("Armature/avaturn_body"))
+        {
+            targetAvatar = "AvatarLoader/AvaternRig";
+        }
+        else if (avatarModel.transform.Find("Armature/Wolf3D_Head"))
+        {
+            targetAvatar = "AvatarLoader/ReadyPlayerMeRig";
         }
         else
-            animator.avatar = Resources.Load<Avatar>("AvatarLoader/BaseAvatar");
-
-        if(animator.runtimeAnimatorController == null)
         {
-            animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>("AvatarLoader/AvatarController");
+            targetAvatar = "AvatarLoader/ArmatureAvatar";
         }
 
+        targetController = "AvatarLoader/AvatarController";
 
-
-        foreach (AnimatorControllerParameter parameter in animator.parameters)
+        if (setupAnimatorRoutine != null)
         {
-            switch (parameter.type)
+            StopCoroutine(setupAnimatorRoutine);
+            setupAnimatorRoutine = null;
+        }
+
+        StartCoroutine(SetupAnimatorCoroutine(animator, targetAvatar, targetController));
+    }
+
+    private Coroutine setupAnimatorRoutine;
+
+    private readonly Dictionary<string, float> floatParameters = new();
+    private readonly Dictionary<string, int> intParameters = new();
+    private readonly Dictionary<string, bool> boolParameters = new();
+
+    private IEnumerator SetupAnimatorCoroutine(Animator _animator, string _avatarPath, string _controllerPath)
+    {
+        if (_animator == null)
+        {
+            Debug.LogError("Animator is null in SetupAnimatorCoroutine");
+            yield break;
+        }
+
+        floatParameters.Clear();
+        intParameters.Clear();
+        boolParameters.Clear();
+
+        foreach (var p in _animator.parameters)
+        {
+            switch (p.type)
             {
                 case AnimatorControllerParameterType.Float:
-                    animator.SetFloat(parameter.nameHash, floatParameters[parameter.name]);
+                    floatParameters[p.name] = _animator.GetFloat(p.nameHash);
                     break;
                 case AnimatorControllerParameterType.Int:
-                    animator.SetInteger(parameter.nameHash, intParameters[parameter.name]);
+                    intParameters[p.name] = _animator.GetInteger(p.nameHash); 
                     break;
                 case AnimatorControllerParameterType.Bool:
-                    animator.SetBool(parameter.nameHash, boolParameters[parameter.name]);
-                    break;
-                default:
+                    boolParameters[p.name] = _animator.GetBool(p.nameHash); 
                     break;
             }
         }
+
+        var newAvatar = Resources.Load<Avatar>(_avatarPath);
+        if (newAvatar != null)
+        {
+            _animator.avatar = newAvatar;
+        }
+        else
+        {
+            Debug.LogWarning($"Avatar not found at {_avatarPath}");
+        }
+
+        var newController = animator.runtimeAnimatorController;
+
+        if (newController != null)
+        {
+            _animator.runtimeAnimatorController = newController;
+        }
+        else
+        {
+            newController = Resources.Load<RuntimeAnimatorController>(_controllerPath);
+            _animator.runtimeAnimatorController = newController;
+        }
+
+        yield return null;
+        yield return null;
+
+        if (_animator.runtimeAnimatorController == null)
+        {
+            Debug.LogError("Animator controller is null after assignment and wait.");
+            yield break;
+        }
+
+        foreach (var p in _animator.parameters)
+        {
+            switch (p.type)
+            {
+                case AnimatorControllerParameterType.Float:
+                    if(floatParameters.TryGetValue(p.name, out var fVal))
+                        _animator.SetFloat(p.nameHash, fVal);
+                    break;
+                case AnimatorControllerParameterType.Int:
+                    if(intParameters.TryGetValue(p.name, out var iVal))
+                        _animator.SetInteger(p.nameHash, iVal);
+                    break;
+                case AnimatorControllerParameterType.Bool:
+                    if(boolParameters.TryGetValue(p.name, out var bVal))
+                        _animator.SetBool(p.nameHash, bVal);
+                    break;
+            }
+        }
+
+        setupAnimatorRoutine = null;
     }
+
+
 }

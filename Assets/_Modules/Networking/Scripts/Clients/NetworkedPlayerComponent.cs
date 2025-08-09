@@ -2,7 +2,9 @@ using FishNet.Component.Observing;
 using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
+using MANGOsFramework.Experiment;
 using StarterAssets;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -48,10 +50,14 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         EventHandler.CheckDeviceStatusEvent -= EventHandler_CheckDeviceStatusEvent;
     }
 
+
+
     #region Client
     public override void OnStartClient()
     {
         base.OnStartClient();
+
+        AvatarLoaderEvent.AvatarLoadedEvent += AvatarLoaderEvent_AvatarLoadedEvent;
 
         if (!base.IsOwner)
         {
@@ -69,6 +75,7 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         EventHandler.UserMicMuteUpdateEvent += EventHandler_UserMicMuteUpdateEvent;
         EventHandler.UserShareScreenStartedEvent += EventHandler_UserShareScreenStartedEvent;
         EventHandler.UserShareScreenStoppedEvent += EventHandler_UserShareScreenStoppedEvent;
+
         
         nameText.gameObject.SetActive(false);
         micStatusIcon.gameObject.SetActive(false);
@@ -87,7 +94,15 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         }
         UserReferencePersistent.Instance.AssignPlayerGameObject(gameObject);
 
-        PersistentCanvas.LoadingCanvas.ToggleLoadingScreen(false);
+        EventHandler.OnLocalClientCompleteSetup();
+    }
+
+    private void AvatarLoaderEvent_AvatarLoadedEvent(GameObject _model, string _url)
+    {
+        if(_model == avatarLoader.Model && _url == GLTFLink.Value)
+        {
+            StartCoroutine(RestartAnimator(avatarLoader.Animator));
+        }
     }
 
     public override void OnStopClient()
@@ -101,6 +116,9 @@ public class NetworkedPlayerComponent : NetworkBehaviour
             EventHandler.UserShareScreenStartedEvent -= EventHandler_UserShareScreenStartedEvent;
             EventHandler.UserShareScreenStoppedEvent -= EventHandler_UserShareScreenStoppedEvent;
         }
+
+        AvatarLoaderEvent.AvatarLoadedEvent -= AvatarLoaderEvent_AvatarLoadedEvent;
+
     }
     #endregion
 
@@ -147,8 +165,16 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         
         if (asServer) return;
 
-        avatarLoader.LoadAvatar();
+        if (IsOwner) UserReferencePersistent.Instance.SetGLTFLink(next);
 
+        if(AvatarSystem.Instance.IsAvatarCached(next))
+        {
+            avatarLoader.LoadAvatarFromCache();
+        }
+        else
+        {
+            avatarLoader.LoadAvatar();
+        }
     }
     private void OnVideo_OnChange(bool prev, bool next, bool asServer)
     {
@@ -205,6 +231,12 @@ public class NetworkedPlayerComponent : NetworkBehaviour
     {
         OnProjector.Value = projectorId;
     }
+    [ServerRpc]
+    public  void RPCServerSetAvatar(string newLink)
+    {
+        GLTFLink.Value = newLink;
+    }
+
     [TargetRpc]
     public void TargetUpdatePlayerInfo(NetworkConnection conn, string message)
     {
@@ -271,6 +303,13 @@ public class NetworkedPlayerComponent : NetworkBehaviour
     private void OnLand(AnimationEvent animationEvent)
     {
 
+    }
+
+    private IEnumerator RestartAnimator(Animator anim)
+    {
+        anim.Rebind();
+        anim.Update(0);
+        yield return new WaitForEndOfFrame();
     }
     #endregion
 }
