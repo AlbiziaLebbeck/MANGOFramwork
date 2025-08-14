@@ -50,8 +50,6 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         EventHandler.CheckDeviceStatusEvent -= EventHandler_CheckDeviceStatusEvent;
     }
 
-
-
     #region Client
     public override void OnStartClient()
     {
