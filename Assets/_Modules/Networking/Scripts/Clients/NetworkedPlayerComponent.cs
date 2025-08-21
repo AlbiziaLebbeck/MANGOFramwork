@@ -116,7 +116,6 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         }
 
         AvatarLoaderEvent.AvatarLoadedEvent -= AvatarLoaderEvent_AvatarLoadedEvent;
-
     }
     #endregion
 

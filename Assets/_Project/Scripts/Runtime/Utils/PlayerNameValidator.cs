@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 
 public static class PlayerNameValidator
 {
-    // Offensive words list (lowercase)
     private static readonly string[] bannedWords =
     {
         "admin", "mod", "fuck", "shit", "bitch" // Add more
@@ -11,14 +10,12 @@ public static class PlayerNameValidator
 
     public static bool IsValidName(string name, out string reason)
     {
-        // 1. Empty/null check
         if (string.IsNullOrWhiteSpace(name))
         {
             reason = "Name cannot be empty.";
             return false;
         }
 
-        // 2. Regex: multiple languages, numbers, underscores, spaces, no lead/trail space/underscore
         string pattern = @"^(?![_\s])[\p{L}\p{Nd}_\s]{2,32}(?<![_\s])$";
         if (!Regex.IsMatch(name, pattern))
         {
@@ -33,7 +30,6 @@ public static class PlayerNameValidator
             return false;
         }
 
-        // 3. No offensive words
         string lowerName = name.ToLower();
         if (bannedWords.Any(bw => lowerName.Contains(bw)))
         {
@@ -41,14 +37,12 @@ public static class PlayerNameValidator
             return false;
         }
 
-        // 4. No emoji
         if (Regex.IsMatch(name, @"\p{Cs}"))
         {
             reason = "Name cannot contain emoji.";
             return false;
         }
 
-        // Passed all checks
         reason = "";
         return true;
     }

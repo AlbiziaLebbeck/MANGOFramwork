@@ -28,6 +28,11 @@ namespace MANGOsFramework.Experiment
         [SerializeField] private AuthConfig config;
         [SerializeField] private string mockAuthCode;
         private const string AUTH_TO_ACCESS_ROUTE = "/o-auth/auth-to-access";
+        private const string HOST = "https://api.mangosgo.com/api/v2";
+        private const string AUTH_HOST = "https://authenticate.mangosgo.com/api/v2";
+#if UNITY_WEBGL && !UNITY_EDITOR
+        private string OAUTH_LOGIN_URL => $"https://auth.mangosgo.com/oauth-login?metaverseClientId={config.METAVERSE_CLIENT_ID}&scope=users_get-one";
+#endif
         private string _basic;
 
         public Response<AuthToAccessResponse> accessResponse = new();
@@ -75,10 +80,10 @@ namespace MANGOsFramework.Experiment
                 }
 
                 StartCoroutine(ApiService.GetCoroutine<Response<UserGetOneResponse>>(
-                    url: config.HOST + "/users/get-one/" + _userId,
+                    url: HOST + "/users/get-one/" + _userId,
                     headers: new Dictionary<string, string>()
                     {
-                                { "Authorization", "Bearer " + _accessToken }
+                        { "Authorization", "Bearer " + _accessToken }
                     },
                     onSuccess: (response) =>
                     {
@@ -93,7 +98,6 @@ namespace MANGOsFramework.Experiment
                         CommonErrorFallback(error);
                     }
                     ));
-
             }
             else
             {
@@ -104,8 +108,7 @@ namespace MANGOsFramework.Experiment
         public void TryLogin()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            string authUrl = $"https://auth.mangosgo.com/oauth-login?metaverseClientId={config.METAVERSE_CLIENT_ID}&scope=users_get-one";
-            OpenOAuthPopup(gameObject.name, "OnAuthSuccess", authUrl, config.REDIRECT_URL);
+            OpenOAuthPopup(gameObject.name, "OnAuthSuccess", OAUTH_LOGIN_URL, config.REDIRECT_URL);
 #else
             Debug.Log("OAuth login only works in WebGL builds.");
             UpdateLoadingText("OAuth login only works in WebGL builds. Runs Mock Login");
@@ -115,7 +118,6 @@ namespace MANGOsFramework.Experiment
 
         private bool CheckHasLoggedIn()
         {
-            // Do Check login logic
 #if UNITY_WEBGL && !UNITY_EDITOR
             return HasLoggedIn() == 1;
 #else
@@ -126,9 +128,7 @@ namespace MANGOsFramework.Experiment
         private void CommonErrorFallback(string errorMessage, Action fallback = null)
         {
             Debug.LogError("Error: " + errorMessage);
-
             authCanvas.ResetCanvas();
-
             fallback?.Invoke();
         }
 
@@ -140,7 +140,7 @@ namespace MANGOsFramework.Experiment
             bool success = false;
 
             yield return StartCoroutine(ApiService.PostCoroutine<Response<GetBasicResponse>>(
-                 url: config.HOST + "/public/generate-basic",
+                 url: HOST + "/public/generate-basic",
                  jsonBody: JsonUtility.ToJson(new GetBasicForm()
                  {
                      metaverseClientId = config.METAVERSE_CLIENT_ID,
@@ -162,7 +162,7 @@ namespace MANGOsFramework.Experiment
             if (!success) yield break;
             
             yield return StartCoroutine(ApiService.PostCoroutine<Response<AuthToAccessResponse>>(
-                url: config.AUTH_HOST + AUTH_TO_ACCESS_ROUTE,
+                url: AUTH_HOST + AUTH_TO_ACCESS_ROUTE,
                 jsonBody: JsonUtility.ToJson(new AuthToAccessForm()
                 {
                     authCode = mockAuthCode
@@ -186,7 +186,7 @@ namespace MANGOsFramework.Experiment
             if (!success) yield break;
 
             yield return StartCoroutine(ApiService.GetCoroutine<Response<UserGetOneResponse>>(
-                url: config.HOST + "/users/get-one/" + accessResponse.data.userId,
+                url: HOST + "/users/get-one/" + accessResponse.data.userId,
                 headers: new Dictionary<string, string>()
                 {
                     { "Authorization", "Bearer " + accessResponse.data.accessToken }
@@ -222,7 +222,7 @@ namespace MANGOsFramework.Experiment
             }
         }
 #endif
-        #endregion
+#endregion
 
         #region Login Canvas
 
@@ -254,7 +254,6 @@ namespace MANGOsFramework.Experiment
 
         private void AuthCanvas_OnContinueAsUser()
         {
- 
             if(userResponse != null)
             {
                 if (UserReferencePersistent.Instance != null)
@@ -274,7 +273,6 @@ namespace MANGOsFramework.Experiment
 
         private void AuthCanvas_OnLoginAsGuest(string guestName)
         {
-            Debug.Log("User will join as Guest...");
             UpdateLoadingText("User will join as Guest...");
             if (UserReferencePersistent.Instance != null)
             {
@@ -303,16 +301,13 @@ namespace MANGOsFramework.Experiment
                     }
                 }
 
-
                 EventHandler.OnClientLogin();
             }
         }
 
         private void AuthCanvas_OnLogin()
         {
-            Debug.Log("Try login... connecting to MetaAuth...");
             UpdateLoadingText("Try login... connecting to MetaAuth...");
-
             TryLogin();
         }
 
@@ -325,7 +320,6 @@ namespace MANGOsFramework.Experiment
         #region Auth Callback
         public void OnAuthSuccess(string resultJson)
         {
-
             if(!string.IsNullOrEmpty(resultJson) && resultJson != "ERROR_NO_AUTHCODE")
             {
                 UpdateLoadingText("Get AuthCode success! trying to get accessToken");   
@@ -334,7 +328,6 @@ namespace MANGOsFramework.Experiment
             else
             {
                 UpdateLoadingText("Get AuthCode failed! please try again...");
-
                 authCanvas.ResetCanvas();
             }
         }
@@ -344,7 +337,7 @@ namespace MANGOsFramework.Experiment
             bool success = false;
 
             yield return StartCoroutine(ApiService.PostCoroutine<Response<GetBasicResponse>>(
-                 url: config.HOST + "/public/generate-basic",
+                 url: HOST + "/public/generate-basic",
                  jsonBody: JsonUtility.ToJson(new GetBasicForm()
                  {
                      metaverseClientId = config.METAVERSE_CLIENT_ID,
@@ -366,7 +359,7 @@ namespace MANGOsFramework.Experiment
             if (!success) yield break;
 
             yield return StartCoroutine(ApiService.PostCoroutine<Response<AuthToAccessResponse>>(
-                 url: config.AUTH_HOST + AUTH_TO_ACCESS_ROUTE,
+                 url: AUTH_HOST + AUTH_TO_ACCESS_ROUTE,
                  jsonBody: JsonUtility.ToJson(new AuthToAccessForm()
                  {
                      authCode = _authCode
@@ -379,7 +372,6 @@ namespace MANGOsFramework.Experiment
                  {
                      accessResponse = response;
                      UpdateLoadingText("Get accessToken success!");
-                     Debug.Log($"success Check userID: {accessResponse.data.userId}");
                      success = true;
                  },
                  onError: (error) =>
@@ -391,7 +383,7 @@ namespace MANGOsFramework.Experiment
             if (!success) yield break;
 
             yield return StartCoroutine(ApiService.GetCoroutine<Response<UserGetOneResponse>>(
-                url: config.HOST + "/users/get-one/" + accessResponse.data.userId,
+                url: HOST + "/users/get-one/" + accessResponse.data.userId,
                 headers: new Dictionary<string, string>()
                 {
                     { "Authorization", "Bearer " + accessResponse.data.accessToken }
@@ -411,7 +403,6 @@ namespace MANGOsFramework.Experiment
 
             if (success)
             {
-                // Do Check login logic
 #if UNITY_WEBGL && !UNITY_EDITOR
                 SaveToLocalStorage("metaauth_accessToken", accessResponse.data.accessToken);
                 SaveToLocalStorage("metaauth_accessTokenExpiresAt", accessResponse.data.accessTokenExpiresAt);
@@ -433,7 +424,6 @@ namespace MANGOsFramework.Experiment
             }
         }
         #endregion
-
     }
 }
 

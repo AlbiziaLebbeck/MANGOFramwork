@@ -3,7 +3,6 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace MANGOsFramework.Experiment
 {
@@ -28,6 +27,7 @@ namespace MANGOsFramework.Experiment
         [SerializeField] private GameObject askGuestNamePanel;
         [SerializeField] private TMP_InputField guestNameInputField;
         [SerializeField] private Button confirmGuestNameButton;
+        [SerializeField] private Button backToLoginPageButton;
 
         public event Action OnLogin;
         public event Action<string> OnLoginAsGuest;
@@ -63,6 +63,12 @@ namespace MANGOsFramework.Experiment
                 DisableAllButtons();
             });
 
+            backToLoginPageButton.onClick.RemoveAllListeners();
+            backToLoginPageButton.onClick.AddListener(() =>
+            {
+                ResetCanvas();
+            });
+
             continueAsUserButton.onClick.RemoveAllListeners();
             continueAsUserButton.onClick.AddListener(() =>
             {
@@ -73,8 +79,8 @@ namespace MANGOsFramework.Experiment
             loginAsNewUserButton.onClick.RemoveAllListeners();
             loginAsNewUserButton.onClick.AddListener(() =>
             {
-                OnClick_LoginWithNewUser();
                 DisableAllButtons();
+                OnClick_LoginWithNewUser();
             });
 
             guestNameInputField.onValueChanged.AddListener(OnNameChanged);
@@ -85,11 +91,9 @@ namespace MANGOsFramework.Experiment
 
         void OnNameChanged(string text)
         {
-            // Cancel previous debounce timer
             if (typingCoroutine != null)
                 StopCoroutine(typingCoroutine);
 
-            // Start new debounce timer
             typingCoroutine = StartCoroutine(WaitAndValidate(text));
         }
 
@@ -152,12 +156,7 @@ namespace MANGOsFramework.Experiment
 
         private void OnClick_Login() => OnLogin?.Invoke();
         private void OnClick_LoginAsGuest() => OnAskGuestName();
-        private void OnClick_ConfirmGuestName()
-        {
-            //Check Regex for guest name
-
-            OnLoginAsGuest?.Invoke(guestNameInputField.text);
-        }
+        private void OnClick_ConfirmGuestName() => OnLoginAsGuest?.Invoke(guestNameInputField.text);
         private void OnClick_ContinueAsUser() => OnContinueAsUser?.Invoke();
         private void OnClick_LoginWithNewUser() => OnLoginAsNewUser?.Invoke();
 

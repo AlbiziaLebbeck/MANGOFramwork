@@ -9,8 +9,6 @@ namespace MANGOsFramework.Experiment
     public class AuthConfig : ScriptableObject
     {
         public string METAVERSE_NAME;
-        public string HOST;
-        public string AUTH_HOST;
         public string REDIRECT_URL;
         public string METAVERSE_CLIENT_ID;
         public string SECRET;

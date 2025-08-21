@@ -286,6 +286,7 @@ public class PlayerMovementHandler : MonoBehaviour
     private void GroundCheck()
     {
         Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z);
+
         Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers,
             QueryTriggerInteraction.Ignore);
 
@@ -335,7 +336,7 @@ public class PlayerMovementHandler : MonoBehaviour
 
         if (Grounded && playerVerticalVelocity < 0)
         {
-            playerVerticalVelocity = 0f;
+            playerVerticalVelocity = -2f;
         }
 
         playerVerticalVelocity += thirdPersonController.Gravity * Time.deltaTime;
@@ -513,6 +514,25 @@ public class PlayerMovementHandler : MonoBehaviour
             {
                 particleEffectReference.transform.position = hit.point + new Vector3(0, 0.1f, 0);
                 particleEffectReference.Play();
+            }
+        }
+    }
+
+    public void TeleportPlayer(Transform destination)
+    {
+        if (UserReferencePersistent.Instance)
+        {
+            var cc = UserReferencePersistent.Instance.PlayerGameObject.GetComponent<CharacterController>();
+
+            if(cc != null)
+            {
+                cc.enabled = false;
+                UserReferencePersistent.Instance.PlayerGameObject.transform.position = destination.position;
+                cc.enabled = true;
+            }
+            else
+            {
+                Debug.LogError("Cannot teleport because you do not have CharacterController attach to the player Object.");
             }
         }
     }

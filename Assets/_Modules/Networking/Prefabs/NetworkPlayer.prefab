@@ -2873,7 +2873,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cinemachineCameraTarget: {fileID: 8761390901812886308}
-  GroundedOffset: -0.14
+  GroundedOffset: 0
   GroundedRadius: 0.28
   GroundLayers:
     serializedVersion: 2
