@@ -34,10 +34,23 @@ namespace MANGOsFramework.Experiment
         public event Action OnContinueAsUser;
         public event Action OnLoginAsNewUser;
 
+        private TouchScreenKeyboard keyboard;
+
         private void Awake()
         {
             signInPanel.SetActive(false);
             userVerificationPanel.SetActive(false);
+
+            if (CheckMobile.CheckIsMobile())
+            {
+                keyboard = null;
+                guestNameInputField.onSelect.RemoveAllListeners();
+                guestNameInputField.onSelect.AddListener((text) =>
+                {
+                    TouchScreenKeyboard.hideInput = true;
+                    keyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default);
+                });
+            }
         }
 
         private void SetupCanvas()
@@ -84,6 +97,14 @@ namespace MANGOsFramework.Experiment
             });
 
             guestNameInputField.onValueChanged.AddListener(OnNameChanged);
+        }
+
+        private void OnGUI()
+        {
+            if (keyboard != null)
+            {
+                guestNameInputField.text = keyboard.text;
+            }
         }
 
         private Coroutine typingCoroutine;

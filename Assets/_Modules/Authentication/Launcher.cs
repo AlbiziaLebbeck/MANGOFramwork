@@ -109,10 +109,12 @@ namespace MANGOsFramework.Experiment
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             OpenOAuthPopup(gameObject.name, "OnAuthSuccess", OAUTH_LOGIN_URL, config.REDIRECT_URL);
-#else
+#elif UNITY_EDITOR
             Debug.Log("OAuth login only works in WebGL builds.");
             UpdateLoadingText("OAuth login only works in WebGL builds. Runs Mock Login");
             StartCoroutine(RunMockLogin());
+#else
+            return;
 #endif
         }
 
