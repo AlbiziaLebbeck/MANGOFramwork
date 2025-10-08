@@ -25,11 +25,17 @@ public class LoadingCanvas : MonoBehaviour
 
     public void ToggleLoadingScreen(bool toggle)
     {
-        panelGroup.SetActive(toggle);
+        if(panelGroup != null)
+        {
+            panelGroup.SetActive(toggle);
+        }
     }
 
     public void ToggleSpinner(bool toggle)
     {
-        spinner.Rotation = toggle;
+        if(spinner != null)
+        {
+            spinner.Rotation = toggle;
+        }
     }
 }

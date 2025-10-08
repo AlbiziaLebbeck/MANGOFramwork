@@ -2759,7 +2759,7 @@ MonoBehaviour:
   look: {x: 0, y: 0}
   jump: 0
   sprint: 0
-  analogMovement: 0
+  analogMovement: 1
   cursorLocked: 0
   cursorInputForLook: 0
 --- !u!114 &7750375550308523974
@@ -2872,7 +2872,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec9b3205e861824b89b88f6e7584e53, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cinemachineCameraTarget: {fileID: 8761390901812886308}
+  cinemachineCameraTargetMain: {fileID: 8761390901812886308}
+  cinemachineCameraTargetSub: {fileID: 3539536308251759832}
   GroundedOffset: 0
   GroundedRadius: 0.28
   GroundLayers:
@@ -2893,6 +2894,7 @@ MonoBehaviour:
   rotationSpeed: 15
   rotationThreshold: 0.1
   isChangeView: 0
+  isMobile: 0
   smoothingFactor: 100
   _lockToPlatformTarget: {fileID: 0}
 --- !u!114 &456589385153110915

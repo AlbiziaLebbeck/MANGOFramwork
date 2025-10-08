@@ -40,7 +40,6 @@ public class UIVirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandle
 
     public void OnDrag(PointerEventData eventData)
     {
-
         RectTransformUtility.ScreenPointToLocalPointInRectangle(containerRect, eventData.position, eventData.pressEventCamera, out Vector2 position);
         
         position = ApplySizeDelta(position);

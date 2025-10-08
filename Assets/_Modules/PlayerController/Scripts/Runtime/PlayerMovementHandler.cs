@@ -3,11 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 
 public class PlayerMovementHandler : MonoBehaviour
 {
     [Header("General Settings")]
-    [SerializeField] private Transform cinemachineCameraTarget;
+    [SerializeField] private Transform cinemachineCameraTargetMain;
+    [SerializeField] private Transform cinemachineCameraTargetSub;
     private StarterAssetsInputs starterAssetsInputs;
     private int interactableLayer;
     private int uILayer;
@@ -77,10 +79,17 @@ public class PlayerMovementHandler : MonoBehaviour
     private float cinemachineTargetYaw;
     private float cinemachineTargetPitch;
 
+    [SerializeField] private bool isMobile;
+    [SerializeField] private bool useTouchControls;
+    private PlayerInput playerInput;
+
     private void Awake()
     {
+        isMobile = CheckMobile.CheckIsMobile();
+
+        playerInput = GetComponent<PlayerInput>();
         starterAssetsInputs = GetComponent<StarterAssetsInputs>();
-        cinemachineTargetYaw = cinemachineCameraTarget.transform.rotation.eulerAngles.y;
+        cinemachineTargetYaw = cinemachineCameraTargetMain.transform.rotation.eulerAngles.y;
 
         thirdPersonController = GetComponent<ThirdPersonController>();
         characterController = GetComponent<CharacterController>();
@@ -98,12 +107,109 @@ public class PlayerMovementHandler : MonoBehaviour
         _animIDJump = Animator.StringToHash("Jump");
 
         startSpeed = thirdPersonController.MoveSpeed;
+
+        if (!isMobile)
+        {
+            playerActions.asset.FindActionMap("KeyboardMouse").Enable();
+            playerActions.asset.FindActionMap("Touch").Disable();
+
+            starterAssetsInputs.analogMovement = false;
+        }
+        else
+        {
+            playerActions.asset.FindActionMap("KeyboardMouse").Disable();
+            playerActions.asset.FindActionMap("Touch").Enable();
+
+            starterAssetsInputs.analogMovement = true;
+        }
     }
 
-    private void OnEnable() => playerActions.Enable();
+    private void OnEnable()
+    {
+        LocomotionManager.OnToggleControllerEvent += LocomotionManager_OnToggleControllerEvent;
 
-    private void OnDisable() => playerActions.Disable();
+        if (isMobile)
+        {
+            LocomotionManager.VirtualMoveInputEvent += LocomotionManager_VirtualMoveInputEvent;
+            LocomotionManager.VirtualLookInputEvent += LocomotionManager_VirtualLookInputEvent;
 
+            LocomotionManager.VirtualJumpInputEvent += LocomotionManager_VirtualJumpInputEvent;
+            LocomotionManager.VirtualSprintInputEvent += LocomotionManager_VirtualSprintInputEvent;
+        }
+    }
+
+    private void OnDisable()
+    {
+        LocomotionManager.OnToggleControllerEvent -= LocomotionManager_OnToggleControllerEvent;
+
+        if (isMobile)
+        {
+            LocomotionManager.VirtualMoveInputEvent -= LocomotionManager_VirtualMoveInputEvent;
+            LocomotionManager.VirtualLookInputEvent -= LocomotionManager_VirtualLookInputEvent;
+
+            LocomotionManager.VirtualJumpInputEvent -= LocomotionManager_VirtualJumpInputEvent;
+            LocomotionManager.VirtualSprintInputEvent -= LocomotionManager_VirtualSprintInputEvent;
+        }
+    }
+
+    private void LocomotionManager_VirtualSprintInputEvent(bool state)
+    {
+        starterAssetsInputs?.SprintInput(state);
+    }
+
+    private void LocomotionManager_VirtualJumpInputEvent(bool state)
+    {
+        starterAssetsInputs?.JumpInput(state);
+    }
+
+    private float sprintThreshold = 1.05f;
+    private void LocomotionManager_VirtualMoveInputEvent(Vector2 dir, float magnitude)
+    {
+        starterAssetsInputs?.MoveInput(dir * Mathf.Min(magnitude, 1f));
+        starterAssetsInputs?.SprintInput(magnitude > sprintThreshold);
+    }
+
+    private void LocomotionManager_VirtualLookInputEvent(Vector2 delta)
+    {
+        starterAssetsInputs?.LookInput(delta);
+    }
+
+    private void LocomotionManager_OnToggleControllerEvent(bool isTouch)
+    {
+        if (!isTouch)
+        {
+            //Use Controller, Joystick
+            if (!isMobile)
+            {
+                playerActions.KeyboardMouse.LeftMousePressed.Disable();
+                playerActions.KeyboardMouse.DoubleLeftPressed.Disable();
+            }
+            else
+            {
+                thirdPersonController.CinemachineCameraTarget = cinemachineCameraTargetMain.gameObject;
+            }
+
+            //enable starter assets
+            playerInput.actions.FindActionMap("Player").Enable();
+        }
+        else
+        {
+            //Use Mouse click to move
+            if(!isMobile)
+            {
+                playerActions.KeyboardMouse.LeftMousePressed.Enable();
+                playerActions.KeyboardMouse.DoubleLeftPressed.Enable();
+            }
+            else
+            {
+                thirdPersonController.CinemachineCameraTarget = cinemachineCameraTargetSub.gameObject;
+            }
+
+            playerInput.actions.FindActionMap("Player").Disable();
+        }
+
+        useTouchControls = isTouch;
+    }
 
     private void Start()
     {
@@ -120,7 +226,7 @@ public class PlayerMovementHandler : MonoBehaviour
     /// </summary>
     private void AssignInputs()
     {
-        if (!CheckMobile.CheckIsMobile())
+        if (!isMobile)
         {
             playerActions.KeyboardMouse.LeftMousePressed.canceled += _ =>
             {
@@ -131,27 +237,21 @@ public class PlayerMovementHandler : MonoBehaviour
 
             playerActions.KeyboardMouse.RightMousePressed.performed += _ => { isChangeView = true; };
             playerActions.KeyboardMouse.RightMousePressed.canceled += _ => { isChangeView = false; };
+
             playerActions.KeyboardMouse.DoubleLeftPressed.performed += _ => { doubleClicked = true; };
             playerActions.KeyboardMouse.DoubleLeftPressed.canceled += _ => { doubleClicked = false; };
 
             playerActions.KeyboardMouse.MouseAxis.performed += _rotation => primaryTouchDelta = _rotation.ReadValue<Vector2>();
             playerActions.KeyboardMouse.MouseScrollY.performed += _scrollAmount => mouseScrollY = _scrollAmount.ReadValue<float>();
-
-            playerActions.KeyboardMouse.Crouch.performed += _ =>
-            {
-                ToggleCrouch();
-            };
+            playerActions.KeyboardMouse.Crouch.performed += _ => ToggleCrouch();
         }
         else
         {
             playerActions.Touch.PrimaryTouchContact.canceled += _ => { if (primaryTouchDelta == Vector2.zero || !IsDrag) ClickToMove(); };
-            playerActions.Touch.PrimaryTouchContact.performed += _position =>
-            {
-                IsDrag = false;
-            };
+            playerActions.Touch.PrimaryTouchContact.performed += _ => IsDrag = false;
 
-            playerActions.Touch.PrimaryDoubleTap.performed += _ => { doubleClicked = true; };
-            playerActions.Touch.PrimaryDoubleTap.canceled += _ => { doubleClicked = false; };
+            playerActions.Touch.PrimaryDoubleTap.performed += _ => doubleClicked = true;
+            playerActions.Touch.PrimaryDoubleTap.canceled += _ => doubleClicked = false;
 
             playerActions.Touch.PrimaryTouchDelta.performed += _rotation =>
             {
@@ -194,8 +294,8 @@ public class PlayerMovementHandler : MonoBehaviour
     /// </summary>
     private void AssignCamera()
     {
-        PlayerCameraHandler.Instance.AssignFollowCamera(PlayerCameraHandler.Instance.MainVirtualCamera, cinemachineCameraTarget);
-        PlayerCameraHandler.Instance.AssignCameraLookAt(PlayerCameraHandler.Instance.MainVirtualCamera, cinemachineCameraTarget);
+        PlayerCameraHandler.Instance.AssignFollowCamera(PlayerCameraHandler.Instance.MainVirtualCamera, cinemachineCameraTargetMain);
+        PlayerCameraHandler.Instance.AssignCameraLookAt(PlayerCameraHandler.Instance.MainVirtualCamera, cinemachineCameraTargetMain);
     }
 
     private void Update()
@@ -371,7 +471,7 @@ public class PlayerMovementHandler : MonoBehaviour
     {
         var zoomAmount = 0f;
 
-        if(CheckMobile.CheckIsMobile() && IsPinchZoom)
+        if(CheckMobile.CheckIsMobile() && IsPinchZoom && !IsPointerOverUIElement())
         {
             var distance = Vector2.Distance(primaryTouchPosition, secondaryTouchPosition);
 
@@ -458,7 +558,9 @@ public class PlayerMovementHandler : MonoBehaviour
     {
         cinemachineTargetYaw += 45 * starterAssetsInputs.move.x * Time.deltaTime;
 
-        if (primaryTouchDelta.sqrMagnitude != previousTouchDelta)
+        var canTouchRotate = isMobile ? useTouchControls : true;
+
+        if (primaryTouchDelta.sqrMagnitude != previousTouchDelta && canTouchRotate)
         {
             previousTouchDelta = primaryTouchDelta.sqrMagnitude;
 
@@ -471,7 +573,7 @@ public class PlayerMovementHandler : MonoBehaviour
             }
         }
 
-        cinemachineCameraTarget.transform.rotation = Quaternion.Euler(cinemachineTargetPitch, cinemachineTargetYaw, 0.0f);
+        cinemachineCameraTargetMain.transform.rotation = Quaternion.Euler(cinemachineTargetPitch, cinemachineTargetYaw, 0.0f);
     }
 
     private IEnumerator ClickCoroutine()
@@ -482,6 +584,7 @@ public class PlayerMovementHandler : MonoBehaviour
 
     private void ClickToMove()
     {
+        if (!useTouchControls) return;
         if (isChangeView) return;
         if (IsPointerOverUIElement()) return;
 

@@ -41,6 +41,7 @@ namespace MANGOsFramework.Experiment
             signInPanel.SetActive(false);
             userVerificationPanel.SetActive(false);
 
+#if !UNITY_EDITOR
             if (CheckMobile.CheckIsMobile())
             {
                 keyboard = null;
@@ -51,6 +52,7 @@ namespace MANGOsFramework.Experiment
                     keyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default);
                 });
             }
+#endif
         }
 
         private void SetupCanvas()
@@ -99,6 +101,7 @@ namespace MANGOsFramework.Experiment
             guestNameInputField.onValueChanged.AddListener(OnNameChanged);
         }
 
+#if !UNITY_EDITOR
         private void OnGUI()
         {
             if (keyboard != null)
@@ -106,6 +109,7 @@ namespace MANGOsFramework.Experiment
                 guestNameInputField.text = keyboard.text;
             }
         }
+#endif
 
         private Coroutine typingCoroutine;
         private float typingDelay = 0.5f;
