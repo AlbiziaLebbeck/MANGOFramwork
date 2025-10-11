@@ -42,7 +42,6 @@ public class LocomotionManager : Singleton<LocomotionManager>
     public void OnToggleController(bool _isTouch)
     {
         IsTouch = _isTouch;
-
         if (OnToggleControllerEvent != null) OnToggleControllerEvent(_isTouch);
     }
 }

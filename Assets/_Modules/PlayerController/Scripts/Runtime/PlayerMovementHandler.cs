@@ -176,6 +176,11 @@ public class PlayerMovementHandler : MonoBehaviour
 
     private void LocomotionManager_OnToggleControllerEvent(bool isTouch)
     {
+        ApplyLocomotionSetting(isTouch);
+    }
+
+    private void ApplyLocomotionSetting(bool isTouch)
+    {
         if (!isTouch)
         {
             //Use Controller, Joystick
@@ -195,7 +200,7 @@ public class PlayerMovementHandler : MonoBehaviour
         else
         {
             //Use Mouse click to move
-            if(!isMobile)
+            if (!isMobile)
             {
                 playerActions.KeyboardMouse.LeftMousePressed.Enable();
                 playerActions.KeyboardMouse.DoubleLeftPressed.Enable();
@@ -217,6 +222,8 @@ public class PlayerMovementHandler : MonoBehaviour
         AssignCamera();
 
         Grounded = thirdPersonController.Grounded;
+
+        ApplyLocomotionSetting(LocomotionManager.IsTouch);
     }
 
     private bool IsDrag = false;
