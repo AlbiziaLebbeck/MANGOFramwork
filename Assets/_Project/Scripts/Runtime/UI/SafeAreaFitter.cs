@@ -1,76 +1,50 @@
-using System;
-using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
-/// <summary>
-/// Adjusts the UI RectTransform to fit within the screen's safe area.
-/// Works for Mobile WebGL, Android, and iOS.
-/// </summary>
-[ExecuteAlways]
 [RequireComponent(typeof(RectTransform))]
 public class SafeAreaFitter : MonoBehaviour
 {
-    [Header("Extra Margin (in pixels)")]
-    [Tooltip("Add extra padding beyond the safe area on each side.")]
-    public Vector4 extraMargin; // Left, Top, Right, Bottom
-
-    public static event Action<Rect> OnSafeAreaChanged;
+    [SerializeField] private CanvasScaler canvasScaler;
+    [SerializeField] private Vector2 additionalMargin = Vector2.zero;
 
     private RectTransform panel;
     private Rect lastSafeArea = new Rect(0, 0, 0, 0);
     private Vector2Int lastScreenSize = new Vector2Int(0, 0);
-    private ScreenOrientation lastOriention;
+    private ScreenOrientation lastOrientation = ScreenOrientation.AutoRotation;
 
-    private void Awake()
+    void Awake()
     {
         panel = GetComponent<RectTransform>();
-        ApplySafeArea();
-        StartCoroutine(CheckSafeAreaRoutine());
-    }
+        if (!canvasScaler)
+            canvasScaler = GetComponentInParent<CanvasScaler>();
 
-#if UNITY_EDITOR
-    private void Update()
-    {
         ApplySafeArea();
     }
-#endif
 
-    private IEnumerator CheckSafeAreaRoutine()
+    void Update()
     {
-        while (true)
+        if (Screen.safeArea != lastSafeArea
+            || Screen.width != lastScreenSize.x
+            || Screen.height != lastScreenSize.y
+            || Screen.orientation != lastOrientation)
         {
-            yield return new WaitForSeconds(0.25f);
-
-            if(Screen.safeArea != lastSafeArea ||
-                Screen.width != lastSafeArea.x ||
-                Screen.height != lastSafeArea.y ||
-                Screen.orientation != lastOriention)
-            {
-                ApplySafeArea();
-            }
+            ApplySafeArea();
         }
     }
 
     private void ApplySafeArea()
     {
-        if (panel == null)
-            panel = GetComponent<RectTransform>();
-
         Rect safeArea = Screen.safeArea;
 
-        safeArea.xMin -= extraMargin.x;
-        safeArea.xMax += extraMargin.z;
-        safeArea.yMin -= extraMargin.w;
-        safeArea.yMax += extraMargin.y;
+        // Apply additional margins in *screen pixels*
+        safeArea.xMin += additionalMargin.x * Screen.width / canvasScaler.referenceResolution.x;
+        safeArea.xMax -= additionalMargin.x * Screen.width / canvasScaler.referenceResolution.x;
+        safeArea.yMin += additionalMargin.y * Screen.height / canvasScaler.referenceResolution.y;
+        safeArea.yMax -= additionalMargin.y * Screen.height / canvasScaler.referenceResolution.y;
 
-        safeArea.xMin = Mathf.Max(safeArea.xMin, 0);
-        safeArea.yMin = Mathf.Max(safeArea.yMin, 0);
-        safeArea.xMax = Mathf.Min(safeArea.xMax, Screen.width);
-        safeArea.yMax = Mathf.Min(safeArea.yMax, Screen.height);
-
+        // Convert safe area rectangle to normalized anchor values
         Vector2 anchorMin = safeArea.position;
         Vector2 anchorMax = safeArea.position + safeArea.size;
-
         anchorMin.x /= Screen.width;
         anchorMin.y /= Screen.height;
         anchorMax.x /= Screen.width;
@@ -81,10 +55,8 @@ public class SafeAreaFitter : MonoBehaviour
         panel.offsetMin = Vector2.zero;
         panel.offsetMax = Vector2.zero;
 
-        lastSafeArea = safeArea;
+        lastSafeArea = Screen.safeArea;
         lastScreenSize = new Vector2Int(Screen.width, Screen.height);
-        lastOriention = Screen.orientation;
-
-        OnSafeAreaChanged?.Invoke(safeArea);
+        lastOrientation = Screen.orientation;
     }
 }

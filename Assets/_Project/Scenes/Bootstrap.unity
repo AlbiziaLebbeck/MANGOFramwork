@@ -3039,7 +3039,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3252467d35db244e87d539219b5b969, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  extraMargin: {x: 0, y: 0, z: 0, w: 0}
+  canvasScaler: {fileID: 0}
+  additionalMargin: {x: 0, y: 0}
 --- !u!1 &336673734
 GameObject:
   m_ObjectHideFlags: 0
@@ -7580,7 +7581,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -16319.983}
+  m_AnchoredPosition: {x: 0, y: -21179.982}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &979093539
@@ -7715,7 +7716,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3252467d35db244e87d539219b5b969, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  extraMargin: {x: 0, y: 0, z: 0, w: 0}
+  canvasScaler: {fileID: 0}
+  additionalMargin: {x: 0, y: 0}
 --- !u!1 &988813516
 GameObject:
   m_ObjectHideFlags: 0
@@ -7750,7 +7752,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.00030517578, y: -0.00017166138}
+  m_AnchoredPosition: {x: 0.00024414062, y: -0.00017166138}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &988813518
@@ -8420,7 +8422,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3252467d35db244e87d539219b5b969, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  extraMargin: {x: 0, y: 0, z: 0, w: 0}
+  canvasScaler: {fileID: 0}
+  additionalMargin: {x: 0, y: 0}
 --- !u!1 &1066116341
 GameObject:
   m_ObjectHideFlags: 0
@@ -9643,7 +9646,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3252467d35db244e87d539219b5b969, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  extraMargin: {x: 0, y: 0, z: 0, w: 0}
+  canvasScaler: {fileID: 0}
+  additionalMargin: {x: 0, y: 0}
 --- !u!1 &1311593176
 GameObject:
   m_ObjectHideFlags: 0
@@ -14189,7 +14193,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3252467d35db244e87d539219b5b969, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  extraMargin: {x: 0, y: 0, z: 0, w: 0}
+  canvasScaler: {fileID: 0}
+  additionalMargin: {x: 0, y: 0}
 --- !u!1 &2053051923
 GameObject:
   m_ObjectHideFlags: 0
