@@ -11,7 +11,6 @@ public class DragRotator : MonoBehaviour
     private Vector2 rotation;
     private bool rotateAllowed;
 
-
     private void Awake()
     {
         AddActionBinding();

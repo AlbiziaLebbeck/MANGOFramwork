@@ -28,6 +28,14 @@
     <script src="AgoraWebSDK/libs/spatial-audio-main.js" type="module"></script>
   </head>
   <body>
+    <div id="startOverlay" style="
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      background:black;color:white;display:flex;
+      align-items:center;justify-content:center;
+      font-size:24px;cursor:pointer;z-index:9999;">
+      Click to Start
+    </div>
+
     <div id="unity-container">
       <canvas id="unity-canvas" width={{{ WIDTH }}} height={{{ HEIGHT }}} tabindex="-1"></canvas>
       <div id="unity-loading-bar">
@@ -98,6 +106,7 @@
         productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
         productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
         showBanner: unityShowBanner,
+        devicePixelRatio: window.devicePixelRatio || 1,
       };
 
       // By default Unity keeps WebGL canvas render target size matched with
@@ -133,6 +142,15 @@
         });
       };
       document.body.appendChild(script);
+
+    document.getElementById("startOverlay").addEventListener("click", () => {
+      document.getElementById("startOverlay").style.display = "none";
+      let ctx = Module.audioContext;
+      if (ctx && ctx.state === "suspended") {
+        ctx.resume();
+      }
+    });
+
     </script>
   </body>
 </html>

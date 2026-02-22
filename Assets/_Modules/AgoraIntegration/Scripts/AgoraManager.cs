@@ -93,6 +93,11 @@ public class AgoraManager : Singleton<AgoraManager>
 
         EventHandler.ClientSpawnSuccessEvent += EventHandler_ClientSpawnSuccessEvent;
         EventHandler.ClientDisconnectedEvent += EventHandler_ClientDisconnectedEvent;
+
+        PermissionHelper.RequestMicrophontPermission();
+        PermissionHelper.RequestCameraPermission();
+
+        RefreshDevices();
     }
 
     private bool CheckAppId()
@@ -124,51 +129,66 @@ public class AgoraManager : Singleton<AgoraManager>
     }
     private void Update()
     {
-        PermissionHelper.RequestMicrophontPermission();
-        PermissionHelper.RequestCameraPermission();
+        if (Time.time >= nextRefreshTime)
+        {
+            RefreshDevices();
+            nextRefreshTime = Time.time + refreshInterval;
+        }
+    }
 
-        //if (!joinedChannel) return;
+    private float refreshInterval = 1f; // check once per second instead of every frame
+    private float nextRefreshTime;
 
+    private int lastVideoDeviceCount = -1;
+    private int lastRecordingDeviceCount = -1;
+    private int lastPlaybackDeviceCount = -1;
+
+    private void RefreshDevices()
+    {
         List<MediaDeviceInfo> videoDevices = AgoraWebGLEventHandler.GetCachedCameras();
-
         int recordingDevices = audioRecordingDeviceDict.Count;
         int playbackDevices = audioPlaybackDeviceDict.Count;
 
-        List<string> videoDeviceLabels = new List<string>();
-
-        if (videoDevices.Count > 0)
+        // Video Devices
+        if (videoDevices.Count != lastVideoDeviceCount)
         {
-            if(videoDeviceManagerNameDict.Count != videoDevices.Count)
-            {
-                GetVideoDeviceManager();
-            }
+            UpdateVideoDropdown(videoDevices);
+            lastVideoDeviceCount = videoDevices.Count;
+        }
 
-            foreach (MediaDeviceInfo info in videoDevices)
-            {
-                bool hasLabel = false;
-                foreach (Dropdown.OptionData data in videoDropdown.options)
-                {
-                    if (data.text == info.label)
-                    {
-                        hasLabel = true;
-                    }
-                }
-                
-                if (!hasLabel)
-                {
-                    videoDeviceLabels.Add(info.label);
-                }
-            }
+        // Audio Devices
+        if (recordingDevices != lastRecordingDeviceCount)
+        {
+            recordingDropdown.interactable = recordingDevices > 0;
+            lastRecordingDeviceCount = recordingDevices;
+        }
 
-            if (videoDropdown.options.Count == 0)
+        if (playbackDevices != lastPlaybackDeviceCount)
+        {
+            playbackDropdown.interactable = playbackDevices > 0;
+            lastPlaybackDeviceCount = playbackDevices;
+        }
+    }
+
+    private void UpdateVideoDropdown(List<MediaDeviceInfo> videoDevices)
+    {
+        videoDropdown.ClearOptions();
+
+        List<string> labels = new List<string>();
+        HashSet<string> existing = new HashSet<string>();
+
+        foreach (var info in videoDevices)
+        {
+            if (!string.IsNullOrEmpty(info.label) && existing.Add(info.label))
             {
-                videoDropdown.AddOptions(videoDeviceLabels);
+                labels.Add(info.label);
             }
         }
 
-        videoDropdown.interactable = videoDevices.Count > 0;
-        recordingDropdown.interactable = recordingDevices > 0;
-        playbackDropdown.interactable = playbackDevices > 0;
+        if (labels.Count > 0)
+            videoDropdown.AddOptions(labels);
+
+        videoDropdown.interactable = labels.Count > 0;
     }
     #endregion
 

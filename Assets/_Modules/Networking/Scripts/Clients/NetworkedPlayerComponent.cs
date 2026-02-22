@@ -2,7 +2,9 @@ using FishNet.Component.Observing;
 using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
+using MANGOsFramework.Experiment;
 using StarterAssets;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -53,6 +55,8 @@ public class NetworkedPlayerComponent : NetworkBehaviour
     {
         base.OnStartClient();
 
+        AvatarLoaderEvent.AvatarLoadedEvent += AvatarLoaderEvent_AvatarLoadedEvent;
+
         if (!base.IsOwner)
         {
             gameObject.tag = "RemotePlayer";
@@ -87,7 +91,17 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         }
         UserReferencePersistent.Instance.AssignPlayerGameObject(gameObject);
 
+        EventHandler.OnLocalClientCompleteSetup();
+
         PersistentCanvas.LoadingCanvas.ToggleLoadingScreen(false);
+    }
+
+    private void AvatarLoaderEvent_AvatarLoadedEvent(GameObject _model, string _url)
+    {
+        if(_model == avatarLoader.Model && _url == GLTFLink.Value)
+        {
+            StartCoroutine(RestartAnimator(avatarLoader.Animator));
+        }
     }
 
     public override void OnStopClient()
@@ -101,6 +115,8 @@ public class NetworkedPlayerComponent : NetworkBehaviour
             EventHandler.UserShareScreenStartedEvent -= EventHandler_UserShareScreenStartedEvent;
             EventHandler.UserShareScreenStoppedEvent -= EventHandler_UserShareScreenStoppedEvent;
         }
+
+        AvatarLoaderEvent.AvatarLoadedEvent -= AvatarLoaderEvent_AvatarLoadedEvent;
     }
     #endregion
 
@@ -147,8 +163,16 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         
         if (asServer) return;
 
-        avatarLoader.LoadAvatar();
+        if (IsOwner) UserReferencePersistent.Instance.SetGLTFLink(next);
 
+        if(AvatarSystem.Instance.IsAvatarCached(next))
+        {
+            avatarLoader.LoadAvatarFromCache();
+        }
+        else
+        {
+            avatarLoader.LoadAvatar();
+        }
     }
     private void OnVideo_OnChange(bool prev, bool next, bool asServer)
     {
@@ -205,6 +229,12 @@ public class NetworkedPlayerComponent : NetworkBehaviour
     {
         OnProjector.Value = projectorId;
     }
+    [ServerRpc]
+    public  void RPCServerSetAvatar(string newLink)
+    {
+        GLTFLink.Value = newLink;
+    }
+
     [TargetRpc]
     public void TargetUpdatePlayerInfo(NetworkConnection conn, string message)
     {
@@ -271,6 +301,13 @@ public class NetworkedPlayerComponent : NetworkBehaviour
     private void OnLand(AnimationEvent animationEvent)
     {
 
+    }
+
+    private IEnumerator RestartAnimator(Animator anim)
+    {
+        anim.Rebind();
+        anim.Update(0);
+        yield return new WaitForEndOfFrame();
     }
     #endregion
 }

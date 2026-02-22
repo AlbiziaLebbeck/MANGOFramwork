@@ -70,7 +70,7 @@ public class NetworkedPlayerSpawner : NetworkBehaviour
     {
         Vector3 spawnPosition = spawner.GetRandomSpawn();
 
-        NetworkObject nob = Instantiate<NetworkObject>(playerPrefab, spawnPosition, Quaternion.identity);
+        NetworkObject nob = Instantiate(playerPrefab, spawnPosition, Quaternion.identity);
 
         UnitySceneManager.MoveGameObjectToScene(nob.gameObject, gameObject.scene);
 
