@@ -160,8 +160,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 900.84076, y: -659.1122}
-  m_SizeDelta: {x: 1801.6815, y: 330}
+  m_AnchoredPosition: {x: 960, y: -623.6497}
+  m_SizeDelta: {x: 1920, y: 330}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!225 &34054685
 CanvasGroup:
@@ -1080,8 +1080,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 900.84076, y: -270}
-  m_SizeDelta: {x: 1801.6815, y: 120}
+  m_AnchoredPosition: {x: 960, y: -270}
+  m_SizeDelta: {x: 1920, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &213929813
 GameObject:
@@ -1627,7 +1627,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 960, y: -623.6497}
+  m_AnchoredPosition: {x: 960, y: -865}
   m_SizeDelta: {x: 1920, y: 330}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &431578792
@@ -1908,7 +1908,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: I have <b>Meta<color=#D0356D>Auth</color></b> account
+  m_text: I have <b>MANGOs<color=#D0356D>Auth</color></b> account
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 80df197b074ed5f419395e9d697b1730, type: 2}
   m_sharedMaterial: {fileID: -7943734650547218268, guid: 80df197b074ed5f419395e9d697b1730, type: 2}
@@ -2853,8 +2853,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 900.84076, y: -390}
-  m_SizeDelta: {x: 1801.6815, y: 120}
+  m_AnchoredPosition: {x: 960, y: -390}
+  m_SizeDelta: {x: 1920, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1404772224
 GameObject:
@@ -3366,8 +3366,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 900.84076, y: -150}
-  m_SizeDelta: {x: 1801.6815, y: 120}
+  m_AnchoredPosition: {x: 960, y: -150}
+  m_SizeDelta: {x: 1920, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1677738171
 GameObject:
@@ -3493,7 +3493,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Login with <b>Meta<color=#D0356D>Auth</b>
+  m_text: Login with <b>MANGOs<color=#D0356D>Auth</b>
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 80df197b074ed5f419395e9d697b1730, type: 2}
   m_sharedMaterial: {fileID: -7943734650547218268, guid: 80df197b074ed5f419395e9d697b1730, type: 2}
@@ -4133,8 +4133,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 900.84076, y: -45}
-  m_SizeDelta: {x: 1801.6815, y: 90}
+  m_AnchoredPosition: {x: 960, y: -45}
+  m_SizeDelta: {x: 1920, y: 90}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2135361075
 GameObject:
