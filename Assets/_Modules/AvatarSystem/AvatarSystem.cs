@@ -17,22 +17,19 @@ namespace MANGOsFramework.Experiment
         [SerializeField] private Button avatarSubmitButton;
         [SerializeField] private Button cancelButton;
         [SerializeField] private Button avatarWindowButton;
-        [SerializeField] private Transform avatarButtonHolder;
         [SerializeField] private Button AvatarButtonPrefab;
+        [SerializeField] private Button resetAnimatorButton;
+        [SerializeField] private Transform avatarButtonHolder;
         [SerializeField] private Transform cachedAvatarHolder;
         [SerializeField] private Transform avatarCollectionsTransform;
-        [SerializeField] private Button resetAnimatorButton;
 
         [Header("Setting")]
         private float avatarChangeCooldown = 5f;
 
         [Header("Debug")]
         [SerializeField] private List<string> userAvatarUrls = new();
-
         private List<AvatarIcon> avatarButtons = new();
-
         private LimitedDictionary<string, GameObject> cachedAvatarModel = new(100);
-
         [SerializeField] private string currentSelectAvatar;
 
         private bool inCooldown;
@@ -127,7 +124,6 @@ namespace MANGOsFramework.Experiment
                     if(buttonToRemove != null)
                     {
                         avatarButtons.Remove(buttonToRemove);
-
                         Destroy(buttonToRemove.gameObject);
                     }
 
@@ -173,7 +169,8 @@ namespace MANGOsFramework.Experiment
         {
             yield return StartCoroutine(LoadAvatarSelection());
 
-            yield return new WaitUntil(() => cachedAvatarModel.Count == AvatarUrls.Count + userAvatarUrls.Count);
+            //yield return new WaitUntil(() => cachedAvatarModel.Count == AvatarUrls.Count + userAvatarUrls.Count);
+            yield return new WaitUntil(() => avatarButtons.Count == AvatarUrls.Count + userAvatarUrls.Count);
 
             Destroy(avatarCollectionsTransform.gameObject, 15);
 
@@ -193,8 +190,6 @@ namespace MANGOsFramework.Experiment
             }
 
             isLoaded = true;
-
-            PersistentCanvas.LoadingCanvas.ToggleLoadingScreen(false);
         }
 
         private void OnAvatarLoaded(GameObject _modelToCache, string _url)
@@ -262,16 +257,16 @@ namespace MANGOsFramework.Experiment
                 for (int i = 0; i < totalAvatarCount; i++)
                 {
                     var newButton = Instantiate(AvatarButtonPrefab, avatarButtonHolder);
-
+                    
                     var icon = newButton.GetComponent<AvatarIcon>();
-
+                    
                     string url = i >= AvatarUrls.Count ? userAvatarUrls[i - AvatarUrls.Count] : AvatarUrls[i];
 
                     icon.SetIconData(url);
 
-                    int count = i;
+                    //int count = i;
                     
-                    LoadAvatar(url, count);
+                    //LoadAvatar(url, count);
                    
                     avatarButtons.Add(icon);
 
@@ -312,6 +307,8 @@ namespace MANGOsFramework.Experiment
                     netCom.RPCServerSetAvatar(url);
                 }
             }
+
+            //OnToggleAvatarWindow();
         }
 
         public void OnToggleAvatarWindow()

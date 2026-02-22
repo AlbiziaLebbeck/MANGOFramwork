@@ -158,6 +158,14 @@ public class AvatarLoader : MonoBehaviour
         {
             targetAvatar = "AvatarLoader/ReadyPlayerMeRig";
         }
+        else if (avatarModel.transform.Find("Armature/Outfit"))
+        {
+            targetAvatar = "AvatarLoader/RajPatternAvatar";
+        }
+        else if (avatarModel.transform.Find("Armature/mixamorig:Hips"))
+        {
+            targetAvatar = "AvatarLoader/MANGOsAvatar";
+        }
         else
         {
             targetAvatar = "AvatarLoader/ArmatureAvatar";
@@ -261,5 +269,11 @@ public class AvatarLoader : MonoBehaviour
         setupAnimatorRoutine = null;
     }
 
-
+    public void AssignAnimatorController(RuntimeAnimatorController controller)
+    {
+        if (animator != null)
+        {
+            animator.runtimeAnimatorController = controller;
+        }
+    }
 }

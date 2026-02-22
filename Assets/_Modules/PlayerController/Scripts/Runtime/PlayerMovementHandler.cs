@@ -124,6 +124,22 @@ public class PlayerMovementHandler : MonoBehaviour
         }
     }
 
+    public void EnableInputActions(bool enable)
+    {
+        var mapString = isMobile ? "Touch" : "KeyboardMouse";
+
+        if (enable)
+        {
+            playerActions.asset.FindActionMap(mapString).Enable();
+            playerInput.actions.Enable();
+        }
+        else
+        {
+            playerActions.asset.FindAction(mapString).Disable();
+            playerInput.actions.Disable();
+        }
+    }
+
     private void OnEnable()
     {
         LocomotionManager.OnToggleControllerEvent += LocomotionManager_OnToggleControllerEvent;
@@ -589,6 +605,8 @@ public class PlayerMovementHandler : MonoBehaviour
         ClickToMove();
     }
 
+    public float hitDistance = 100f;
+
     private void ClickToMove()
     {
         if (!useTouchControls) return;
@@ -600,7 +618,7 @@ public class PlayerMovementHandler : MonoBehaviour
 
         RaycastHit hit;
 
-        if(Physics.Raycast(Camera.main.ScreenPointToRay(movePosition), out hit, 100, clickableLayers))
+        if(Physics.Raycast(Camera.main.ScreenPointToRay(movePosition), out hit, hitDistance, clickableLayers))
         {
             clickToMoveTarget = hit.point;
             clickToMoveTarget.y = 0f;

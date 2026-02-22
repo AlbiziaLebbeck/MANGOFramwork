@@ -1,16 +1,23 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class AreaSpawner : MonoBehaviour
 {
+    public static AreaSpawner PlayerSpawnerInstance;
+    [SerializeField] private bool isPlayerSpawner;
     [SerializeField] private Vector2 spawnSize = Vector2.zero;
-    [SerializeField] private List<int> alreadyMovedConnections = new List<int>();
 
     private float minXBound = 0f;
     private float maxXBound = 0f;
     private float minYBound = 0f;
     private float maxYBound = 0f;
+
+    private void Awake()
+    {
+        if (isPlayerSpawner)
+        {
+            PlayerSpawnerInstance = this;
+        }
+    }
 
     #region Draw Visualize Box
 #if UNITY_EDITOR

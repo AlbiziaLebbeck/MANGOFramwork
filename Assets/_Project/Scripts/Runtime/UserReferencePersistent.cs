@@ -1,5 +1,4 @@
 using MANGOsFramework.Experiment;
-using System;
 using UnityEngine;
 
 public class UserReferencePersistent : SingletonPersistent<UserReferencePersistent>

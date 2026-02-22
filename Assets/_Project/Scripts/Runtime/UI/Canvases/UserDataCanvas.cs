@@ -11,6 +11,7 @@ public class UserDataCanvas : MonoBehaviour
     private void Awake()
     {
         container.alpha = 0f;
+        container.gameObject.SetActive(false);
     }
 
     private void OnEnable()
@@ -45,10 +46,12 @@ public class UserDataCanvas : MonoBehaviour
     public void OpenCanvas()
     {
         container.alpha = 1.0f;
+        container.gameObject.SetActive(true);
     }
 
     public void CloseCanvas()
     {
         container.alpha = 0f;
+        container.gameObject.SetActive(false);
     }
 }

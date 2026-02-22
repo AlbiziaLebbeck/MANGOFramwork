@@ -87,8 +87,5 @@ crashlytics-build.properties
 /[Aa]ssets/_ExcludeAssets.meta
 
 #Exclude Configs file
-/[Aa]ssets/_Configs/
-/[Aa]ssets/_Configs.meta
-
-/[Aa]ssets/[Cc]onfigs/
-/[Aa]ssets/[Cc]onfigs.meta
+/[Aa]ssets/_Configs/*
+/[Aa]ssets/[Cc]onfigs/*

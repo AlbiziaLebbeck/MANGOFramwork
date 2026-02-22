@@ -55,7 +55,5 @@ public class UITextReveal : MonoBehaviour, IPointerClickHandler, IPointerEnterHa
     {
         if (revealRoutine != null) StopCoroutine(revealRoutine);
         revealRoutine = StartCoroutine(DoSlide(Vector2.zero));
-    }
-
-    
+    } 
 }

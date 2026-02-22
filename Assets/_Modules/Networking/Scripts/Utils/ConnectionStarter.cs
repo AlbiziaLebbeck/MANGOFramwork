@@ -40,16 +40,17 @@ public class ConnectionStarter : MonoBehaviour
     private void Start()
     {
         networkManager = GetComponent<NetworkManager>();
+
         if (networkManager == null)
         {
             Debug.LogError("NetworkManager not found, ConnectionStarter need network manager attach to Game Object.");
             return;
         }
-        else
-        {
-            networkManager.ServerManager.OnServerConnectionState += ServerManager_OnServerConnectionState;
-            networkManager.ClientManager.OnClientConnectionState += ClientManager_OnClientConnectionState;
-        }
+        networkManager.ServerManager.OnServerConnectionState -= ServerManager_OnServerConnectionState;
+        networkManager.ClientManager.OnClientConnectionState -= ClientManager_OnClientConnectionState;
+
+        networkManager.ServerManager.OnServerConnectionState += ServerManager_OnServerConnectionState;
+        networkManager.ClientManager.OnClientConnectionState += ClientManager_OnClientConnectionState;
 
 #if UNITY_EDITOR
         if (ParrelSync.ClonesManager.IsClone())
@@ -69,19 +70,21 @@ public class ConnectionStarter : MonoBehaviour
 
         if (StartType == StartType.Host || StartType == StartType.Server)
         {
-            if (networkManager == null) return;
-            if (serverState != LocalConnectionState.Stopped) networkManager.ServerManager.StopConnection(true);
-            else networkManager.ServerManager.StartConnection();
+            if(serverState == LocalConnectionState.Stopped)
+            {
+                networkManager.ServerManager.StartConnection();
+            }
         }
 
         if (StartType == StartType.Host || StartType == StartType.Client)
         {
-            if (networkManager == null) return;
-            if (clientState != LocalConnectionState.Stopped) networkManager.ClientManager.StopConnection();
-            else networkManager.ClientManager.StartConnection();
+            if (clientState == LocalConnectionState.Stopped)
+            {
+                networkManager.ClientManager.StartConnection();
+            }
         }
 
-        if(ConnectionStartedEvent != null) ConnectionStartedEvent(StartType);
+        ConnectionStartedEvent?.Invoke(StartType);
     }
 
     private void OnDestroy()
@@ -128,6 +131,7 @@ public class ConnectionStarter : MonoBehaviour
         }
 
         Scene scene = UnitySceneManager.GetSceneByName("Bootstrap");
+        if (!scene.IsValid()) return;
 
         NetworkObject serverPrewarmer = Instantiate(serverScenePrewarmerPrefab);
         UnitySceneManager.MoveGameObjectToScene(serverPrewarmer.gameObject, scene);

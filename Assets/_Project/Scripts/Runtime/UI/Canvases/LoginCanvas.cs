@@ -41,7 +41,6 @@ public class LoginCanvas : MonoBehaviour
                 userNameInputField.onSelect.RemoveAllListeners();
                 userNameInputField.onSelect.AddListener((text) =>
                 {
-                    Debug.Log(text);
                     TouchScreenKeyboard.hideInput = true;
                     keyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default);
                 });
@@ -70,7 +69,6 @@ public class LoginCanvas : MonoBehaviour
     {
         ShowErrorMessage(obj);
     }
-
 
     public void OnClick_LoginButton()
     {

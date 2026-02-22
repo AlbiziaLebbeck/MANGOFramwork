@@ -19,7 +19,6 @@ public static class EventHandler
     
     public static event Action ServerStartedEvent;
 
-
     //Communication Events
     public static event Action<uint, bool> UserMicMuteUpdateEvent;
     public static event Action<uint, bool> UserCamMuteUpdateEvent;

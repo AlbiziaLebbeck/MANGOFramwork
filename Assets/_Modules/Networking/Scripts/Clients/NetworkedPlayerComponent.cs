@@ -73,7 +73,6 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         EventHandler.UserMicMuteUpdateEvent += EventHandler_UserMicMuteUpdateEvent;
         EventHandler.UserShareScreenStartedEvent += EventHandler_UserShareScreenStartedEvent;
         EventHandler.UserShareScreenStoppedEvent += EventHandler_UserShareScreenStoppedEvent;
-
         
         nameText.gameObject.SetActive(false);
         micStatusIcon.gameObject.SetActive(false);
@@ -93,6 +92,8 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         UserReferencePersistent.Instance.AssignPlayerGameObject(gameObject);
 
         EventHandler.OnLocalClientCompleteSetup();
+
+        PersistentCanvas.LoadingCanvas.ToggleLoadingScreen(false);
     }
 
     private void AvatarLoaderEvent_AvatarLoadedEvent(GameObject _model, string _url)

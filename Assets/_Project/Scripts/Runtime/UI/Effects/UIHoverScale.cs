@@ -11,7 +11,6 @@ public class UIHoverScale : MonoBehaviour, IPointerClickHandler, IPointerEnterHa
 
     private Coroutine scaleRoutine;
 
-
     public void OnPointerClick(PointerEventData eventData)
     {
         LerpExit();

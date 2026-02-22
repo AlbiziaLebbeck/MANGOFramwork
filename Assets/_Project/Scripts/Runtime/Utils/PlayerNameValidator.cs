@@ -16,7 +16,8 @@ public static class PlayerNameValidator
             return false;
         }
 
-        string pattern = @"^(?![_\s])[\p{L}\p{Nd}_\s]{2,32}(?<![_\s])$";
+        //string pattern = @"^(?![_\s])[\p{L}\p{Nd}_\s]{2,32}(?<![_\s])$";
+        string pattern = @"^(?![_\s])[\p{L}\p{M}\p{Nd}_\s]{2,32}(?<![_\s])$";
         if (!Regex.IsMatch(name, pattern))
         {
             if (name.Length < 2 || name.Length > 32)
@@ -30,7 +31,8 @@ public static class PlayerNameValidator
             return false;
         }
 
-        string lowerName = name.ToLower();
+        //string lowerName = name.ToLower();
+        string lowerName = name.ToLowerInvariant();
         if (bannedWords.Any(bw => lowerName.Contains(bw)))
         {
             reason = "Name contains inappropriate language.";
