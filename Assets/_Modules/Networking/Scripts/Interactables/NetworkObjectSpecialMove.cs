@@ -39,6 +39,10 @@ public class NetworkObjectSpecialMove : NetworkInteractable
     private CharacterController localPlayer_CharacterController;
     private ThirdPersonController localPlayer_ThirdPersonController;
     private PlayerMovementHandler localPlayer_PlayerMovementHandler;
+    private BasicBehaviour localPlayer_BasicBehaviour;
+    private MoveBehaviour localPlayer_MoveBehaviour;
+    private FlyBehaviour localPlayer_FlyBehaviour;
+    private LockTarget localPlayer_LockTarget;
     private Animator localPlayer_Animator;
     #endregion
 
@@ -51,13 +55,27 @@ public class NetworkObjectSpecialMove : NetworkInteractable
             localPlayer_CharacterController = player.GetComponent<CharacterController>();
             localPlayer_ThirdPersonController = player.GetComponent<ThirdPersonController>();
             localPlayer_PlayerMovementHandler = player.GetComponent<PlayerMovementHandler>();
+            localPlayer_BasicBehaviour = player.GetComponent<BasicBehaviour>();
+            localPlayer_MoveBehaviour = player.GetComponent<MoveBehaviour>();
+            localPlayer_FlyBehaviour = player.GetComponent<FlyBehaviour>();
+            localPlayer_LockTarget = player.GetComponent<LockTarget>();
             localPlayer_Animator = player.GetComponent<Animator>();
         }
 
-        localPlayer_CharacterController.enabled = false;
-        localPlayer_ThirdPersonController.enabled = false;
-        localPlayer_PlayerMovementHandler.SetLockToPlatformTarget(lockPosition);
-        localPlayer_Animator.SetInteger("Motion", 1);
+        if (localPlayer_BasicBehaviour != null)
+        {
+            localPlayer_BasicBehaviour.enabled = false;
+            if (localPlayer_MoveBehaviour != null) localPlayer_MoveBehaviour.enabled = false;
+            if (localPlayer_FlyBehaviour != null) localPlayer_FlyBehaviour.enabled = false;
+            if (localPlayer_LockTarget != null) localPlayer_LockTarget.SetLockToPlatformTarget(lockPosition);
+        }
+        else
+        {
+            if (localPlayer_CharacterController != null) localPlayer_CharacterController.enabled = false;
+            if (localPlayer_ThirdPersonController != null) localPlayer_ThirdPersonController.enabled = false;
+            if (localPlayer_PlayerMovementHandler != null) localPlayer_PlayerMovementHandler.SetLockToPlatformTarget(lockPosition);
+        }
+        if (localPlayer_Animator != null) localPlayer_Animator.SetInteger("Motion", 1);
         #endregion
 
         onDoAction?.Invoke();
@@ -68,10 +86,20 @@ public class NetworkObjectSpecialMove : NetworkInteractable
         #region Local Object
         if (localPlayer == null) return;
 
-        localPlayer_CharacterController.enabled = true;
-        localPlayer_ThirdPersonController.enabled = true;
-        localPlayer_PlayerMovementHandler.SetLockToPlatformTarget(null);
-        localPlayer_Animator.SetInteger("Motion", 0);
+        if (localPlayer_BasicBehaviour != null)
+        {
+            localPlayer_BasicBehaviour.enabled = true;
+            if (localPlayer_MoveBehaviour != null) localPlayer_MoveBehaviour.enabled = true;
+            if (localPlayer_FlyBehaviour != null) localPlayer_FlyBehaviour.enabled = true;
+            if (localPlayer_LockTarget != null) localPlayer_LockTarget.SetLockToPlatformTarget(null);
+        }
+        else
+        {
+            if (localPlayer_CharacterController != null) localPlayer_CharacterController.enabled = true;
+            if (localPlayer_ThirdPersonController != null) localPlayer_ThirdPersonController.enabled = true;
+            if (localPlayer_PlayerMovementHandler != null) localPlayer_PlayerMovementHandler.SetLockToPlatformTarget(null);
+        }
+        if (localPlayer_Animator != null) localPlayer_Animator.SetInteger("Motion", 0);
         #endregion
 
         onStopAction?.Invoke();

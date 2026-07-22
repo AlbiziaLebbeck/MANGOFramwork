@@ -1,18 +1,23 @@
 using MANGOsFramework.Experiment;
+using System;
 using UnityEngine;
 
 public class UserReferencePersistent : SingletonPersistent<UserReferencePersistent>
 {
     [SerializeField] private string username;
     [SerializeField] private string gltf;
+    [SerializeField] private int mangosGold;
     [SerializeField] private GameObject playerGameObject;
     [SerializeField] private Transform playerCameraRoot;
 
     public string Username { get { return username; } }
     public string GLTF { get { return gltf; } }
+    public int MangosGold { get { return mangosGold; } }
     public Texture AvatarImage { get; private set; }
     public GameObject PlayerGameObject { get {  return playerGameObject; } }
     public Transform PlayerCameraRoot { get { return playerCameraRoot; } }
+
+    public event Action<int> MangosGoldChanged;
 
     private void OnEnable()
     {
@@ -46,6 +51,13 @@ public class UserReferencePersistent : SingletonPersistent<UserReferencePersiste
     public void SetGLTFLink(string _link)
     {
         this.gltf = _link;
+    }
+
+    public void SetMangosGold(int amount)
+    {
+        mangosGold = amount;
+        PersistentCanvas.UserDataCanvas?.SetMangosGold(amount);
+        MangosGoldChanged?.Invoke(amount);
     }
 
     public void SetAvatarImage(Texture newImage)

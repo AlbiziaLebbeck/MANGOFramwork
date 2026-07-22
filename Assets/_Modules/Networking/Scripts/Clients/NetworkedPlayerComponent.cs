@@ -34,6 +34,8 @@ public class NetworkedPlayerComponent : NetworkBehaviour
     public readonly SyncVar<bool> OnVideo = new SyncVar<bool>();
     public readonly SyncVar<uint> OnProjector = new SyncVar<uint>(); 
 
+    private bool IsFlyableController => TryGetComponent(out BasicBehaviour _);
+
     private void Awake()
     {
         PlayerName.OnChange += OnChangePlayerName;
@@ -60,12 +62,7 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         if (!base.IsOwner)
         {
             gameObject.tag = "RemotePlayer";
-            GetComponent<ThirdPersonController>().enabled = false;
-            GetComponent<StarterAssetsInputs>().enabled = false;
-            GetComponent<PlayerMovementHandler>().enabled = false;
-#if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
-            GetComponent<PlayerInput>().enabled = false;
-#endif
+            DisableLocalMovement();
             return;
         }
 
@@ -78,18 +75,33 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         micStatusIcon.gameObject.SetActive(false);
         videoStatusIcon.gameObject.SetActive(false);
 
-        PlayerCameraHandler.Instance.Initialize();
-
-        GetComponent<PlayerMovementHandler>().enabled = true;
-
         gameObject.tag = "Player";
 
         if(UserReferencePersistent.Instance == null)
         {
-            GameObject userRef = new GameObject("UserReferncePresistent");
+            GameObject userRef = new GameObject("UserReferencePersistent");
             userRef.AddComponent<UserReferencePersistent>();
         }
         UserReferencePersistent.Instance.AssignPlayerGameObject(gameObject);
+
+        if (IsFlyableController)
+        {
+            if (TryGetComponent(out BasicBehaviour basicBehaviour))
+            {
+                basicBehaviour.enabled = true;
+                basicBehaviour.CamInit();
+            }
+            if (TryGetComponent(out MoveBehaviour moveBehaviour)) moveBehaviour.enabled = true;
+            if (TryGetComponent(out FlyBehaviour flyBehaviour)) flyBehaviour.enabled = true;
+        }
+        else
+        {
+            PlayerCameraHandler.Instance.Initialize();
+            if (TryGetComponent(out PlayerMovementHandler movementHandler)) movementHandler.enabled = true;
+#if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
+            if (TryGetComponent(out PlayerInput playerInput)) playerInput.enabled = true;
+#endif
+        }
 
         EventHandler.OnLocalClientCompleteSetup();
 
@@ -114,6 +126,15 @@ public class NetworkedPlayerComponent : NetworkBehaviour
             EventHandler.UserMicMuteUpdateEvent -= EventHandler_UserMicMuteUpdateEvent;
             EventHandler.UserShareScreenStartedEvent -= EventHandler_UserShareScreenStartedEvent;
             EventHandler.UserShareScreenStoppedEvent -= EventHandler_UserShareScreenStoppedEvent;
+
+            if (IsFlyableController &&
+                PlayerCameraHandler.Instance != null &&
+                PlayerCameraHandler.Instance.MainVirtualCamera != null &&
+                PlayerCameraHandler.Instance.MainVirtualCamera.TryGetComponent(out ThirdPersonOrbitCamBasic flyableCamera))
+            {
+                flyableCamera.player = null;
+                flyableCamera.enabled = false;
+            }
         }
 
         AvatarLoaderEvent.AvatarLoadedEvent -= AvatarLoaderEvent_AvatarLoadedEvent;
@@ -258,11 +279,7 @@ public class NetworkedPlayerComponent : NetworkBehaviour
 
         if (IsServerInitialized)
         {
-#if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
-            GetComponent<PlayerInput>().enabled = false;
-#endif
-            GetComponent<ThirdPersonController>().enabled = false;
-            GetComponent<StarterAssetsInputs>().enabled = false;
+            DisableLocalMovement();
 
             foreach (var local in localObject)
             {
@@ -276,6 +293,24 @@ public class NetworkedPlayerComponent : NetworkBehaviour
                 renderer.enabled = false;
             }
         }
+    }
+
+    private void DisableLocalMovement()
+    {
+        if (IsFlyableController)
+        {
+            if (TryGetComponent(out BasicBehaviour basicBehaviour)) basicBehaviour.enabled = false;
+            if (TryGetComponent(out MoveBehaviour moveBehaviour)) moveBehaviour.enabled = false;
+            if (TryGetComponent(out FlyBehaviour flyBehaviour)) flyBehaviour.enabled = false;
+            return;
+        }
+
+#if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
+        if (TryGetComponent(out PlayerInput playerInput)) playerInput.enabled = false;
+#endif
+        if (TryGetComponent(out ThirdPersonController thirdPersonController)) thirdPersonController.enabled = false;
+        if (TryGetComponent(out StarterAssetsInputs starterAssetsInputs)) starterAssetsInputs.enabled = false;
+        if (TryGetComponent(out PlayerMovementHandler movementHandler)) movementHandler.enabled = false;
     }
 
     [Server]

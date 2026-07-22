@@ -243,7 +243,9 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: 504112381}
   _networkObjectCache: {fileID: 504112381}
   spawner: {fileID: 1120301416}
-  playerPrefab: {fileID: 7537613859411478104, guid: ce5933fe0c9980845be5316f2c4b437c, type: 3}
+  standardPlayerPrefab: {fileID: 7537613859411478104, guid: ce5933fe0c9980845be5316f2c4b437c, type: 3}
+  flyablePlayerPrefab: {fileID: 7537613859411478104, guid: 10b79f59281f9784a92b396a5572443f, type: 3}
+  playerTypeController: {fileID: 900000003}
 --- !u!4 &504112383
 Transform:
   m_ObjectHideFlags: 0
@@ -846,6 +848,52 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &900000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 900000002}
+  - component: {fileID: 900000003}
+  m_Layer: 0
+  m_Name: PlayerTypeController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &900000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &900000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eea5b9b8bbce0314babfddaa05c08320, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  flyablePlayer: 0
+  allowCursorToggle: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -857,3 +905,4 @@ SceneRoots:
   - {fileID: 504112383}
   - {fileID: 2027922788}
   - {fileID: 490138023}
+  - {fileID: 900000002}

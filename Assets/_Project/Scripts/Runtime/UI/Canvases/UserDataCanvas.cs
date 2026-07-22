@@ -7,6 +7,9 @@ public class UserDataCanvas : MonoBehaviour
     [SerializeField] private CanvasGroup container;
     [SerializeField] private TMP_Text userNameText;
     [SerializeField] private RawImage avatarImage;
+    [SerializeField] private TMP_Text mangosGoldText;
+
+    public int MangosGold { get; private set; }
 
     private void Awake()
     {
@@ -41,6 +44,15 @@ public class UserDataCanvas : MonoBehaviour
     public void SetUserNameText(string text)
     {
         userNameText.text = text;
+    }
+
+    public void SetMangosGold(int amount)
+    {
+        MangosGold = amount;
+        if (mangosGoldText != null)
+        {
+            mangosGoldText.text = $"MANGOs Gold: {amount}";
+        }
     }
 
     public void OpenCanvas()

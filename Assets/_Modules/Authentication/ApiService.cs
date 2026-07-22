@@ -1,12 +1,60 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
-using System;
-using System.Collections.Generic;
 
 namespace MANGOsFramework.Experiment
 {
-    public class ApiService
+    public enum ApiErrorKind
+    {
+        Http,
+        Network,
+        Timeout,
+        Cancelled,
+        InvalidJson,
+        MissingData,
+        UnexpectedEnvelope,
+        InvalidAuthentication,
+        UnsupportedAuthenticationMode,
+        SecurityConfiguration
+    }
+
+    [Serializable]
+    public sealed class ApiError
+    {
+        public ApiErrorKind kind;
+        public long statusCode;
+        public string message;
+
+        public ApiError(ApiErrorKind kind, string message, long statusCode = 0)
+        {
+            this.kind = kind;
+            this.message = message;
+            this.statusCode = statusCode;
+        }
+
+        public string ToSafeMessage()
+        {
+            return statusCode > 0 ? $"HTTP {statusCode}: {message}" : message;
+        }
+    }
+
+    public sealed class ApiRequestOptions
+    {
+        public int TimeoutSeconds = 20;
+        public CancellationToken CancellationToken = CancellationToken.None;
+    }
+
+    public interface IApiEnvelope
+    {
+        string Status { get; }
+        bool HasData { get; }
+    }
+
+    public static class ApiService
     {
         public static void PostJson<T>(
             MonoBehaviour runner,
@@ -15,6 +63,7 @@ namespace MANGOsFramework.Experiment
             Dictionary<string, string> headers,
             Action<T> onSuccess,
             Action<string> onError)
+            where T : class
         {
             runner.StartCoroutine(PostCoroutine(url, jsonBody, headers, onSuccess, onError));
         }
@@ -25,43 +74,16 @@ namespace MANGOsFramework.Experiment
             Dictionary<string, string> headers,
             Action<T> onSuccess,
             Action<string> onError)
+            where T : class
         {
-            using (UnityWebRequest request = new UnityWebRequest(url, "POST"))
-            {
-                byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonBody);
-                request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-                request.downloadHandler = new DownloadHandlerBuffer();
-                request.SetRequestHeader("Content-Type", "application/json");
-
-                if (headers != null)
-                {
-                    foreach (var pair in headers)
-                    {
-                        request.SetRequestHeader(pair.Key, pair.Value);
-                        yield return null;
-                    }
-                }
-
-                yield return request.SendWebRequest();
-
-                if (request.result == UnityWebRequest.Result.Success)
-                {
-                    string responseJson = request.downloadHandler.text;
-                    try
-                    {
-                        T result = JsonUtility.FromJson<T>(responseJson);
-                        onSuccess?.Invoke(result);
-                    }
-                    catch (Exception ex)
-                    {
-                        onError?.Invoke("Deserialization failed: " + ex.Message);
-                    }
-                }
-                else
-                {
-                    onError?.Invoke($"Error {request.responseCode}: {request.error}");
-                }
-            }
+            yield return SendCoroutine(
+                UnityWebRequest.kHttpVerbPOST,
+                url,
+                jsonBody,
+                headers,
+                new ApiRequestOptions(),
+                onSuccess,
+                error => onError?.Invoke(error.ToSafeMessage()));
         }
 
         public static void GetJson<T>(
@@ -70,6 +92,7 @@ namespace MANGOsFramework.Experiment
             Dictionary<string, string> headers,
             Action<T> onSuccess,
             Action<string> onError)
+            where T : class
         {
             runner.StartCoroutine(GetCoroutine(url, headers, onSuccess, onError));
         }
@@ -79,49 +102,199 @@ namespace MANGOsFramework.Experiment
             Dictionary<string, string> headers,
             Action<T> onSuccess,
             Action<string> onError)
+            where T : class
         {
-            using (UnityWebRequest request = UnityWebRequest.Get(url))
+            yield return SendCoroutine(
+                UnityWebRequest.kHttpVerbGET,
+                url,
+                null,
+                headers,
+                new ApiRequestOptions(),
+                onSuccess,
+                error => onError?.Invoke(error.ToSafeMessage()));
+        }
+
+        public static IEnumerator SendCoroutine<T>(
+            string method,
+            string url,
+            string jsonBody,
+            Dictionary<string, string> headers,
+            ApiRequestOptions options,
+            Action<T> onSuccess,
+            Action<ApiError> onError)
+            where T : class
+        {
+            options = options ?? new ApiRequestOptions();
+
+            using (UnityWebRequest request = new UnityWebRequest(url, method))
             {
-                request.SetRequestHeader("Content-Type", "application/json");
+                request.downloadHandler = new DownloadHandlerBuffer();
+                request.timeout = Mathf.Max(1, options.TimeoutSeconds);
+                request.SetRequestHeader("Accept", "application/json");
 
-                if(headers != null)
+                if (jsonBody != null)
                 {
-                    foreach (var pair in headers)
+                    request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(jsonBody));
+                    request.SetRequestHeader("Content-Type", "application/json");
+                }
+
+                if (headers != null)
+                {
+                    foreach (KeyValuePair<string, string> pair in headers)
                     {
-                        request.SetRequestHeader(pair.Key, pair.Value);
-                        yield return null;
+                        if (!string.IsNullOrWhiteSpace(pair.Key) && pair.Value != null)
+                        {
+                            request.SetRequestHeader(pair.Key, pair.Value);
+                        }
                     }
                 }
 
-                yield return request.SendWebRequest();
-
-                if(request.result == UnityWebRequest.Result.Success)
+                UnityWebRequestAsyncOperation operation = request.SendWebRequest();
+                while (!operation.isDone)
                 {
-                    try
+                    if (options.CancellationToken.IsCancellationRequested)
                     {
-                        T result = JsonUtility.FromJson<T>(request.downloadHandler.text);
-                        onSuccess?.Invoke(result);
-                    }catch (Exception ex)
-                    {
-                        onError?.Invoke("JSON parse error: " + ex.Message);
+                        request.Abort();
+                        onError?.Invoke(new ApiError(ApiErrorKind.Cancelled, "The request was cancelled."));
+                        yield break;
                     }
+
+                    yield return null;
                 }
-                else
+
+                if (options.CancellationToken.IsCancellationRequested)
                 {
-                    onError?.Invoke($"Error: {request.responseCode} - {request.error}");
+                    onError?.Invoke(new ApiError(ApiErrorKind.Cancelled, "The request was cancelled."));
+                    yield break;
+                }
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    onError?.Invoke(CreateRequestError(request));
+                    yield break;
+                }
+
+                if (!TryDeserialize(request.downloadHandler.text, out T result, out ApiError parseError))
+                {
+                    onError?.Invoke(parseError);
+                    yield break;
+                }
+
+                onSuccess?.Invoke(result);
+            }
+        }
+
+        public static bool TryDeserialize<T>(string json, out T result, out ApiError error)
+            where T : class
+        {
+            result = null;
+            error = null;
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                error = new ApiError(ApiErrorKind.MissingData, "The API returned an empty response.");
+                return false;
+            }
+
+            try
+            {
+                result = JsonUtility.FromJson<T>(json);
+            }
+            catch (Exception)
+            {
+                error = new ApiError(ApiErrorKind.InvalidJson, "The API returned invalid JSON.");
+                return false;
+            }
+
+            if (result == null)
+            {
+                error = new ApiError(ApiErrorKind.InvalidJson, "The API response could not be parsed.");
+                return false;
+            }
+
+            if (result is IApiEnvelope envelope)
+            {
+                if (string.IsNullOrWhiteSpace(envelope.Status))
+                {
+                    error = new ApiError(ApiErrorKind.UnexpectedEnvelope, "The API response is missing its status field.");
+                    return false;
+                }
+
+                if (!string.Equals(envelope.Status, "success", StringComparison.OrdinalIgnoreCase))
+                {
+                    error = new ApiError(ApiErrorKind.Http, "The API rejected the request.");
+                    return false;
+                }
+
+                if (!envelope.HasData)
+                {
+                    error = new ApiError(ApiErrorKind.MissingData, "The API response is missing its data field.");
+                    return false;
                 }
             }
+
+            return true;
+        }
+
+        public static ApiError CreateHttpError(long statusCode, string transportMessage = null)
+        {
+            ApiErrorKind kind = statusCode == 401
+                ? ApiErrorKind.InvalidAuthentication
+                : ApiErrorKind.Http;
+
+            string message;
+            switch (statusCode)
+            {
+                case 400:
+                    message = "The request was invalid.";
+                    break;
+                case 401:
+                    message = "The authentication state is missing, invalid, or expired.";
+                    break;
+                case 403:
+                    message = "The authenticated user is not allowed to perform this action.";
+                    break;
+                case 404:
+                    message = "The requested resource was not found.";
+                    break;
+                default:
+                    message = string.IsNullOrWhiteSpace(transportMessage)
+                        ? "The API request failed."
+                        : transportMessage;
+                    break;
+            }
+
+            return new ApiError(kind, message, statusCode);
+        }
+
+        private static ApiError CreateRequestError(UnityWebRequest request)
+        {
+            if (request.result == UnityWebRequest.Result.ProtocolError)
+            {
+                return CreateHttpError(request.responseCode);
+            }
+
+            if (string.Equals(request.error, "Request timeout", StringComparison.OrdinalIgnoreCase) ||
+                request.error?.IndexOf("timed out", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return new ApiError(ApiErrorKind.Timeout, "The API request timed out.");
+            }
+
+            return new ApiError(ApiErrorKind.Network, "The API could not be reached.");
         }
     }
 
     [Serializable]
-    public class Response<T> where T : class
+    public class Response<T> : IApiEnvelope where T : class
     {
+        public string status;
         public string time;
         public T data;
+
+        public string Status => status;
+        public bool HasData => data != null;
     }
 
-    #region USER_GET_ONE
     [Serializable]
     public class UserGetOneResponse
     {
@@ -130,57 +303,88 @@ namespace MANGOsFramework.Experiment
         [Serializable]
         public class UserData
         {
-            public int id;
-            public string serialNumber;
+            public string id;
             public string firstName;
             public string lastName;
             public string email;
-            public string isEmailVerified;
+            public string emailVerifiedAt;
+            public string emailVerificationSentAt;
+            public string affiliation;
+            public string birthdate;
+            public string gender;
+            public string nationality;
+            public string avatarImageUrl;
             public string createdAt;
             public string updatedAt;
-            public AvatarsData[] Avatars;
-            public GeneralInformationData[] GeneralInformation;
+            public LoginMethodsData loginMethods;
+            public RoleData[] Roles;
         }
 
         [Serializable]
-        public class AvatarsData
+        public class LoginMethodsData
         {
-            public int id;
-            public string url;
-            public string userId;
-            public string isDefault;
-            public string createdAt;
-            public string updatedAt;
+            public LoginMethodData email;
+            public LoginMethodData line;
         }
 
         [Serializable]
-        public class GeneralInformationData
+        public class LoginMethodData
         {
-            public int id;
-            public string position;
-            public string country;
-            public string organization;
-            public string brithDate;
-            public string createdAt;
-            public string updatedAt;
+            public bool configured;
+            public bool verified;
+            public bool connected;
+        }
+
+        [Serializable]
+        public class RoleData
+        {
+            public string id;
+            public string name;
         }
     }
-    #endregion
 
-    #region Get AuthCode
     [Serializable]
-    public class GetAuthCodeReponse
+    public class AvatarListResponse
+    {
+        public int Count;
+        public AvatarData[] Avatars;
+    }
+
+    [Serializable]
+    public class AvatarData
+    {
+        public int id;
+        public string url;
+        public string userId;
+        public string avatarType;
+        public bool isDefault;
+        public string createdAt;
+        public string updatedAt;
+    }
+
+    [Serializable]
+    public class GetAuthCodeForm
+    {
+        public string email;
+        public string password;
+    }
+
+    [Serializable]
+    public class GetAuthCodeResponse
     {
         public string redirectUrl;
         public string metaverseClientId;
-        public string scope;
         public string authCode;
         public string state;
         public string authCodeExpiresAt;
     }
-    #endregion
 
-    #region AUTHTOACCESS
+    [Obsolete("Use GetAuthCodeResponse.")]
+    [Serializable]
+    public class GetAuthCodeReponse : GetAuthCodeResponse
+    {
+    }
+
     [Serializable]
     public class AuthToAccessForm
     {
@@ -197,22 +401,136 @@ namespace MANGOsFramework.Experiment
         public string userId;
         public string type;
     }
-    #endregion
 
-    #region Get Basic
     [Serializable]
     public class GetBasicForm
     {
-        public string metaverseClientId;
+        public string id;
         public string secret;
     }
 
     [Serializable]
     public class GetBasicResponse
     {
-        public string message;
+        public string Basic;
     }
-    #endregion
+
+    [Serializable]
+    public class MangosGoldResponse
+    {
+        public WalletData UserMgoGoldWallet;
+
+        [Serializable]
+        public class WalletData
+        {
+            public int id;
+            public string userId;
+            public int amount;
+            public string createdAt;
+            public string updatedAt;
+        }
+    }
+
+    [Serializable]
+    public class FriendListResponse
+    {
+        public FriendData[] Friends;
+    }
+
+    [Serializable]
+    public class FriendRequestListResponse
+    {
+        public FriendData[] FriendRequests;
+    }
+
+    [Serializable]
+    public class RequestedFriendListResponse
+    {
+        public FriendData[] RequestedFriends;
+    }
+
+    [Serializable]
+    public class FriendData
+    {
+        public int id;
+        public string requesterId;
+        public string addresseeId;
+        public string status;
+        public string createdAt;
+        public string updatedAt;
+        public UserGetOneResponse.UserData Requester;
+        public UserGetOneResponse.UserData Addressee;
+    }
+
+    [Serializable]
+    public class FriendProfileResponse
+    {
+        public UserGetOneResponse.UserData User;
+        public int Count;
+        public AvatarData[] Avatars;
+    }
+
+    [Serializable]
+    public class MarketplaceListResponse
+    {
+        public int Count;
+        public MarketplaceItemData[] MarketplaceItems;
+    }
+
+    [Serializable]
+    public class MarketplaceItemResponse
+    {
+        public MarketplaceItemData MarketplaceItem;
+    }
+
+    [Serializable]
+    public class MarketplaceItemData
+    {
+        public int id;
+        public string name;
+        public string description;
+        public string category;
+        public int price;
+        public string modelUrl;
+        public string sellerId;
+        public string receiverId;
+        public bool isActive;
+        public string createdAt;
+        public string updatedAt;
+        public UserGetOneResponse.UserData Seller;
+        public UserGetOneResponse.UserData Receiver;
+    }
+
+    [Serializable]
+    public class MarketplaceBuyForm
+    {
+        public int itemId;
+    }
+
+    [Serializable]
+    public class MarketplacePurchaseResponse
+    {
+        public ItemPurchaseHistoryData ItemPurchaseHistory;
+        public MangosGoldResponse.WalletData UserMgoGoldWallet;
+    }
+
+    [Serializable]
+    public class ItemPurchaseHistoryData
+    {
+        public int id;
+        public int itemId;
+        public string userId;
+        public string sellerId;
+        public string receiverId;
+        public int pricePaid;
+        public int buyerBalanceBefore;
+        public int buyerBalanceAfter;
+        public int receiverBalanceBefore;
+        public int receiverBalanceAfter;
+        public string createdAt;
+        public string updatedAt;
+        public MarketplaceItemData Item;
+    }
 
     [Serializable]
     public class APIForm<T>
@@ -220,5 +538,3 @@ namespace MANGOsFramework.Experiment
         public T form;
     }
 }
-
-

@@ -3,6 +3,7 @@ using FishNet.Connection;
 using FishNet.Object;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnitySceneManager = UnityEngine.SceneManagement.SceneManager;
 
 
@@ -11,7 +12,10 @@ public class NetworkedPlayerSpawner : NetworkBehaviour
     #region Serialized
     [Header("Spawning")]
     [SerializeField] private AreaSpawner spawner;
-    [SerializeField] private NetworkObject playerPrefab = null;
+    [FormerlySerializedAs("playerPrefab")]
+    [SerializeField] private NetworkObject standardPlayerPrefab = null;
+    [SerializeField] private NetworkObject flyablePlayerPrefab = null;
+    [SerializeField] private PlayerTypeController playerTypeController = null;
     #endregion
 
     /// <summary>
@@ -24,6 +28,8 @@ public class NetworkedPlayerSpawner : NetworkBehaviour
     /// </summary>
     private List<NetworkObject> spawnedPlayerObjects = new();
 
+    public NetworkObject SelectedPlayerPrefab => ResolvePlayerPrefab();
+
     private void OnDestroy()
     {
         if (this.worldManager != null)
@@ -35,6 +41,11 @@ public class NetworkedPlayerSpawner : NetworkBehaviour
     public void FirstInitialize(WorldManager worldManager)
     {
         this.worldManager = worldManager;
+
+        if (playerTypeController == null)
+        {
+            playerTypeController = FindObjectOfType<PlayerTypeController>(true);
+        }
 
         this.worldManager.OnClientJoinedWorld += OnClientJoinedWorld;
         this.worldManager.OnClientLeftWorld += OnClientLeftWorld;
@@ -68,9 +79,16 @@ public class NetworkedPlayerSpawner : NetworkBehaviour
     }
     private void SpawnPlayer(NetworkConnection conn, WorldDetails worldDetails)
     {
+        NetworkObject selectedPlayerPrefab = ResolvePlayerPrefab();
+        if (selectedPlayerPrefab == null)
+        {
+            Debug.LogError("NetworkedPlayerSpawner cannot spawn because the selected player prefab is not assigned.");
+            return;
+        }
+
         Vector3 spawnPosition = spawner.GetRandomSpawn();
 
-        NetworkObject nob = Instantiate(playerPrefab, spawnPosition, Quaternion.identity);
+        NetworkObject nob = Instantiate(selectedPlayerPrefab, spawnPosition, Quaternion.identity);
 
         UnitySceneManager.MoveGameObjectToScene(nob.gameObject, gameObject.scene);
 
@@ -98,6 +116,12 @@ public class NetworkedPlayerSpawner : NetworkBehaviour
 
         SetupPlayer(nob, worldDetails);
 
+    }
+
+    private NetworkObject ResolvePlayerPrefab()
+    {
+        bool useFlyablePlayer = playerTypeController != null && playerTypeController.FlyablePlayer;
+        return useFlyablePlayer ? flyablePlayerPrefab : standardPlayerPrefab;
     }
     private void SetupPlayer(NetworkObject nob, WorldDetails worldDetails)
     {

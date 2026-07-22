@@ -1,10 +1,6 @@
-#if UNITY_WEBGL && !UNITY_EDITOR
-    using System.Runtime.InteropServices;
-#endif
-
 using System;
 using System.Collections;
-using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 
 namespace MANGOsFramework.Experiment
@@ -17,415 +13,337 @@ namespace MANGOsFramework.Experiment
         [Header("References")]
         [SerializeField] private AuthenticationCanvas authCanvas;
 
-        [Header("Flags")]        
+        [Header("Flags")]
         public bool HasLogedIn;
 
-        [Header("DefaultSettings")]
+        [Header("Default Settings")]
         public string defaultAvatarLink;
         public string defaultName;
 
-        [Header("OAuth Settings")]
+        [Header("Authentication Settings")]
         [SerializeField] private AuthConfig config;
-        [SerializeField] private string mockAuthCode;
-        private const string AUTH_TO_ACCESS_ROUTE = "/o-auth/auth-to-access";
-        private const string HOST = "https://api.mangosgo.com/api/v2";
-        private const string AUTH_HOST = "https://authenticate.mangosgo.com/api/v2";
-#if UNITY_WEBGL && !UNITY_EDITOR
-        private string OAUTH_LOGIN_URL => $"https://auth.mangosgo.com/oauth-login?metaverseClientId={config.METAVERSE_CLIENT_ID}&scope=users_get-one";
-#endif
-        private string _basic;
 
-        public Response<AuthToAccessResponse> accessResponse = new();
-        public Response<UserGetOneResponse> userResponse = new();
+        public Response<AuthToAccessResponse> accessResponse = new Response<AuthToAccessResponse>();
+        public Response<UserGetOneResponse> userResponse = new Response<UserGetOneResponse>();
+        public Response<AvatarListResponse> avatarResponse = new Response<AvatarListResponse>();
+        public Response<MangosGoldResponse> goldResponse = new Response<MangosGoldResponse>();
 
-#if UNITY_WEBGL && !UNITY_EDITOR
-        [DllImport("__Internal")]
-        private static extern void OpenOAuthPopup(string gameObject, string callbackMethod, string authUrl, string redirUrl);
+        public AuthenticationMode ResolvedAuthenticationMode =>
+            apiClient != null ? apiClient.ResolvedMode : AuthenticationMode.ThirdPartyOAuth;
 
-        [DllImport("__Internal")]
-        private static extern int HasLoggedIn();
+        public MangosApiClient ApiClient => apiClient;
 
-        [DllImport("__Internal")]
-        private static extern void Logout();
+        private MangosApiClient apiClient;
+        private CancellationTokenSource lifetimeCancellation;
 
-        [DllImport("__Internal")]
-        private static extern void SaveToLocalStorage(string key, string value);
+        private void Awake()
+        {
+            apiClient = GetComponent<MangosApiClient>();
+            if (apiClient == null)
+            {
+                apiClient = gameObject.AddComponent<MangosApiClient>();
+            }
 
-        [DllImport("__Internal")]
-        private static extern string GetLocalStorage(string key);
-#endif
+            apiClient.Configure(config);
+            lifetimeCancellation = new CancellationTokenSource();
+        }
 
         private void Start()
         {
-            if(PersistentCanvas.LoadingCanvas != null) PersistentCanvas.LoadingCanvas.ToggleLoadingScreen(false);
-            UpdateLoadingText("Check Login Session ...");
-
-            HasLogedIn = CheckHasLoggedIn();
-
-            if(HasLogedIn)
+            if (PersistentCanvas.LoadingCanvas != null)
             {
-                string _accessToken = string.Empty;
-                string _userId = string.Empty;
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-                _accessToken = GetLocalStorage("metaauth_accessToken");
-                _userId = GetLocalStorage("metaauth_userId");
-#endif
-
-                if (string.IsNullOrEmpty(_accessToken) || string.IsNullOrEmpty(_userId))
-                {
-                    CommonErrorFallback("Failed, cannot get accessToken or userId from local storage.");
-                    authCanvas.Init(false);
-                    return;
-                }
-
-                StartCoroutine(ApiService.GetCoroutine<Response<UserGetOneResponse>>(
-                    url: HOST + "/users/get-one/" + _userId,
-                    headers: new Dictionary<string, string>()
-                    {
-                        { "Authorization", "Bearer " + _accessToken }
-                    },
-                    onSuccess: (response) =>
-                    {
-                        userResponse = response;
-                        UpdateLoadingText($"Welcome {userResponse.data.User.firstName} !");
-                        authCanvas.DisplayUsername(userResponse.data.User.firstName);
-                        authCanvas.Init(true);
-
-                    },
-                    onError: (error) =>
-                    {
-                        CommonErrorFallback(error);
-                    }
-                    ));
+                PersistentCanvas.LoadingCanvas.ToggleLoadingScreen(false);
             }
-            else
+
+            if (authCanvas == null)
             {
-                authCanvas.Init(false);
+                Debug.LogError("AuthenticationCanvas is not assigned to Launcher.");
+                return;
+            }
+
+            authCanvas.Init(false);
+            StartCoroutine(CheckCurrentSession());
+        }
+
+        private IEnumerator CheckCurrentSession()
+        {
+            UpdateLoadingText("Checking MANGOs session...");
+
+            if (apiClient.ResolvedMode == AuthenticationMode.ThirdPartyOAuth &&
+                !apiClient.HasValidOAuthAccessToken)
+            {
+                SetAnonymousState("Connect to MANGOs when you need an authenticated feature.");
+                yield break;
+            }
+
+            Response<UserGetOneResponse> currentUserResponse = null;
+            ApiError sessionError = null;
+            yield return apiClient.GetCurrentUser(
+                response => currentUserResponse = response,
+                error => sessionError = error,
+                lifetimeCancellation.Token);
+
+            if (sessionError != null)
+            {
+                if (sessionError.kind == ApiErrorKind.InvalidAuthentication || sessionError.statusCode == 401)
+                {
+                    apiClient.ClearLocalAuthenticationState();
+                    SetAnonymousState("No active MANGOs session. You can continue as a guest.");
+                }
+                else
+                {
+                    SetAnonymousState(sessionError.ToSafeMessage());
+                }
+                yield break;
+            }
+
+            userResponse = currentUserResponse;
+            HasLogedIn = true;
+            yield return LoadAuthenticatedUserResources();
+
+            string firstName = userResponse.data.User.firstName;
+            authCanvas.DisplayUsername(string.IsNullOrWhiteSpace(firstName) ? "MANGOs user" : firstName);
+            authCanvas.Init(true);
+            UpdateLoadingText("MANGOs session is ready.");
+        }
+
+        private IEnumerator LoadAuthenticatedUserResources()
+        {
+            ApiError avatarError = null;
+            yield return apiClient.GetAvatars(
+                response => avatarResponse = response,
+                error => avatarError = error,
+                lifetimeCancellation.Token);
+
+            if (avatarError != null)
+            {
+                avatarResponse = new Response<AvatarListResponse>();
+                Debug.LogWarning("MANGOs avatars could not be loaded: " + avatarError.ToSafeMessage());
+            }
+
+            ApiError walletError = null;
+            yield return apiClient.GetWallet(
+                response => goldResponse = response,
+                error => walletError = error,
+                lifetimeCancellation.Token);
+
+            if (walletError != null)
+            {
+                goldResponse = new Response<MangosGoldResponse>();
+                Debug.LogWarning("MANGOs Gold wallet could not be loaded: " + walletError.ToSafeMessage());
             }
         }
 
         public void TryLogin()
         {
-#if UNITY_WEBGL && !UNITY_EDITOR
-            OpenOAuthPopup(gameObject.name, "OnAuthSuccess", OAUTH_LOGIN_URL, config.REDIRECT_URL);
-#elif UNITY_EDITOR
-            Debug.Log("OAuth login only works in WebGL builds.");
-            UpdateLoadingText("OAuth login only works in WebGL builds. Runs Mock Login");
-            StartCoroutine(RunMockLogin());
-#else
-            return;
-#endif
+            if (apiClient.ResolvedMode == AuthenticationMode.FirstPartyCookieSso)
+            {
+                UpdateLoadingText("Redirecting to MANGOs login...");
+                apiClient.RedirectToFirstPartyLogin();
+                return;
+            }
+
+            CommonErrorFallback(
+                "Third-party OAuth requires a trusted code-exchange backend. " +
+                "Apply its documented token response with ApplyOAuthTokens after the secure exchange completes.");
         }
 
-        private bool CheckHasLoggedIn()
+        public bool ApplyOAuthTokens(AuthToAccessResponse tokens)
         {
-#if UNITY_WEBGL && !UNITY_EDITOR
-            return HasLoggedIn() == 1;
-#else
-            return false;
-#endif
+            if (!apiClient.ApplyOAuthTokens(tokens, out ApiError error))
+            {
+                CommonErrorFallback(error.ToSafeMessage());
+                return false;
+            }
+
+            accessResponse = new Response<AuthToAccessResponse>
+            {
+                status = "success",
+                data = tokens
+            };
+
+            StopAllCoroutines();
+            StartCoroutine(CheckCurrentSession());
+            return true;
+        }
+
+        public void DisconnectLocal()
+        {
+            apiClient.ClearLocalAuthenticationState();
+            HasLogedIn = false;
+            userResponse = new Response<UserGetOneResponse>();
+            avatarResponse = new Response<AvatarListResponse>();
+            goldResponse = new Response<MangosGoldResponse>();
+            authCanvas.ResetCanvas();
+            UpdateLoadingText("Disconnected from this application.");
+        }
+
+        public void LogoutFromMangosGlobally()
+        {
+            StartCoroutine(apiClient.GlobalLogout(
+                () =>
+                {
+                    DisconnectLocal();
+                    UpdateLoadingText("Logged out from MANGOs.");
+                },
+                error => CommonErrorFallback(error.ToSafeMessage())));
+        }
+
+        [Obsolete("The legacy popup flow used obsolete endpoints. Use a trusted OAuth exchange backend and ApplyOAuthTokens.")]
+        public void OnAuthSuccess(string authCode)
+        {
+            CommonErrorFallback(
+                "An authorization code was received, but secure OAuth exchange is not configured. " +
+                "Do not embed the client secret in this Unity build.");
+        }
+
+        private void ApplyAuthenticatedUserToRuntime()
+        {
+            UserGetOneResponse.UserData user = userResponse?.data?.User;
+            if (user == null || UserReferencePersistent.Instance == null)
+            {
+                CommonErrorFallback("Authenticated user data is unavailable.");
+                return;
+            }
+
+            string displayName = string.IsNullOrWhiteSpace(user.firstName)
+                ? (string.IsNullOrWhiteSpace(user.email) ? defaultName : user.email)
+                : user.firstName;
+            UserReferencePersistent.Instance.SetUserName(displayName);
+
+            AvatarData selectedAvatar = null;
+            AvatarData[] avatars = avatarResponse?.data?.Avatars;
+            if (avatars != null)
+            {
+                for (int index = 0; index < avatars.Length; index++)
+                {
+                    AvatarData avatar = avatars[index];
+                    if (avatar == null || string.IsNullOrWhiteSpace(avatar.url))
+                    {
+                        continue;
+                    }
+
+                    avatar.url = apiClient.ResolveAssetUrl(avatar.url);
+                    if (AvatarSystem.Instance != null)
+                    {
+                        AvatarSystem.Instance.AddNewUserAvatar(avatar.url);
+                    }
+
+                    if (selectedAvatar == null || avatar.isDefault)
+                    {
+                        selectedAvatar = avatar;
+                    }
+                }
+            }
+
+            string avatarUrl = selectedAvatar != null
+                ? selectedAvatar.url
+                : apiClient.ResolveAssetUrl(defaultAvatarLink);
+            UserReferencePersistent.Instance.SetGLTFLink(
+                string.IsNullOrWhiteSpace(avatarUrl) ? "default" : avatarUrl);
+
+            if (goldResponse?.data?.UserMgoGoldWallet != null)
+            {
+                UserReferencePersistent.Instance.SetMangosGold(goldResponse.data.UserMgoGoldWallet.amount);
+            }
+
+            EventHandler.OnClientLogin();
+        }
+
+        private void SetAnonymousState(string message)
+        {
+            HasLogedIn = false;
+            authCanvas.Init(false);
+            UpdateLoadingText(message);
         }
 
         private void CommonErrorFallback(string errorMessage, Action fallback = null)
         {
-            Debug.LogError("Error: " + errorMessage);
+            Debug.LogError("MANGOs authentication error: " + errorMessage);
             authCanvas.ResetCanvas();
+            UpdateLoadingText(errorMessage);
             fallback?.Invoke();
         }
 
-        #region Mock
-
-#if UNITY_EDITOR
-        private IEnumerator RunMockLogin()
-        {
-            bool success = false;
-
-            yield return StartCoroutine(ApiService.PostCoroutine<Response<GetBasicResponse>>(
-                 url: HOST + "/public/generate-basic",
-                 jsonBody: JsonUtility.ToJson(new GetBasicForm()
-                 {
-                     metaverseClientId = config.METAVERSE_CLIENT_ID,
-                     secret = config.SECRET
-                 }),
-                 headers: null,
-                 onSuccess: (response) =>
-                 {
-                     _basic = response.data.message;
-                     success = true;
-                 },
-                 onError: (error) =>
-                 {
-                     CommonErrorFallback(error);
-                     success = false;
-                 }));
-
-
-            if (!success) yield break;
-            
-            yield return StartCoroutine(ApiService.PostCoroutine<Response<AuthToAccessResponse>>(
-                url: AUTH_HOST + AUTH_TO_ACCESS_ROUTE,
-                jsonBody: JsonUtility.ToJson(new AuthToAccessForm()
-                {
-                    authCode = mockAuthCode
-                }),
-                headers: new Dictionary<string, string>()
-                {
-                    {"authorization", $"Basic {_basic}"}
-                },
-                onSuccess: (response) =>
-                {
-                    accessResponse = response;
-                    UpdateLoadingText("Get accessToken success!");
-                    success = true;
-                },
-                onError: (error) =>
-                {
-                    CommonErrorFallback(error);
-                    success = false;
-                }));
-
-            if (!success) yield break;
-
-            yield return StartCoroutine(ApiService.GetCoroutine<Response<UserGetOneResponse>>(
-                url: HOST + "/users/get-one/" + accessResponse.data.userId,
-                headers: new Dictionary<string, string>()
-                {
-                    { "Authorization", "Bearer " + accessResponse.data.accessToken }
-                },
-                onSuccess: (response) =>
-                {
-                    userResponse = response;
-                    UpdateLoadingText($"Welcome {userResponse.data.User.firstName} !");
-                    success = true;
-                },
-                onError: (error) =>
-                {
-                    CommonErrorFallback(error);
-                    success = false;
-                }
-                ));
-
-            if (success)
-            {
-                if(UserReferencePersistent.Instance != null)
-                {
-                    UserReferencePersistent.Instance.SetUserName(userResponse.data.User.firstName);
-                    UserReferencePersistent.Instance.SetGLTFLink(userResponse.data.User.Avatars[0].url);
-
-                    for (int i = 0; i < userResponse.data.User.Avatars.Length; i++)
-                    {
-                        AvatarSystem.Instance.AddNewUserAvatar(userResponse.data.User.Avatars[i].url);
-                        yield return null;
-                    }
-
-                    EventHandler.OnClientLogin();
-                }
-            }
-        }
-#endif
-#endregion
-
-        #region Login Canvas
-
         private void OnEnable()
         {
+            if (authCanvas == null)
+            {
+                return;
+            }
+
             authCanvas.OnLogin += AuthCanvas_OnLogin;
             authCanvas.OnLoginAsGuest += AuthCanvas_OnLoginAsGuest;
-
             authCanvas.OnContinueAsUser += AuthCanvas_OnContinueAsUser;
             authCanvas.OnLoginAsNewUser += AuthCanvas_OnLoginAsNewUser;
         }
 
         private void OnDisable()
         {
+            if (authCanvas == null)
+            {
+                return;
+            }
+
             authCanvas.OnLogin -= AuthCanvas_OnLogin;
             authCanvas.OnLoginAsGuest -= AuthCanvas_OnLoginAsGuest;
-
             authCanvas.OnContinueAsUser -= AuthCanvas_OnContinueAsUser;
             authCanvas.OnLoginAsNewUser -= AuthCanvas_OnLoginAsNewUser;
         }
 
         private void AuthCanvas_OnLoginAsNewUser()
         {
-#if UNITY_WEBGL && !UNITY_EDITOR
-            Logout();
-#endif
-            authCanvas.ResetCanvas();
+            DisconnectLocal();
         }
 
         private void AuthCanvas_OnContinueAsUser()
         {
-            if(userResponse != null)
-            {
-                if (UserReferencePersistent.Instance != null)
-                {
-                    UserReferencePersistent.Instance.SetUserName(userResponse.data.User.firstName);
-                    UserReferencePersistent.Instance.SetGLTFLink(userResponse.data.User.Avatars[0].url);
-
-                    for (int i = 0; i < userResponse.data.User.Avatars.Length; i++)
-                    {
-                        AvatarSystem.Instance.AddNewUserAvatar(userResponse.data.User.Avatars[i].url);
-                    }
-
-                    EventHandler.OnClientLogin();
-                }
-            }
+            ApplyAuthenticatedUserToRuntime();
         }
 
         private void AuthCanvas_OnLoginAsGuest(string guestName)
         {
-            UpdateLoadingText("User will join as Guest...");
-            if (UserReferencePersistent.Instance != null)
+            apiClient.ClearLocalAuthenticationState();
+            HasLogedIn = false;
+            UpdateLoadingText("Joining as a guest...");
+
+            if (UserReferencePersistent.Instance == null)
             {
-                if (!string.IsNullOrEmpty(guestName))
-                {
-                    UserReferencePersistent.Instance.SetUserName(guestName);
-                }
-                else
-                {
-                    UserReferencePersistent.Instance.SetUserName(defaultName);
-                }
-
-                if(AvatarSystem.Instance.AvatarUrls.Count > 0)
-                {
-                    UserReferencePersistent.Instance.SetGLTFLink(AvatarSystem.Instance.AvatarUrls[0]);
-                }
-                else
-                {
-                    if(!string.IsNullOrEmpty(defaultAvatarLink))
-                    {
-                        UserReferencePersistent.Instance.SetGLTFLink(defaultAvatarLink);
-                    }
-                    else
-                    {
-                        UserReferencePersistent.Instance.SetGLTFLink("default");
-                    }
-                }
-
-                EventHandler.OnClientLogin();
+                CommonErrorFallback("UserReferencePersistent is unavailable.");
+                return;
             }
+
+            UserReferencePersistent.Instance.SetUserName(
+                string.IsNullOrWhiteSpace(guestName) ? defaultName : guestName);
+
+            if (AvatarSystem.Instance != null && AvatarSystem.Instance.AvatarUrls.Count > 0)
+            {
+                UserReferencePersistent.Instance.SetGLTFLink(AvatarSystem.Instance.AvatarUrls[0]);
+            }
+            else
+            {
+                string fallbackAvatar = apiClient.ResolveAssetUrl(defaultAvatarLink);
+                UserReferencePersistent.Instance.SetGLTFLink(
+                    string.IsNullOrWhiteSpace(fallbackAvatar) ? "default" : fallbackAvatar);
+            }
+
+            EventHandler.OnClientLogin();
         }
 
         private void AuthCanvas_OnLogin()
         {
-            UpdateLoadingText("Try login... connecting to MetaAuth...");
             TryLogin();
         }
 
-        private void UpdateLoadingText(string _loadingString)
+        private void UpdateLoadingText(string message)
         {
-            authCanvas.UpdateFooterMessage(_loadingString);
-        }
-        #endregion
-
-        #region Auth Callback
-        public void OnAuthSuccess(string resultJson)
-        {
-            if(!string.IsNullOrEmpty(resultJson) && resultJson != "ERROR_NO_AUTHCODE")
-            {
-                UpdateLoadingText("Get AuthCode success! trying to get accessToken");   
-                StartCoroutine(RunFullAuthenticationStep(resultJson));
-            }
-            else
-            {
-                UpdateLoadingText("Get AuthCode failed! please try again...");
-                authCanvas.ResetCanvas();
-            }
+            authCanvas?.UpdateFooterMessage(message);
         }
 
-        private IEnumerator RunFullAuthenticationStep(string _authCode)
+        private void OnDestroy()
         {
-            bool success = false;
-
-            yield return StartCoroutine(ApiService.PostCoroutine<Response<GetBasicResponse>>(
-                 url: HOST + "/public/generate-basic",
-                 jsonBody: JsonUtility.ToJson(new GetBasicForm()
-                 {
-                     metaverseClientId = config.METAVERSE_CLIENT_ID,
-                     secret = config.SECRET
-                 }),
-                 headers: null,
-                 onSuccess: (response) =>
-                 {
-                     _basic = response.data.message;
-                     success = true;
-                 },
-                 onError: (error) =>
-                 {
-                     CommonErrorFallback(error);
-                     success = false;
-                 }));
-
-
-            if (!success) yield break;
-
-            yield return StartCoroutine(ApiService.PostCoroutine<Response<AuthToAccessResponse>>(
-                 url: AUTH_HOST + AUTH_TO_ACCESS_ROUTE,
-                 jsonBody: JsonUtility.ToJson(new AuthToAccessForm()
-                 {
-                     authCode = _authCode
-                 }),
-                 headers: new Dictionary<string, string>()
-                 {
-                        {"authorization", $"Basic {_basic}"}
-                 },
-                 onSuccess: (response) =>
-                 {
-                     accessResponse = response;
-                     UpdateLoadingText("Get accessToken success!");
-                     success = true;
-                 },
-                 onError: (error) =>
-                 {
-                     CommonErrorFallback(error);
-                     success = false;
-                 }));
-
-            if (!success) yield break;
-
-            yield return StartCoroutine(ApiService.GetCoroutine<Response<UserGetOneResponse>>(
-                url: HOST + "/users/get-one/" + accessResponse.data.userId,
-                headers: new Dictionary<string, string>()
-                {
-                    { "Authorization", "Bearer " + accessResponse.data.accessToken }
-                },
-                onSuccess: (response) =>
-                {
-                    userResponse = response;
-                    UpdateLoadingText($"Welcome {userResponse.data.User.firstName} !");
-                    success = true;
-                },
-                onError: (error) =>
-                {
-                    CommonErrorFallback(error);
-                    success = false;
-                }
-                ));
-
-            if (success)
-            {
-#if UNITY_WEBGL && !UNITY_EDITOR
-                SaveToLocalStorage("metaauth_accessToken", accessResponse.data.accessToken);
-                SaveToLocalStorage("metaauth_accessTokenExpiresAt", accessResponse.data.accessTokenExpiresAt);
-                SaveToLocalStorage("metaauth_userId", accessResponse.data.userId);
-#endif
-                if (UserReferencePersistent.Instance != null)
-                {
-                    UserReferencePersistent.Instance.SetUserName(userResponse.data.User.firstName);
-                    UserReferencePersistent.Instance.SetGLTFLink(userResponse.data.User.Avatars[0].url);
-
-                    for(int i = 0; i < userResponse.data.User.Avatars.Length; i++)
-                    {
-                        AvatarSystem.Instance.AddNewUserAvatar(userResponse.data.User.Avatars[i].url);
-                        yield return null;
-                    }
-
-                    EventHandler.OnClientLogin();
-                }
-            }
+            lifetimeCancellation?.Cancel();
+            lifetimeCancellation?.Dispose();
         }
-        #endregion
     }
 }
-

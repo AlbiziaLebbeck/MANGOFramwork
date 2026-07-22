@@ -1,80 +1,96 @@
 mergeInto(LibraryManager.library, {
-  OpenOAuthPopup: function (callbackObjectPtr, callbackMethodPtr, urlPtr, reUrlPtr) {
-    const callbackObject = UTF8ToString(callbackObjectPtr);
+  MangosFetchWithCredentials: function (
+    gameObjectNamePtr,
+    callbackMethodPtr,
+    requestIdPtr,
+    urlPtr,
+    methodPtr,
+    jsonBodyPtr,
+    timeoutMilliseconds
+  ) {
+    const gameObjectName = UTF8ToString(gameObjectNamePtr);
     const callbackMethod = UTF8ToString(callbackMethodPtr);
-    const authUrl = UTF8ToString(urlPtr);
-    const redirUrl = UTF8ToString(reUrlPtr)
+    const requestId = UTF8ToString(requestIdPtr);
+    const url = UTF8ToString(urlPtr);
+    const method = UTF8ToString(methodPtr);
+    const jsonBody = UTF8ToString(jsonBodyPtr);
 
-    const popup = window.open(authUrl, "Login", "width=500, height=600");
+    window.mangosAuthRequests = window.mangosAuthRequests || {};
 
-    let receivedAuthCode = false;
+    const controller = new AbortController();
+    const state = {
+      controller: controller,
+      timedOut: false
+    };
+    window.mangosAuthRequests[requestId] = state;
 
-    const interval = setInterval(function (){
-      try{
-        if(popup.location.href.startsWith(`${redirUrl}/?authCode=`)){   
-          const searchParams = new URL(popup.location.href).searchParams;
-          const authCode = searchParams.get("authCode");
+    const options = {
+      method: method,
+      credentials: "include",
+      headers: {
+        "Accept": "application/json"
+      },
+      signal: controller.signal
+    };
 
-          if(authCode){
-            window.unityInstance.SendMessage(callbackObject, callbackMethod, authCode);
-            receivedAuthCode = true;
-            popup.close();
-            clearInterval(interval);
-          }
-        }
-      } catch (e){
-        // clearInterval(interval);
-      }
-
-      if(popup.closed){
-        clearInterval(interval);
-
-        if(!receivedAuthCode){
-          window.unityInstance.SendMessage(callbackObject, callbackMethod, "ERROR_NO_AUTHCODE");
-        }
-      }
-    }, 100);
-  },
-
-  SaveToLocalStorage: function(keyPtr, valuePtr){
-    var key = UTF8ToString(keyPtr);
-    var value = UTF8ToString(valuePtr);
-    localStorage.setItem(key, value);
-  }, 
-
-  GetLocalStorage: function (keyPtr) {
-    var key = UTF8ToString(keyPtr);
-    var value = localStorage.getItem(key);
-    if (!value) return 0;
-
-    var buffer = _malloc(lengthBytesUTF8(value) + 1);
-    stringToUTF8(value, buffer, lengthBytesUTF8(value) + 1);
-    return buffer;
-  },
-
-  HasLoggedIn: function (){
-    var token = localStorage.getItem("metaauth_accessToken");
-    var expiredAt = localStorage.getItem("metaauth_accessTokenExpiresAt")
-    var userId = localStorage.getItem("metaauth_userId");
-
-    if(!token || !expiredAt || !userId) return 0;
-
-    var now = Date.now();
-    var expires = Date.parse(expiredAt);
-
-    if(isNaN(expires) || expires < now){
-      localStorage.removeItem("metaauth_accessToken");
-      localStorage.removeItem("metaauth_accessTokenExpiresAt")
-      localStorage.removeItem("metaauth_userId");
-      return 0;
+    if (jsonBody) {
+      options.headers["Content-Type"] = "application/json";
+      options.body = jsonBody;
     }
 
-    return 1;
+    const timeoutId = setTimeout(function () {
+      state.timedOut = true;
+      controller.abort();
+    }, Math.max(1000, timeoutMilliseconds));
+
+    fetch(url, options)
+      .then(function (response) {
+        return response.text().then(function (body) {
+          return {
+            requestId: requestId,
+            statusCode: response.status,
+            body: body,
+            error: "",
+            errorKind: ""
+          };
+        });
+      })
+      .catch(function (error) {
+        return {
+          requestId: requestId,
+          statusCode: 0,
+          body: "",
+          error: error && error.name ? error.name : "NetworkError",
+          errorKind: state.timedOut ? "timeout" : "network"
+        };
+      })
+      .then(function (result) {
+        clearTimeout(timeoutId);
+        delete window.mangosAuthRequests[requestId];
+        if (window.unityInstance) {
+          window.unityInstance.SendMessage(
+            gameObjectName,
+            callbackMethod,
+            JSON.stringify(result)
+          );
+        }
+      });
   },
 
-    Logout: function () {
-    localStorage.removeItem("metaauth_accessToken");
-    localStorage.removeItem("metaauth_accessTokenExpiresAt");
-    localStorage.removeItem("metaauth_userId");
+  MangosCancelBrowserRequest: function (requestIdPtr) {
+    const requestId = UTF8ToString(requestIdPtr);
+    if (!window.mangosAuthRequests || !window.mangosAuthRequests[requestId]) {
+      return;
+    }
+
+    window.mangosAuthRequests[requestId].controller.abort();
+    delete window.mangosAuthRequests[requestId];
+  },
+
+  MangosRedirectToLogin: function (webBaseUrlPtr) {
+    const webBaseUrl = UTF8ToString(webBaseUrlPtr);
+    const loginUrl = new URL("/login", webBaseUrl);
+    loginUrl.searchParams.set("redirect", window.location.href);
+    window.location.assign(loginUrl.toString());
   }
 });
