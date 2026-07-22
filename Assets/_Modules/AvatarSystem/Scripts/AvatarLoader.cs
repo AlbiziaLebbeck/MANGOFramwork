@@ -175,7 +175,9 @@ public class AvatarLoader : MonoBehaviour
         {
             targetAvatar = "AvatarLoader/AvaternRig";
         }
-        else if (avatarModel.transform.Find("Armature/mixamorig:Hips"))
+        else if (
+            (avatarModel.transform.Find("Cloth.001") && avatarModel.transform.Find("avaturn_body.001")) ||
+            (avatarModel.transform.Find("Scene/Cloth.001") && avatarModel.transform.Find("Scene/avaturn_body.001")))
         {
             targetAvatar = "AvatarLoader/full_derssAvatar";
         }

@@ -270,3 +270,9 @@ The legacy V2 avatar loader contained additional hierarchy detection and Humanoi
 The WebGL build revision is updated to `20260723-session-rigs-v1` so the rebuilt `.data`, `.framework.js`, loader, and `.wasm` URLs cannot reuse the earlier Unity IndexedDB entries.
 
 Follow-up static validation passed with zero C# compilation errors. All twelve runtime Humanoid resource paths resolve, each of the six copied assets contains serialized skeleton, human, and transform-path data, both animation clip GUIDs used by `AvatarController` resolve in the target, and the updated WebGL template JavaScript parses successfully. Browser session-restoration timing and animated VRoid/VRM runtime behavior still require validation in a newly rebuilt and deployed WebGL client.
+
+## Avatar Preview Rollback and RajPattern Rig Hotfix
+
+The deployed `20260723-avatar-ui-rigs-v2` build proved that eagerly loading and cloning every account avatar for thumbnail capture was unsafe in WebGL. Production logs showed concurrent avatar downloads repeatedly failing with HTTP/2 protocol errors, followed by continuous `Bone weights do not match bones` errors and loss of the active player avatar. The complete thumbnail/profile/eye-stabilizer change was reverted instead of retaining partially connected capture behavior.
+
+The remaining RajPattern regression was isolated to a rig-detection collision. `RajPattern_Blue.glb` and the legacy full-dress avatar both contain `Armature/mixamorig:Hips`, so the generic Mixamo check selected `full_derssAvatar` before the RajPattern-specific `Armature/Outfit` check. The overlapping generic bone path is no longer used to identify full-dress models. Full-dress selection now requires its unique `Cloth.001` and `avaturn_body.001` mesh markers, while RajPattern continues to use its unique `Armature/Outfit` marker. The WebGL build revision is `20260723-raj-rig-hotfix-v3` so the corrected binary cannot reuse the failed deployment's Unity cache entry.
