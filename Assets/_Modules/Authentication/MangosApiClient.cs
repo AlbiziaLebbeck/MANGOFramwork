@@ -467,13 +467,33 @@ namespace MANGOsFramework.Experiment
                 return string.Empty;
             }
 
-            if (Uri.TryCreate(assetUrl, UriKind.Absolute, out Uri absolute))
+            string normalizedAssetUrl = assetUrl.Trim();
+            if (normalizedAssetUrl.StartsWith("/", StringComparison.Ordinal) &&
+                !normalizedAssetUrl.StartsWith("//", StringComparison.Ordinal))
             {
-                return absolute.ToString();
+                return ApiOrigin + normalizedAssetUrl;
             }
 
-            string path = assetUrl.StartsWith("/", StringComparison.Ordinal) ? assetUrl : "/" + assetUrl;
-            return ApiOrigin + path;
+            if (Uri.TryCreate(normalizedAssetUrl, UriKind.Absolute, out Uri absolute))
+            {
+                return IsHttpAssetUri(absolute) ? absolute.AbsoluteUri : string.Empty;
+            }
+
+            if (Uri.TryCreate(ApiOrigin + "/", UriKind.Absolute, out Uri apiOrigin) &&
+                Uri.TryCreate(apiOrigin, normalizedAssetUrl, out Uri resolved) &&
+                IsHttpAssetUri(resolved))
+            {
+                return resolved.AbsoluteUri;
+            }
+
+            return string.Empty;
+        }
+
+        private static bool IsHttpAssetUri(Uri uri)
+        {
+            return uri != null &&
+                   (string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase));
         }
 
         public void OnMangosBrowserResponse(string responseJson)

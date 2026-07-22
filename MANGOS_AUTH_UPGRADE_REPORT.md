@@ -71,6 +71,8 @@ The supplied documentation names wallet transaction and login-claim endpoints bu
 
 A trusted OAuth code-exchange service or another approved secret-free exchange design is also required before the existing Login button can complete third-party OAuth end to end. Current Marketplace OAuth support must not be enabled unless backend behavior changes and is independently verified.
 
+The current public MANGOs frontend was observed retrying a `401` through `GET /auth/refresh-tokens`, but the supplied Cookie SSO guide does not document that endpoint or authorize subdomain clients to use it. The Unity client therefore does not call it. If `/users/me` still returns an uncached `401` while the main site appears logged in, MANGOsAuth must confirm whether the shared access cookie is expired, whether the visible main-site state is stale, and whether a documented Cookie SSO refresh operation will be supported.
+
 ## Upgrade Plan and Authentication Mode Design
 
 The implementation uses one shared `MangosApiClient` and a centralized `AuthenticationMode` enum:
@@ -248,3 +250,7 @@ Static validation confirms `NetworkPlayer_Flyable` is selected before instantiat
 The first deployed Cookie SSO check reached `GET https://api.mangosgo.com/api/v1/users/me` but returned `401` while the PWA service worker was controlling the request. The generated worker intercepted every request, cached cross-origin API responses without checking status, and attempted to cache non-GET requests. The browser console sequence was consistent with a cached anonymous `/users/me` response after login, and the same worker caused the observed `Cache.put` failure for POST requests.
 
 The WebGL template now bypasses the service worker for cross-origin and non-GET requests, caches only successful same-origin GET responses, versions the static cache, deletes the legacy cache, and activates the updated worker immediately. Credentialed authentication fetches also use `cache: "no-store"`. A live preflight check confirmed that the API currently allows `https://plus.mangosgo.com` with credentials. If a fresh uncached request still returns `401`, the remaining issue is backend session-cookie scope or validity and must be verified by MANGOsAuth without exposing the HttpOnly cookie to Unity or JavaScript.
+
+The follow-up WebGL deployment confirmed that an older worker had cached authenticated API routes and attempted to cache Cloudflare POST telemetry. The static cache is now versioned as `static-v3`, with both the original and `static-v2` caches removed during activation, so a rebuilt client cannot continue running an older cached WebAssembly payload.
+
+Avatar loading logs also showed documented relative asset paths being converted to `file:///api/v1/...` by `System.Uri` on Windows. Asset resolution now handles root-relative paths before absolute-URI parsing, accepts only HTTP or HTTPS absolute assets, and resolves other relative paths against the configured API origin. The reported VRM asset was independently verified to return `200`, `model/gltf-binary`, and the correct credentialed CORS headers. Avatar selection now iterates over a stable, deduplicated URL snapshot so removing a repeatedly failing URL cannot invalidate the active coroutine index.

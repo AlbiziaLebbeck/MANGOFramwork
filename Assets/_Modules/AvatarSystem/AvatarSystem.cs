@@ -169,9 +169,6 @@ namespace MANGOsFramework.Experiment
         {
             yield return StartCoroutine(LoadAvatarSelection());
 
-            //yield return new WaitUntil(() => cachedAvatarModel.Count == AvatarUrls.Count + userAvatarUrls.Count);
-            yield return new WaitUntil(() => avatarButtons.Count == AvatarUrls.Count + userAvatarUrls.Count);
-
             Destroy(avatarCollectionsTransform.gameObject, 15);
 
             var matchIcon = avatarButtons.Find(icon => icon.GLTFLink == UserReferencePersistent.Instance.GLTF);
@@ -251,31 +248,39 @@ namespace MANGOsFramework.Experiment
 
         public IEnumerator LoadAvatarSelection(Action onComplete = null)
         {
-            var totalAvatarCount = AvatarUrls.Count + userAvatarUrls.Count;
-            if (totalAvatarCount != avatarButtons.Count)
+            var avatarUrlSnapshot = new List<string>(AvatarUrls.Count + userAvatarUrls.Count);
+            AddUniqueAvatarUrls(avatarUrlSnapshot, AvatarUrls);
+            AddUniqueAvatarUrls(avatarUrlSnapshot, userAvatarUrls);
+
+            for (int i = 0; i < avatarUrlSnapshot.Count; i++)
             {
-                for (int i = 0; i < totalAvatarCount; i++)
+                string url = avatarUrlSnapshot[i];
+                if (avatarButtons.Exists(icon => icon != null && icon.GLTFLink == url))
                 {
-                    var newButton = Instantiate(AvatarButtonPrefab, avatarButtonHolder);
-                    
-                    var icon = newButton.GetComponent<AvatarIcon>();
-                    
-                    string url = i >= AvatarUrls.Count ? userAvatarUrls[i - AvatarUrls.Count] : AvatarUrls[i];
-
-                    icon.SetIconData(url);
-
-                    //int count = i;
-                    
-                    //LoadAvatar(url, count);
-                   
-                    avatarButtons.Add(icon);
-
-                    yield return null;
+                    continue;
                 }
+
+                var newButton = Instantiate(AvatarButtonPrefab, avatarButtonHolder);
+                var icon = newButton.GetComponent<AvatarIcon>();
+                icon.SetIconData(url);
+                avatarButtons.Add(icon);
+
+                yield return null;
             }
 
+            onComplete?.Invoke();
+        }
 
-            if (onComplete != null) onComplete();
+        private static void AddUniqueAvatarUrls(List<string> destination, List<string> source)
+        {
+            for (int i = 0; i < source.Count; i++)
+            {
+                string url = source[i];
+                if (!string.IsNullOrWhiteSpace(url) && !destination.Contains(url))
+                {
+                    destination.Add(url);
+                }
+            }
         }
 
         private void LoadAvatar(string url, int avatarCount)
@@ -293,7 +298,10 @@ namespace MANGOsFramework.Experiment
 
         public void AddNewUserAvatar(string avatarUrl)
         {
-            userAvatarUrls.Add(avatarUrl);
+            if (!string.IsNullOrWhiteSpace(avatarUrl) && !userAvatarUrls.Contains(avatarUrl))
+            {
+                userAvatarUrls.Add(avatarUrl);
+            }
         }
 
         public void OnClick_SubmitAvatar(string url)

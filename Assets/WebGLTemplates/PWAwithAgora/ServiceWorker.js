@@ -1,6 +1,7 @@
 #if USE_DATA_CACHING
 const legacyCacheName = {{{JSON.stringify(COMPANY_NAME + "-" + PRODUCT_NAME + "-" + PRODUCT_VERSION )}}};
-const cacheName = legacyCacheName + "-static-v2";
+const previousCacheName = legacyCacheName + "-static-v2";
+const cacheName = legacyCacheName + "-static-v3";
 const contentToCache = [
     "Build/{{{ LOADER_FILENAME }}}",
     "Build/{{{ FRAMEWORK_FILENAME }}}",
@@ -30,7 +31,10 @@ self.addEventListener('install', function (e) {
 self.addEventListener('activate', function (e) {
     e.waitUntil((async function () {
 #if USE_DATA_CACHING
-      await caches.delete(legacyCacheName);
+      await Promise.all([
+        caches.delete(legacyCacheName),
+        caches.delete(previousCacheName)
+      ]);
 #endif
       await self.clients.claim();
     })());
