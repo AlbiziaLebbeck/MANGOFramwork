@@ -27,6 +27,7 @@ mergeInto(LibraryManager.library, {
     const options = {
       method: method,
       credentials: "include",
+      cache: "no-store",
       headers: {
         "Accept": "application/json"
       },

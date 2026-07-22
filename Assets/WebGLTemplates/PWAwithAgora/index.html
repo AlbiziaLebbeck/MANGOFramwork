@@ -49,7 +49,28 @@
     <script>
       window.addEventListener("load", function () {
         if ("serviceWorker" in navigator) {
-          navigator.serviceWorker.register("ServiceWorker.js");
+          const hadServiceWorkerController = Boolean(navigator.serviceWorker.controller);
+          let isReloadingForServiceWorkerUpdate = false;
+
+          if (hadServiceWorkerController) {
+            navigator.serviceWorker.addEventListener("controllerchange", function () {
+              if (isReloadingForServiceWorkerUpdate) {
+                return;
+              }
+
+              isReloadingForServiceWorkerUpdate = true;
+              window.location.reload();
+            });
+          }
+
+          navigator.serviceWorker
+            .register("ServiceWorker.js", { updateViaCache: "none" })
+            .then(function (registration) {
+              return registration.update();
+            })
+            .catch(function (error) {
+              console.warn("Service worker registration failed:", error);
+            });
         }
       });
 
@@ -145,7 +166,10 @@
 
     document.getElementById("startOverlay").addEventListener("click", () => {
       document.getElementById("startOverlay").style.display = "none";
-      let ctx = Module.audioContext;
+      const unityModule = typeof Module !== "undefined"
+        ? Module
+        : (unityInstance && unityInstance.Module ? unityInstance.Module : null);
+      const ctx = unityModule ? unityModule.audioContext : null;
       if (ctx && ctx.state === "suspended") {
         ctx.resume();
       }

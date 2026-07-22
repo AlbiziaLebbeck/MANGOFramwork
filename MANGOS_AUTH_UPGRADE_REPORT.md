@@ -163,12 +163,14 @@ The target now retrieves the documented wallet with the selected authentication 
 - `MANGOS_AUTH_UPGRADE_REPORT.md`
 - `Assets/_Modules/Authentication/MangosApiClient.cs` and `.meta`
 - `Assets/_Modules/Authentication/MangosAuthConfig.asset` and `.meta`
+- `Assets/Plugins/RTC/Agora_Unity_WebGL_Refactor 10 Release/AgoraEngine/Plugins/WebGL/AgoraWebGLSDK.jslib` and its folder/plugin `.meta` files
 - `Assets/_Project/Scripts/Runtime/PlayerTypeController.cs` and `.meta`
 - The selected Flyable prefab, controller scripts, animation assets, controller, physics material, and `LockTarget` listed above
 
 ## Files Modified or Rewritten
 
 - Rewritten: `AuthConfig.cs`, `ApiService.cs`, `Launcher.cs`, and `WebAuth.jslib`.
+- Repository tracking: `.gitignore` now keeps the required Agora WebGL bridge while continuing to ignore the other platform-specific Agora plugin binaries.
 - Merged/adapted: `NetworkedPlayerSpawner.cs`, `NetworkedPlayerComponent.cs`, `NetworkObjectSpecialMove.cs`, `UserReferencePersistent.cs`, and `UserDataCanvas.cs`.
 - Scene/configuration: `BaseWorld.unity`, `Bootstrap.unity`, three FishNet prefab collections, and `InputManager.asset`.
 - Adapted legacy copy: `BasicBehaviour.cs`, `ThirdPersonOrbitCamBasic.cs`, `CharacterController.controller`, and `NetworkPlayer_Flyable.prefab`.
@@ -194,6 +196,7 @@ Completed validation:
 
 - Full C# solution build through the Unity-generated `Assembly-CSharp.csproj`: **0 errors**. Existing Unity/dependency assembly-version warnings remain; new browser-response DTO fields also produce expected `JsonUtility` assignment warnings.
 - `.jslib` JavaScript syntax check: passed.
+- Agora WebGL native-link coverage: all 429 active `DllImport` symbols in `IAgoraGamingRtcEngineNative.cs` have matching bridge exports; the bridge is byte-identical to the compatible legacy asset and its importer is enabled only for WebGL.
 - Changed Scene/Prefab YAML duplicate object-id check: passed.
 - Changed Scene/Prefab local fileID integrity check: passed.
 - Missing script GUID check: passed.
@@ -208,6 +211,8 @@ Completed validation:
 
 Unity batch-mode compilation, EditMode tests, PlayMode tests, and interactive multiplayer validation could not run because this project was already open in another Unity Editor instance. Unity rejected a second process with `HandleProjectAlreadyOpenInAnotherInstance`. The successful C# solution build included the newly added scripts, but it does not replace PlayMode or build-target validation.
 
+The first interactive WebGL build exposed 434 undefined Agora native symbols because the Agora plugin directory had been ignored and the required `AgoraWebGLSDK.jslib` was absent from the target clone. The compatible legacy bridge and its original WebGL-only importer metadata were restored, and static symbol and JavaScript syntax validation passed. A fresh interactive WebGL rebuild after Unity imports the restored bridge remains required.
+
 ### Player Configuration A: Flyable Player Disabled
 
 Static validation confirms `NetworkPlayer` is selected by the resolver, the standard prefab reference remains assigned, and its existing camera/input/avatar/network components compile. Runtime spawn, movement, ownership, and synchronization still require PlayMode host/client validation.
@@ -219,21 +224,27 @@ Static validation confirms `NetworkPlayer_Flyable` is selected before instantiat
 ## Known Limitations and Remaining Blockers
 
 - Third-party OAuth cannot complete securely until a trusted service exchanges authorization codes without exposing the client secret to Unity.
-- Cookie SSO, OAuth, avatar, friends, Marketplace, and wallet calls were not sent to the production backend because no test account/session or safe integration environment was supplied.
+- Automated authenticated backend integration tests were not run because no test credentials or isolated integration environment were supplied. A user-run deployed Cookie SSO check reached the production `/users/me` endpoint and exposed the service-worker caching issue documented below.
 - Browser Cookie SSO requires production CORS and cookie attributes to allow credentialed requests from the deployed first-party subdomain.
 - Wallet transaction and login-claim UI/actions remain unimplemented pending documented schemas.
 - Marketplace remains intentionally unavailable in OAuth mode.
 - Legacy emote-only animation layers use the local idle clip instead of migrating the unrelated emote package.
-- A full WebGL/Standalone build, both PlayMode player configurations, and a multiplayer host/client session remain manual validation items.
+- A fresh WebGL build after the Agora bridge restoration, a Standalone build, both PlayMode player configurations, and a multiplayer host/client session remain manual validation items.
 
 ## Manual Unity Editor Steps
 
-1. Allow Unity to finish importing the new assets and confirm the Console has no script or import errors.
+1. Return focus to Unity, allow the restored Agora WebGL bridge to import, and confirm the Console has no script or import errors.
 2. Open `Assets/_Project/Scenes/BaseWorld.unity`.
 3. Select `PlayerTypeController`, disable **Flyable Player**, start a host/client session, and verify standard movement, camera, avatar loading, ownership, synchronization, and single-player spawning.
 4. Stop Play Mode, enable **Flyable Player**, repeat the session, press F to enter/leave flight, and verify flight movement, camera, avatar loading, ownership, synchronization, and single-player spawning.
 5. Inspect the active FishNet NetworkManager prefab collection after import and confirm both player prefabs are listed.
 6. Open `Bootstrap.unity` and visually verify the MANGOs Gold label layout at supported aspect ratios.
-7. Build WebGL, deploy it under `*.mangosgo.com`, and verify anonymous startup, credentialed `/users/me`, explicit login redirect/return, local disconnect, global logout, avatar URL resolution, and wallet refresh using a test account.
+7. Build WebGL into a fresh output directory. If the old undefined-symbol list persists, close Unity, remove the generated `Library/Bee` cache, reopen the project, and rebuild. Then deploy under `*.mangosgo.com` and verify anonymous startup, credentialed `/users/me`, explicit login redirect/return, local disconnect, global logout, avatar URL resolution, and wallet refresh using a test account.
 8. Configure only public OAuth settings in `MangosAuthConfig`. Connect a trusted code-exchange backend before enabling a production third-party OAuth Login action.
 9. Run Standalone/Mobile OAuth, EditMode, PlayMode, and production-backend integration tests before release.
+
+## Cookie SSO Deployment Follow-up
+
+The first deployed Cookie SSO check reached `GET https://api.mangosgo.com/api/v1/users/me` but returned `401` while the PWA service worker was controlling the request. The generated worker intercepted every request, cached cross-origin API responses without checking status, and attempted to cache non-GET requests. The browser console sequence was consistent with a cached anonymous `/users/me` response after login, and the same worker caused the observed `Cache.put` failure for POST requests.
+
+The WebGL template now bypasses the service worker for cross-origin and non-GET requests, caches only successful same-origin GET responses, versions the static cache, deletes the legacy cache, and activates the updated worker immediately. Credentialed authentication fetches also use `cache: "no-store"`. A live preflight check confirmed that the API currently allows `https://plus.mangosgo.com` with credentials. If a fresh uncached request still returns `401`, the remaining issue is backend session-cookie scope or validity and must be verified by MANGOsAuth without exposing the HttpOnly cookie to Unity or JavaScript.

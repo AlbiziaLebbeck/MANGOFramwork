@@ -81,6 +81,9 @@ crashlytics-build.properties
 
 #Agora Plugins
 /[Aa]ssets/Plugins/RTC/Agora_Unity_WebGL_Refactor 10 Release/AgoraEngine/Plugins/*
+!/[Aa]ssets/Plugins/RTC/Agora_Unity_WebGL_Refactor 10 Release/AgoraEngine/Plugins/WebGL.meta
+!/[Aa]ssets/Plugins/RTC/Agora_Unity_WebGL_Refactor 10 Release/AgoraEngine/Plugins/WebGL/
+!/[Aa]ssets/Plugins/RTC/Agora_Unity_WebGL_Refactor 10 Release/AgoraEngine/Plugins/WebGL/**
 
 #Exclude Assets
 /[Aa]ssets/_ExcludeAssets/
@@ -89,3 +92,9 @@ crashlytics-build.properties
 #Exclude Configs file
 /[Aa]ssets/_Configs/*
 /[Aa]ssets/[Cc]onfigs/*
+
+#Local Unity build outputs
+/systemtester/
+/systemtester.zip
+/systemtester_client/
+/systemtester_client.zip
