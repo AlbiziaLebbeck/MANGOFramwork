@@ -1,17 +1,13 @@
 #if USE_DATA_CACHING
 const legacyCacheName = {{{JSON.stringify(COMPANY_NAME + "-" + PRODUCT_NAME + "-" + PRODUCT_VERSION )}}};
-const previousCacheName = legacyCacheName + "-static-v2";
-const cacheName = legacyCacheName + "-static-v3";
+const previousCacheNames = [
+    legacyCacheName,
+    legacyCacheName + "-static-v2",
+    legacyCacheName + "-static-v3"
+];
+const cacheName = legacyCacheName + "-static-v4";
 const contentToCache = [
-    "Build/{{{ LOADER_FILENAME }}}",
-    "Build/{{{ FRAMEWORK_FILENAME }}}",
-#if USE_THREADS
-    "Build/{{{ WORKER_FILENAME }}}",
-#endif
-    "Build/{{{ DATA_FILENAME }}}",
-    "Build/{{{ CODE_FILENAME }}}",
     "TemplateData/style.css"
-
 ];
 #endif
 
@@ -31,10 +27,9 @@ self.addEventListener('install', function (e) {
 self.addEventListener('activate', function (e) {
     e.waitUntil((async function () {
 #if USE_DATA_CACHING
-      await Promise.all([
-        caches.delete(legacyCacheName),
-        caches.delete(previousCacheName)
-      ]);
+      await Promise.all(previousCacheNames.map(function (name) {
+        return caches.delete(name);
+      }));
 #endif
       await self.clients.claim();
     })());
@@ -49,20 +44,33 @@ self.addEventListener('fetch', function (e) {
 
     e.respondWith((async function () {
       const cache = await caches.open(cacheName);
-      let response = await cache.match(e.request);
       console.log(`[Service Worker] Fetching resource: ${e.request.url}`);
-      if (response) { return response; }
+      const useNetworkFirst = e.request.mode === 'navigate' || requestUrl.pathname.includes('/Build/');
 
-      response = await fetch(e.request);
-      if (response.ok && response.type === 'basic') {
-        try {
-          console.log(`[Service Worker] Caching new resource: ${e.request.url}`);
-          await cache.put(e.request, response.clone());
-        } catch (error) {
-          console.warn('[Service Worker] Cache write failed:', error);
-        }
+      if (!useNetworkFirst) {
+        const cachedResponse = await cache.match(e.request);
+        if (cachedResponse) { return cachedResponse; }
       }
-      return response;
+
+      try {
+        const response = await fetch(e.request);
+        if (response.ok && response.type === 'basic') {
+          try {
+            console.log(`[Service Worker] Caching new resource: ${e.request.url}`);
+            await cache.put(e.request, response.clone());
+          } catch (error) {
+            console.warn('[Service Worker] Cache write failed:', error);
+          }
+        }
+        return response;
+      } catch (error) {
+        const cachedResponse = await cache.match(e.request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        throw error;
+      }
     })());
 });
 #endif

@@ -106,21 +106,25 @@
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
+      var buildRevision = "20260722-avatar-url-v2";
+      var versionedBuildUrl = function (filename) {
+        return buildUrl + "/" + filename + "?v=" + encodeURIComponent(buildRevision);
+      };
+      var loaderUrl = versionedBuildUrl("{{{ LOADER_FILENAME }}}");
       var config = {
-        dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
-        frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+        dataUrl: versionedBuildUrl("{{{ DATA_FILENAME }}}"),
+        frameworkUrl: versionedBuildUrl("{{{ FRAMEWORK_FILENAME }}}"),
 #if USE_THREADS
-        workerUrl: buildUrl + "/{{{ WORKER_FILENAME }}}",
+        workerUrl: versionedBuildUrl("{{{ WORKER_FILENAME }}}"),
 #endif
 #if USE_WASM
-        codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+        codeUrl: versionedBuildUrl("{{{ CODE_FILENAME }}}"),
 #endif
 #if MEMORY_FILENAME
-        memoryUrl: buildUrl + "/{{{ MEMORY_FILENAME }}}",
+        memoryUrl: versionedBuildUrl("{{{ MEMORY_FILENAME }}}"),
 #endif
 #if SYMBOLS_FILENAME
-        symbolsUrl: buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
+        symbolsUrl: versionedBuildUrl("{{{ SYMBOLS_FILENAME }}}"),
 #endif
         streamingAssetsUrl: "StreamingAssets",
         companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
@@ -146,7 +150,7 @@
       }
 
 #if BACKGROUND_FILENAME
-      canvas.style.background = "url('" + buildUrl + "/{{{ BACKGROUND_FILENAME.replace(/'/g, '%27') }}}') center / cover";
+      canvas.style.background = "url('" + versionedBuildUrl("{{{ BACKGROUND_FILENAME.replace(/'/g, '%27') }}}") + "') center / cover";
 #endif
       loadingBar.style.display = "block";
 

@@ -462,31 +462,67 @@ namespace MANGOsFramework.Experiment
 
         public string ResolveAssetUrl(string assetUrl)
         {
+            return ResolveAssetUrl(assetUrl, ApiOrigin);
+        }
+
+        public static string ResolveAssetUrl(string assetUrl, string apiOrigin)
+        {
             if (string.IsNullOrWhiteSpace(assetUrl))
             {
                 return string.Empty;
             }
 
             string normalizedAssetUrl = assetUrl.Trim();
+            if (string.Equals(normalizedAssetUrl, "default", StringComparison.OrdinalIgnoreCase))
+            {
+                return normalizedAssetUrl;
+            }
+
+            string normalizedApiOrigin = NormalizeAssetOrigin(apiOrigin);
             if (normalizedAssetUrl.StartsWith("/", StringComparison.Ordinal) &&
                 !normalizedAssetUrl.StartsWith("//", StringComparison.Ordinal))
             {
-                return ApiOrigin + normalizedAssetUrl;
+                return normalizedApiOrigin + normalizedAssetUrl;
             }
 
             if (Uri.TryCreate(normalizedAssetUrl, UriKind.Absolute, out Uri absolute))
             {
-                return IsHttpAssetUri(absolute) ? absolute.AbsoluteUri : string.Empty;
+                if (IsHttpAssetUri(absolute))
+                {
+                    return absolute.AbsoluteUri;
+                }
+
+                if (string.Equals(absolute.Scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase) &&
+                    absolute.PathAndQuery.StartsWith("/api/v1/avatar-files/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return normalizedApiOrigin + absolute.PathAndQuery;
+                }
+
+                return string.Empty;
             }
 
-            if (Uri.TryCreate(ApiOrigin + "/", UriKind.Absolute, out Uri apiOrigin) &&
-                Uri.TryCreate(apiOrigin, normalizedAssetUrl, out Uri resolved) &&
+            if (Uri.TryCreate(normalizedApiOrigin + "/", UriKind.Absolute, out Uri origin) &&
+                Uri.TryCreate(origin, normalizedAssetUrl, out Uri resolved) &&
                 IsHttpAssetUri(resolved))
             {
                 return resolved.AbsoluteUri;
             }
 
             return string.Empty;
+        }
+
+        private static string NormalizeAssetOrigin(string apiOrigin)
+        {
+            string candidate = string.IsNullOrWhiteSpace(apiOrigin)
+                ? AuthConfig.DefaultApiOrigin
+                : apiOrigin.Trim().TrimEnd('/');
+
+            if (Uri.TryCreate(candidate, UriKind.Absolute, out Uri origin) && IsHttpAssetUri(origin))
+            {
+                return origin.GetLeftPart(UriPartial.Authority);
+            }
+
+            return AuthConfig.DefaultApiOrigin;
         }
 
         private static bool IsHttpAssetUri(Uri uri)

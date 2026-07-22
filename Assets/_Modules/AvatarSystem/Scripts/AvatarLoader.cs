@@ -31,6 +31,23 @@ public class AvatarLoader : MonoBehaviour
     }
     public async void LoadAvatar()
     {
+        string resolvedAvatarUrl = MangosApiClient.ResolveAssetUrl(
+            GLTFLink,
+            AuthConfig.DefaultApiOrigin);
+        if (string.IsNullOrWhiteSpace(resolvedAvatarUrl))
+        {
+            Debug.LogError("Avatar URL is empty or uses an unsupported scheme.", this.gameObject);
+            if (basicAvatar != null)
+            {
+                basicAvatar.SetActive(true);
+            }
+
+            OnLoadFailed?.Invoke();
+            return;
+        }
+
+        GLTFLink = resolvedAvatarUrl;
+
         if (basicAvatar != null)
         {
             basicAvatar.SetActive(false);
