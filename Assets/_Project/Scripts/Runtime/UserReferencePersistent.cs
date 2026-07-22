@@ -9,7 +9,6 @@ public class UserReferencePersistent : SingletonPersistent<UserReferencePersiste
     [SerializeField] private int mangosGold;
     [SerializeField] private GameObject playerGameObject;
     [SerializeField] private Transform playerCameraRoot;
-    private bool hasPreferredProfileImage;
 
     public string Username { get { return username; } }
     public string GLTF { get { return gltf; } }
@@ -52,7 +51,6 @@ public class UserReferencePersistent : SingletonPersistent<UserReferencePersiste
     public void SetGLTFLink(string _link)
     {
         this.gltf = _link;
-        hasPreferredProfileImage = false;
     }
 
     public void SetMangosGold(int amount)
@@ -62,20 +60,10 @@ public class UserReferencePersistent : SingletonPersistent<UserReferencePersiste
         MangosGoldChanged?.Invoke(amount);
     }
 
-    public void SetAvatarImage(Texture newImage, bool isPreferredProfileImage = false)
+    public void SetAvatarImage(Texture newImage)
     {
-        if (newImage == null || (hasPreferredProfileImage && !isPreferredProfileImage))
-        {
-            return;
-        }
-
-        if (isPreferredProfileImage)
-        {
-            hasPreferredProfileImage = true;
-        }
-
         this.AvatarImage = newImage;
-        PersistentCanvas.UserDataCanvas?.SetAvatarImage(AvatarImage);
+        PersistentCanvas.UserDataCanvas.SetAvatarImage(AvatarImage);
     }
 
     public void AssignPlayerGameObject(GameObject _gameObject)

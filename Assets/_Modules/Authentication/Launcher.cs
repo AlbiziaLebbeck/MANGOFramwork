@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Threading;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace MANGOsFramework.Experiment
 {
@@ -267,14 +266,8 @@ namespace MANGOsFramework.Experiment
             string avatarUrl = selectedAvatar != null
                 ? selectedAvatar.url
                 : apiClient.ResolveAssetUrl(defaultAvatarLink);
-            string runtimeAvatarUrl = string.IsNullOrWhiteSpace(avatarUrl) ? "default" : avatarUrl;
-            UserReferencePersistent.Instance.SetGLTFLink(runtimeAvatarUrl);
-
-            string profileImageUrl = apiClient.ResolveAssetUrl(user.avatarImageUrl);
-            if (!string.IsNullOrWhiteSpace(profileImageUrl))
-            {
-                StartCoroutine(TryLoadAccountProfileImage(profileImageUrl, runtimeAvatarUrl));
-            }
+            UserReferencePersistent.Instance.SetGLTFLink(
+                string.IsNullOrWhiteSpace(avatarUrl) ? "default" : avatarUrl);
 
             if (goldResponse?.data?.UserMgoGoldWallet != null)
             {
@@ -282,36 +275,6 @@ namespace MANGOsFramework.Experiment
             }
 
             EventHandler.OnClientLogin();
-        }
-
-        private IEnumerator TryLoadAccountProfileImage(string profileImageUrl, string expectedAvatarUrl)
-        {
-            using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(profileImageUrl, true))
-            {
-                request.timeout = config != null ? config.RequestTimeoutSeconds : 20;
-                yield return request.SendWebRequest();
-
-                if (request.result != UnityWebRequest.Result.Success)
-                {
-                    Debug.LogWarning("MANGOs account profile image could not be loaded; the default avatar thumbnail will be used.");
-                    yield break;
-                }
-
-                UserReferencePersistent userReference = UserReferencePersistent.Instance;
-                if (userReference == null || userReference.GLTF != expectedAvatarUrl)
-                {
-                    yield break;
-                }
-
-                Texture2D profileTexture = DownloadHandlerTexture.GetContent(request);
-                if (profileTexture != null)
-                {
-                    profileTexture.name = "MANGOsAccountProfileImage";
-                    profileTexture.filterMode = FilterMode.Bilinear;
-                    profileTexture.wrapMode = TextureWrapMode.Clamp;
-                    userReference.SetAvatarImage(profileTexture, true);
-                }
-            }
         }
 
         private void SetAnonymousState(string message)
