@@ -84,14 +84,17 @@ public class ThirdPersonOrbitCamBasic : MonoBehaviour
     {
         if (player == null) return;
 
-        // Get mouse movement to orbit the camera.
-        if (Cursor.lockState == CursorLockMode.None) return;
-        // Mouse:
-        angleH += Mathf.Clamp(Input.GetAxis("Mouse X"), -1, 1) * horizontalAimingSpeed;
-        angleV += Mathf.Clamp(Input.GetAxis("Mouse Y"), -1, 1) * verticalAimingSpeed;
-        // Joystick:
-        angleH += Mathf.Clamp(Input.GetAxis(XAxis), -1, 1) * 60 * horizontalAimingSpeed * Time.deltaTime;
-        angleV += Mathf.Clamp(Input.GetAxis(YAxis), -1, 1) * 60 * verticalAimingSpeed * Time.deltaTime;
+        // Keep following the player while the cursor is unlocked. Cursor state only
+        // controls orbit input; it must not freeze the camera at the pre-spawn position.
+        if (Cursor.lockState != CursorLockMode.None)
+        {
+            // Mouse:
+            angleH += Mathf.Clamp(Input.GetAxis("Mouse X"), -1, 1) * horizontalAimingSpeed;
+            angleV += Mathf.Clamp(Input.GetAxis("Mouse Y"), -1, 1) * verticalAimingSpeed;
+            // Joystick:
+            angleH += Mathf.Clamp(Input.GetAxis(XAxis), -1, 1) * 60 * horizontalAimingSpeed * Time.deltaTime;
+            angleV += Mathf.Clamp(Input.GetAxis(YAxis), -1, 1) * 60 * verticalAimingSpeed * Time.deltaTime;
+        }
 
         // Set vertical movement limit.
         angleV = Mathf.Clamp(angleV, minVerticalAngle, targetMaxVerticalAngle);

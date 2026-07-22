@@ -63,14 +63,36 @@ public class BasicBehaviour : MonoBehaviour
 
     public void CamInit()
     {
-        playerCamera = PlayerCameraHandler.Instance.MainVirtualCamera.transform;
+        PlayerCameraHandler cameraHandler = PlayerCameraHandler.Instance;
+        if (cameraHandler == null || cameraHandler.MainVirtualCamera == null)
+        {
+            Debug.LogError("Flyable player camera initialization failed because the main virtual camera is unavailable.", this);
+            return;
+        }
+
+        playerCamera = cameraHandler.MainVirtualCamera.transform;
+
+        // The flyable controller drives the virtual camera transform directly.
+        // Clear targets left by a previous standard player before enabling orbit control.
+        cameraHandler.MainVirtualCamera.Follow = null;
+        cameraHandler.MainVirtualCamera.LookAt = null;
 
         if (!playerCamera.TryGetComponent(out camScript))
         {
             camScript = playerCamera.gameObject.AddComponent<ThirdPersonOrbitCamBasic>();
         }
 
-        camScript.player = UserReferencePersistent.Instance.PlayerGameObject.transform;
+        GameObject localPlayer = UserReferencePersistent.Instance != null
+            ? UserReferencePersistent.Instance.PlayerGameObject
+            : null;
+        if (localPlayer == null)
+        {
+            Debug.LogError("Flyable player camera initialization failed because the local player is unavailable.", this);
+            camScript.enabled = false;
+            return;
+        }
+
+        camScript.player = localPlayer.transform;
         camScript.enabled = true;
         camScript.CamInit();
     }
