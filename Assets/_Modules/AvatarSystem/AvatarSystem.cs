@@ -137,6 +137,11 @@ namespace MANGOsFramework.Experiment
                         userAvatarUrls.Remove(url);
                     }
 
+                    if (loader != null)
+                    {
+                        Destroy(loader.gameObject);
+                    }
+
                     return;
                 }
 
@@ -169,18 +174,6 @@ namespace MANGOsFramework.Experiment
         {
             yield return StartCoroutine(LoadAvatarSelection());
 
-            Destroy(avatarCollectionsTransform.gameObject, 15);
-
-            var matchIcon = avatarButtons.Find(icon => icon.GLTFLink == UserReferencePersistent.Instance.GLTF);
-
-            if (matchIcon != null)
-            {
-                if (matchIcon.TryGetComponent(out AvatarIcon icon))
-                {
-                    UserReferencePersistent.Instance.SetAvatarImage(icon.AvatarTexture);
-                }
-            }
-
             if (avatarWindowButton != null)
             {
                 avatarWindowButton.gameObject.SetActive(true);
@@ -195,6 +188,17 @@ namespace MANGOsFramework.Experiment
             {
                 var clonedAvatar = Instantiate(_modelToCache, cachedAvatarHolder);
                 cachedAvatarModel.Add(_url, clonedAvatar);
+            }
+
+            if (avatarCollectionsTransform != null &&
+                _modelToCache != null &&
+                _modelToCache.transform.IsChildOf(avatarCollectionsTransform))
+            {
+                Transform previewRoot = _modelToCache.transform.parent;
+                if (previewRoot != null)
+                {
+                    Destroy(previewRoot.gameObject);
+                }
             }
         }
 
@@ -263,7 +267,17 @@ namespace MANGOsFramework.Experiment
                 var newButton = Instantiate(AvatarButtonPrefab, avatarButtonHolder);
                 var icon = newButton.GetComponent<AvatarIcon>();
                 icon.SetIconData(url);
+                icon.AvatarTextureGenerated += OnAvatarTextureGenerated;
                 avatarButtons.Add(icon);
+
+                if (cachedAvatarModel.TryGetValue(url, out GameObject cachedModel) && cachedModel != null)
+                {
+                    icon.GenerateFromModel(cachedModel);
+                }
+                else
+                {
+                    LoadAvatar(url, i);
+                }
 
                 yield return null;
             }
@@ -288,12 +302,25 @@ namespace MANGOsFramework.Experiment
             var cloneAvatar = new GameObject();
             cloneAvatar.transform.SetParent(avatarCollectionsTransform, false);
             cloneAvatar.name = $"AvatarHolder{avatarCount}";
-            cloneAvatar.transform.localPosition = new Vector3(2 * avatarCount, 0f, 0f);
+            cloneAvatar.transform.localPosition = new Vector3(3f * avatarCount, -10000f, 0f);
 
             var loader = cloneAvatar.AddComponent<AvatarLoader>();
 
             loader.GLTFLink = url;
             loader.LoadAvatar();
+        }
+
+        private void OnAvatarTextureGenerated(AvatarIcon icon, Texture texture)
+        {
+            if (icon == null || texture == null || UserReferencePersistent.Instance == null)
+            {
+                return;
+            }
+
+            if (icon.GLTFLink == UserReferencePersistent.Instance.GLTF)
+            {
+                UserReferencePersistent.Instance.SetAvatarImage(texture);
+            }
         }
 
         public void AddNewUserAvatar(string avatarUrl)

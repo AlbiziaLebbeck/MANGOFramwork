@@ -175,10 +175,6 @@ public class AvatarLoader : MonoBehaviour
         {
             targetAvatar = "AvatarLoader/AvaternRig";
         }
-        else if (avatarModel.transform.Find("Armature/mixamorig:Hips"))
-        {
-            targetAvatar = "AvatarLoader/full_derssAvatar";
-        }
         else if (avatarModel.transform.Find("Armature/Wolf3D_Head"))
         {
             targetAvatar = "AvatarLoader/ReadyPlayerMeRig";
@@ -186,6 +182,10 @@ public class AvatarLoader : MonoBehaviour
         else if (avatarModel.transform.Find("Armature/Outfit"))
         {
             targetAvatar = "AvatarLoader/RajPatternAvatar";
+        }
+        else if (avatarModel.transform.Find("Armature/mixamorig:Hips"))
+        {
+            targetAvatar = "AvatarLoader/full_derssAvatar";
         }
         else if (avatarModel.transform.Find("Armature/Sphere"))
         {
@@ -202,6 +202,7 @@ public class AvatarLoader : MonoBehaviour
         else if (avatarModel.transform.Find("Scene/Root/J_Bip_C_Hips/J_Bip_C_Spine"))
         {
             targetAvatar = "AvatarLoader/VrmAvatar";
+            ConfigureVrmEyePose(avatarModel);
         }
         else if (avatarModel.transform.Find("Armature/PHHips/UpperLeg L"))
         {
@@ -221,6 +222,49 @@ public class AvatarLoader : MonoBehaviour
         }
 
         StartCoroutine(SetupAnimatorCoroutine(animator, targetAvatar, targetController));
+    }
+
+    private static void ConfigureVrmEyePose(GameObject model)
+    {
+        Transform leftEye = FindDescendantByName(model.transform, "J_Adj_L_FaceEye");
+        Transform rightEye = FindDescendantByName(model.transform, "J_Adj_R_FaceEye");
+        if (leftEye == null || rightEye == null)
+        {
+            Debug.LogWarning("VRoid eye bones were not found; eye pose stabilization was skipped.");
+            return;
+        }
+
+        VrmEyePoseStabilizer stabilizer = model.GetComponent<VrmEyePoseStabilizer>();
+        if (stabilizer == null)
+        {
+            stabilizer = model.AddComponent<VrmEyePoseStabilizer>();
+        }
+
+        stabilizer.Initialize(leftEye, rightEye);
+    }
+
+    private static Transform FindDescendantByName(Transform root, string targetName)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        if (root.name == targetName)
+        {
+            return root;
+        }
+
+        for (int index = 0; index < root.childCount; index++)
+        {
+            Transform result = FindDescendantByName(root.GetChild(index), targetName);
+            if (result != null)
+            {
+                return result;
+            }
+        }
+
+        return null;
     }
 
     private Coroutine setupAnimatorRoutine;
@@ -316,5 +360,44 @@ public class AvatarLoader : MonoBehaviour
         {
             animator.runtimeAnimatorController = controller;
         }
+    }
+}
+
+public sealed class VrmEyePoseStabilizer : MonoBehaviour
+{
+    private Transform leftEye;
+    private Transform rightEye;
+    private Vector3 leftEyeLocalPosition;
+    private Vector3 rightEyeLocalPosition;
+    private Quaternion leftEyeLocalRotation;
+    private Quaternion rightEyeLocalRotation;
+
+    public void Initialize(Transform left, Transform right)
+    {
+        leftEye = left;
+        rightEye = right;
+
+        leftEyeLocalPosition = leftEye.localPosition;
+        rightEyeLocalPosition = rightEye.localPosition;
+        leftEyeLocalRotation = leftEye.localRotation;
+        rightEyeLocalRotation = rightEye.localRotation;
+        enabled = true;
+    }
+
+    private void LateUpdate()
+    {
+        RestoreRestPose(leftEye, leftEyeLocalPosition, leftEyeLocalRotation);
+        RestoreRestPose(rightEye, rightEyeLocalPosition, rightEyeLocalRotation);
+    }
+
+    private static void RestoreRestPose(Transform eye, Vector3 localPosition, Quaternion localRotation)
+    {
+        if (eye == null)
+        {
+            return;
+        }
+
+        eye.localPosition = localPosition;
+        eye.localRotation = localRotation;
     }
 }
