@@ -167,9 +167,17 @@ public class AvatarLoader : MonoBehaviour
         {
             targetAvatar = "AvatarLoader/MasqueAvatar_CU";
         }
+        else if (avatarModel.transform.Find("text_for_unity/Armature/Hips/Spine"))
+        {
+            targetAvatar = "AvatarLoader/MANGOsAvatar";
+        }
         else if (avatarModel.transform.Find("Armature/avaturn_body"))
         {
             targetAvatar = "AvatarLoader/AvaternRig";
+        }
+        else if (avatarModel.transform.Find("Armature/mixamorig:Hips"))
+        {
+            targetAvatar = "AvatarLoader/full_derssAvatar";
         }
         else if (avatarModel.transform.Find("Armature/Wolf3D_Head"))
         {
@@ -179,9 +187,25 @@ public class AvatarLoader : MonoBehaviour
         {
             targetAvatar = "AvatarLoader/RajPatternAvatar";
         }
-        else if (avatarModel.transform.Find("Armature/mixamorig:Hips"))
+        else if (avatarModel.transform.Find("Armature/Sphere"))
         {
-            targetAvatar = "AvatarLoader/MANGOsAvatar";
+            targetAvatar = "AvatarLoader/FruitAvatar";
+        }
+        else if (avatarModel.transform.Find("Armature/Hips/UpperLeg L"))
+        {
+            targetAvatar = "AvatarLoader/ShortBone";
+        }
+        else if (avatarModel.transform.Find("Armature/Hips/LeftUpLeg"))
+        {
+            targetAvatar = "AvatarLoader/MonkAvatar";
+        }
+        else if (avatarModel.transform.Find("Scene/Root/J_Bip_C_Hips/J_Bip_C_Spine"))
+        {
+            targetAvatar = "AvatarLoader/VrmAvatar";
+        }
+        else if (avatarModel.transform.Find("Armature/PHHips/UpperLeg L"))
+        {
+            targetAvatar = "AvatarLoader/PHAvatar";
         }
         else
         {

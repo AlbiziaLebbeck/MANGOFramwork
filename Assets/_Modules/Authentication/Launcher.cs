@@ -7,6 +7,8 @@ namespace MANGOsFramework.Experiment
 {
     public class Launcher : MonoBehaviour
     {
+        private const int FirstPartySessionCheckMaxAttempts = 4;
+
         [Header("Setup")]
         public string WorldSceneName;
 
@@ -78,10 +80,35 @@ namespace MANGOsFramework.Experiment
 
             Response<UserGetOneResponse> currentUserResponse = null;
             ApiError sessionError = null;
-            yield return apiClient.GetCurrentUser(
-                response => currentUserResponse = response,
-                error => sessionError = error,
-                lifetimeCancellation.Token);
+            int maxAttempts = apiClient.ResolvedMode == AuthenticationMode.FirstPartyCookieSso
+                ? FirstPartySessionCheckMaxAttempts
+                : 1;
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                currentUserResponse = null;
+                sessionError = null;
+                yield return apiClient.GetCurrentUser(
+                    response => currentUserResponse = response,
+                    error => sessionError = error,
+                    lifetimeCancellation.Token);
+
+                if (sessionError == null)
+                {
+                    break;
+                }
+
+                bool isMissingOrExpiredSession =
+                    sessionError.kind == ApiErrorKind.InvalidAuthentication ||
+                    sessionError.statusCode == 401;
+                if (!isMissingOrExpiredSession || attempt >= maxAttempts)
+                {
+                    break;
+                }
+
+                UpdateLoadingText("Rechecking MANGOs session...");
+                yield return new WaitForSecondsRealtime(attempt);
+            }
 
             if (sessionError != null)
             {

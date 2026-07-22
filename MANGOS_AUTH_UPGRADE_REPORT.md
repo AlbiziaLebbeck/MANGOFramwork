@@ -168,6 +168,7 @@ The target now retrieves the documented wallet with the selected authentication 
 - `Assets/Plugins/RTC/Agora_Unity_WebGL_Refactor 10 Release/AgoraEngine/Plugins/WebGL/AgoraWebGLSDK.jslib` and its folder/plugin `.meta` files
 - `Assets/_Project/Scripts/Runtime/PlayerTypeController.cs` and `.meta`
 - The selected Flyable prefab, controller scripts, animation assets, controller, physics material, and `LockTarget` listed above
+- Legacy Humanoid mappings and their `.meta` files: `FruitAvatar.asset`, `full_derssAvatar.asset`, `MonkAvatar.asset`, `PHAvatar.asset`, `ShortBone.asset`, and `VrmAvatar.asset` under `Assets/Resources/AvatarLoader`
 
 ## Files Modified or Rewritten
 
@@ -244,6 +245,7 @@ Static validation confirms `NetworkPlayer_Flyable` is selected before instantiat
 7. Build WebGL into a fresh output directory. If the old undefined-symbol list persists, close Unity, remove the generated `Library/Bee` cache, reopen the project, and rebuild. Then deploy under `*.mangosgo.com` and verify anonymous startup, credentialed `/users/me`, explicit login redirect/return, local disconnect, global logout, avatar URL resolution, and wallet refresh using a test account.
 8. Configure only public OAuth settings in `MangosAuthConfig`. Connect a trusted code-exchange backend before enabling a production third-party OAuth Login action.
 9. Run Standalone/Mobile OAuth, EditMode, PlayMode, and production-backend integration tests before release.
+10. In the rebuilt WebGL client, select at least one VRoid/VRM avatar and one non-Avaturn legacy rig, then verify idle and movement animation, avatar switching, local ownership, and remote-client animation synchronization.
 
 ## Cookie SSO Deployment Follow-up
 
@@ -258,3 +260,13 @@ Avatar loading logs also showed documented relative asset paths being converted 
 A subsequent deployed-client check proved that the origin server contained the corrected WebAssembly binary, but the live service worker was still `static-v2` and could continue returning its previously cached binary. The WebGL template now appends an explicit revision to every Unity build URL, uses a `static-v4` cache, deletes all earlier static cache generations, and applies network-first loading to navigation and `Build/` assets with cached fallback only on network failure. The avatar loader also normalizes asset URLs at the final load boundary and safely repairs only the known legacy `file:///api/v1/avatar-files/...` form. Arbitrary local-file URLs remain rejected.
 
 Follow-up validation passed the targeted diff check, full C# solution build with zero errors, Service Worker template syntax check, and WebGL index template syntax check. The reported avatar asset returned `200`, `model/gltf-binary`, the expected content length, and credentialed CORS headers for `https://plus.mangosgo.com`. A fresh Unity WebGL build and complete deployment are still required before the `static-v4` worker and versioned build URLs can replace the currently deployed `static-v2` worker in user browsers.
+
+## Cookie Session Restore and Legacy Humanoid Rig Follow-up
+
+A browser-restart trace showed that the WebGL bridge sent a credentialed, no-store `GET /users/me` request and received a real backend `401` while the visible MANGOs UI appeared signed in. This is consistent with the API access session not yet being restored or the visible site state being stale; the client cannot distinguish those cases because the cookie is HttpOnly. The client still does not call the undocumented refresh route or read HttpOnly cookies. First-party startup now retries the same documented session check up to four total attempts over six seconds, allowing an independently restored shared cookie to become valid without forcing a login redirect. A final `401` still clears local authentication state and leaves the application anonymous as required. If all checks continue returning `401` while the MANGOs site has a verified server-side session, MANGOsAuth must provide backend evidence about shared access-cookie lifetime and restoration behavior.
+
+The legacy V2 avatar loader contained additional hierarchy detection and Humanoid `Avatar` mappings that were absent from the target. The migration restores mappings for Mixamo/full-dress, Fruit, ShortBone, Monk, VRoid/VRM, and PH rigs while retaining target support for Avaturn, Ready Player Me, Masque, RajPattern, and the generic armature fallback. The copied files are standalone Unity Humanoid `Avatar` assets with their original `.meta` GUIDs; no legacy models, obsolete authentication code, or unrelated assets were copied. The existing target `AvatarController` already references animation clips whose GUIDs resolve in the target project.
+
+The WebGL build revision is updated to `20260723-session-rigs-v1` so the rebuilt `.data`, `.framework.js`, loader, and `.wasm` URLs cannot reuse the earlier Unity IndexedDB entries.
+
+Follow-up static validation passed with zero C# compilation errors. All twelve runtime Humanoid resource paths resolve, each of the six copied assets contains serialized skeleton, human, and transform-path data, both animation clip GUIDs used by `AvatarController` resolve in the target, and the updated WebGL template JavaScript parses successfully. Browser session-restoration timing and animated VRoid/VRM runtime behavior still require validation in a newly rebuilt and deployed WebGL client.
