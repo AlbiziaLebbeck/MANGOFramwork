@@ -181,9 +181,26 @@ namespace MANGOsFramework.Experiment
 
         private void OnClick_Login() => OnLogin?.Invoke();
         private void OnClick_LoginAsGuest() => OnAskGuestName();
-        private void OnClick_ConfirmGuestName() => OnLoginAsGuest?.Invoke(guestNameInputField.text);
-        private void OnClick_ContinueAsUser() => OnContinueAsUser?.Invoke();
+        private void OnClick_ConfirmGuestName()
+        {
+            PrepareGameplayPointerLock();
+            OnLoginAsGuest?.Invoke(guestNameInputField.text);
+        }
+
+        private void OnClick_ContinueAsUser()
+        {
+            PrepareGameplayPointerLock();
+            OnContinueAsUser?.Invoke();
+        }
+
         private void OnClick_LoginWithNewUser() => OnLoginAsNewUser?.Invoke();
+
+        private static void PrepareGameplayPointerLock()
+        {
+            // WebGL pointer lock must be requested synchronously from a user gesture.
+            // Standard players release it when PlayerTypeController initializes.
+            WebGlPointerLock.Acquire();
+        }
 
         public void UpdateFooterMessage(string message)
         {

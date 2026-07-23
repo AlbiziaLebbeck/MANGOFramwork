@@ -12,20 +12,39 @@ public sealed class PlayerTypeController : MonoBehaviour
 
     private void Start()
     {
-        SetCursorUnlocked(flyablePlayer);
+        // Flyable movement starts with a hidden cursor. Standard movement starts
+        // with a visible cursor because it uses pointer-based controls.
+        SetCursorUnlocked(!flyablePlayer);
     }
 
     private void Update()
     {
         if (allowCursorToggle && Input.GetKeyDown(KeyCode.E))
         {
-            SetCursorUnlocked(Cursor.lockState == CursorLockMode.Locked);
+            SetCursorUnlocked(!Cursor.visible);
         }
     }
 
     private static void SetCursorUnlocked(bool unlocked)
     {
-        Cursor.lockState = unlocked ? CursorLockMode.None : CursorLockMode.Locked;
-        Cursor.visible = unlocked;
+        if (unlocked)
+        {
+            WebGlPointerLock.Release();
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            return;
+        }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Browser pointer lock requires a user gesture. The WebGL bridge requests
+        // it immediately when allowed or arms the next click/key press as a fallback.
+        // Do not assign CursorLockMode.None here because Unity would release a lock
+        // acquired by the authentication Continue button during scene loading.
+        Cursor.visible = false;
+        WebGlPointerLock.Acquire();
+#else
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+#endif
     }
 }

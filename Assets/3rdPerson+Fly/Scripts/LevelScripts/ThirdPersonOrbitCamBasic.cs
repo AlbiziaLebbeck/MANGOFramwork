@@ -84,9 +84,9 @@ public class ThirdPersonOrbitCamBasic : MonoBehaviour
     {
         if (player == null) return;
 
-        // Keep following the player while the cursor is unlocked. Cursor state only
-        // controls orbit input; it must not freeze the camera at the pre-spawn position.
-        if (Cursor.lockState != CursorLockMode.None)
+        // Keep following the player while the cursor is visible. Cursor visibility
+        // controls orbit input because WebGL cannot request pointer lock at startup.
+        if (!Cursor.visible)
         {
             // Mouse:
             angleH += Mathf.Clamp(Input.GetAxis("Mouse X"), -1, 1) * horizontalAimingSpeed;

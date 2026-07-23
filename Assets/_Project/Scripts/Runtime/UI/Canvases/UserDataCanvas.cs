@@ -39,6 +39,12 @@ public class UserDataCanvas : MonoBehaviour
 
     public void SetAvatarImage(Texture newImage)
     {
+        if (avatarImage == null)
+        {
+            Debug.LogError("UserDataCanvas avatar image reference is missing.", this);
+            return;
+        }
+
         avatarImage.texture = newImage;
     }
     public void SetUserNameText(string text)
@@ -51,7 +57,7 @@ public class UserDataCanvas : MonoBehaviour
         MangosGold = amount;
         if (mangosGoldText != null)
         {
-            mangosGoldText.text = $"MANGOs Gold: {amount}";
+            mangosGoldText.text = amount.ToString();
         }
     }
 
