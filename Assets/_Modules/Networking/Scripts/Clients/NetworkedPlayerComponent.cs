@@ -42,14 +42,6 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         GLTFLink.OnChange += OnChangeAvatar;
 
         OnMic.OnChange += OnMic_OnChange;
-        OnVideo.OnChange += OnVideo_OnChange;
-        OnProjector.OnChange += OnProjector_OnChange;
-
-        EventHandler.CheckDeviceStatusEvent += EventHandler_CheckDeviceStatusEvent;
-    }
-    private void OnDestroy()
-    {
-        EventHandler.CheckDeviceStatusEvent -= EventHandler_CheckDeviceStatusEvent;
     }
 
     #region Client
@@ -66,10 +58,7 @@ public class NetworkedPlayerComponent : NetworkBehaviour
             return;
         }
 
-        EventHandler.UserCamMuteUpdateEvent += EventHandler_UserCamMuteUpdateEvent;
         EventHandler.UserMicMuteUpdateEvent += EventHandler_UserMicMuteUpdateEvent;
-        EventHandler.UserShareScreenStartedEvent += EventHandler_UserShareScreenStartedEvent;
-        EventHandler.UserShareScreenStoppedEvent += EventHandler_UserShareScreenStoppedEvent;
         
         nameText.gameObject.SetActive(false);
         micStatusIcon.gameObject.SetActive(false);
@@ -122,10 +111,7 @@ public class NetworkedPlayerComponent : NetworkBehaviour
 
         if (base.IsOwner)
         {
-            EventHandler.UserCamMuteUpdateEvent -= EventHandler_UserCamMuteUpdateEvent;
             EventHandler.UserMicMuteUpdateEvent -= EventHandler_UserMicMuteUpdateEvent;
-            EventHandler.UserShareScreenStartedEvent -= EventHandler_UserShareScreenStartedEvent;
-            EventHandler.UserShareScreenStoppedEvent -= EventHandler_UserShareScreenStoppedEvent;
 
             if (IsFlyableController &&
                 PlayerCameraHandler.Instance != null &&
@@ -142,36 +128,12 @@ public class NetworkedPlayerComponent : NetworkBehaviour
     #endregion
 
     #region Callbacks
-    private void EventHandler_UserShareScreenStoppedEvent(uint _uid)
-    {
-        
-    }
-
-    private void EventHandler_UserShareScreenStartedEvent(uint _uid)
-    {
-        
-    }
-    private void EventHandler_CheckDeviceStatusEvent(uint _uid)
-    {
-        if (_uid == Uid.Value)
-        {
-            EventHandler.OnUserMicMuteUpdate(_uid, !OnMic.Value);
-            EventHandler.OnUserCamMuteUpdate(_uid, !OnVideo.Value);
-        }
-    }
     private void EventHandler_UserMicMuteUpdateEvent(uint _uid, bool _muted)
     {
         //if 0 means update from local
         if(_uid == 0)
         {
             RPCServerSetMic(_muted);
-        }
-    }
-    private void EventHandler_UserCamMuteUpdateEvent(uint _uid, bool _muted)
-    {
-        if (_uid == 0)
-        {
-            RPCServerSetCam(_muted);
         }
     }
     private void OnChangePlayerName(string prev, string next, bool asServer)
@@ -195,21 +157,6 @@ public class NetworkedPlayerComponent : NetworkBehaviour
             avatarLoader.LoadAvatar();
         }
     }
-    private void OnVideo_OnChange(bool prev, bool next, bool asServer)
-    {
-        if(asServer) return;
-
-        if (next)
-        {
-            if(videoStatusIcon) videoStatusIcon.sprite = videoOnIcon;
-        }
-        else
-        {
-            if (videoStatusIcon) videoStatusIcon.sprite = videoOffIcon;
-        }
-
-        EventHandler.OnUserCamMuteUpdate(Uid.Value, !next);
-    }
     private void OnMic_OnChange(bool prev, bool next, bool asServer)
     {
         if (asServer) return;
@@ -224,13 +171,6 @@ public class NetworkedPlayerComponent : NetworkBehaviour
         }
 
         EventHandler.OnUserMicMuteUpdate(Uid.Value, !next);
-    }
-    private void OnProjector_OnChange(uint prev, uint next, bool asServer)
-    {
-        //later
-        if (asServer) return;
-
-        
     }
     #endregion
 

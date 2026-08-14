@@ -21,7 +21,6 @@ namespace MANGOsFramework.Experiment
         [SerializeField] private Button resetAnimatorButton;
         [SerializeField] private Transform avatarButtonHolder;
         [SerializeField] private Transform cachedAvatarHolder;
-        [SerializeField] private Transform avatarCollectionsTransform;
 
         [Header("Setting")]
         private float avatarChangeCooldown = 5f;
@@ -37,10 +36,17 @@ namespace MANGOsFramework.Experiment
         private bool isLoaded;
         private bool isPanelOpen = false;
         [SerializeField] private Animator localPlayerAnim;
+        private AvatarThumbnailService thumbnailService;
 
         protected override void Awake()
         {
             base.Awake();
+
+            thumbnailService = GetComponent<AvatarThumbnailService>();
+            if (thumbnailService == null)
+            {
+                thumbnailService = gameObject.AddComponent<AvatarThumbnailService>();
+            }
 
             if (avatarSubmitButton != null)
             {
@@ -169,9 +175,8 @@ namespace MANGOsFramework.Experiment
         {
             yield return StartCoroutine(LoadAvatarSelection());
 
-            Destroy(avatarCollectionsTransform.gameObject, 15);
-
-            var matchIcon = avatarButtons.Find(icon => icon.GLTFLink == UserReferencePersistent.Instance.GLTF);
+            string activeAvatarUrl = NormalizeAvatarUrl(UserReferencePersistent.Instance.GLTF);
+            var matchIcon = avatarButtons.Find(icon => icon.GLTFLink == activeAvatarUrl);
 
             if (matchIcon != null)
             {
@@ -191,10 +196,11 @@ namespace MANGOsFramework.Experiment
 
         private void OnAvatarLoaded(GameObject _modelToCache, string _url)
         {
-            if (!cachedAvatarModel.ContainsKey(_url))
+            string normalizedUrl = NormalizeAvatarUrl(_url);
+            if (!string.IsNullOrWhiteSpace(normalizedUrl) && !cachedAvatarModel.ContainsKey(normalizedUrl))
             {
                 var clonedAvatar = Instantiate(_modelToCache, cachedAvatarHolder);
-                cachedAvatarModel.Add(_url, clonedAvatar);
+                cachedAvatarModel.Add(normalizedUrl, clonedAvatar);
             }
         }
 
@@ -216,12 +222,14 @@ namespace MANGOsFramework.Experiment
 
         public bool IsAvatarCached(string _url)
         {
-            return cachedAvatarModel.ContainsKey(_url);
+            string normalizedUrl = NormalizeAvatarUrl(_url);
+            return !string.IsNullOrWhiteSpace(normalizedUrl) && cachedAvatarModel.ContainsKey(normalizedUrl);
         }
 
         public Texture GetAvatarTexture(string _url)
         {
-            var matchIcon = avatarButtons.Find(icon => icon.GLTFLink == _url);
+            string normalizedUrl = NormalizeAvatarUrl(_url);
+            var matchIcon = avatarButtons.Find(icon => icon.GLTFLink == normalizedUrl);
 
             if (matchIcon != null)
             {
@@ -236,7 +244,9 @@ namespace MANGOsFramework.Experiment
 
         public GameObject LoadAvatarFromCached(string _url)
         {
-            if(cachedAvatarModel.TryGetValue(_url, out GameObject loadedAvatar))
+            string normalizedUrl = NormalizeAvatarUrl(_url);
+            if(!string.IsNullOrWhiteSpace(normalizedUrl) &&
+               cachedAvatarModel.TryGetValue(normalizedUrl, out GameObject loadedAvatar))
             {
                 return loadedAvatar;
             }
@@ -254,7 +264,12 @@ namespace MANGOsFramework.Experiment
 
             for (int i = 0; i < avatarUrlSnapshot.Count; i++)
             {
-                string url = avatarUrlSnapshot[i];
+                string url = NormalizeAvatarUrl(avatarUrlSnapshot[i]);
+                if (string.IsNullOrWhiteSpace(url))
+                {
+                    continue;
+                }
+
                 if (avatarButtons.Exists(icon => icon != null && icon.GLTFLink == url))
                 {
                     continue;
@@ -262,10 +277,15 @@ namespace MANGOsFramework.Experiment
 
                 var newButton = Instantiate(AvatarButtonPrefab, avatarButtonHolder);
                 var icon = newButton.GetComponent<AvatarIcon>();
-                icon.SetIconData(url);
+                icon.SetIconData(url, thumbnailService);
                 avatarButtons.Add(icon);
 
                 yield return null;
+            }
+
+            if (thumbnailService != null)
+            {
+                yield return thumbnailService.WaitForIdle();
             }
 
             onComplete?.Invoke();
@@ -283,24 +303,12 @@ namespace MANGOsFramework.Experiment
             }
         }
 
-        private void LoadAvatar(string url, int avatarCount)
-        {
-            var cloneAvatar = new GameObject();
-            cloneAvatar.transform.SetParent(avatarCollectionsTransform, false);
-            cloneAvatar.name = $"AvatarHolder{avatarCount}";
-            cloneAvatar.transform.localPosition = new Vector3(2 * avatarCount, 0f, 0f);
-
-            var loader = cloneAvatar.AddComponent<AvatarLoader>();
-
-            loader.GLTFLink = url;
-            loader.LoadAvatar();
-        }
-
         public void AddNewUserAvatar(string avatarUrl)
         {
-            if (!string.IsNullOrWhiteSpace(avatarUrl) && !userAvatarUrls.Contains(avatarUrl))
+            string normalizedUrl = NormalizeAvatarUrl(avatarUrl);
+            if (!string.IsNullOrWhiteSpace(normalizedUrl) && !userAvatarUrls.Contains(normalizedUrl))
             {
-                userAvatarUrls.Add(avatarUrl);
+                userAvatarUrls.Add(normalizedUrl);
             }
         }
 
@@ -359,7 +367,12 @@ namespace MANGOsFramework.Experiment
 
         public void OnClick_AvatarIcon(string url)
         {
-            currentSelectAvatar = url;
+            currentSelectAvatar = NormalizeAvatarUrl(url);
+        }
+
+        private static string NormalizeAvatarUrl(string url)
+        {
+            return MangosApiClient.ResolveAssetUrl(url, AuthConfig.DefaultApiOrigin);
         }
 
         public void OnClick_Cancel()

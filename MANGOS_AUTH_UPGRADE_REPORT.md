@@ -160,12 +160,40 @@ The legacy implementation provided a wallet amount on `Launcher`, cached it in `
 
 The target now retrieves the documented wallet with the selected authentication strategy, validates `data.UserMgoGoldWallet`, caches the amount, exposes a change event, and updates a `MangosGoldText` element in the persistent user canvas. Anonymous or failed-wallet states do not create fake values. HTTP 401 follows the shared invalid-authentication handling. Unsupported transaction and claim actions were not connected or simulated.
 
+## Agora Removal and WebGL Voice Communication
+
+The Agora SDK, sample project, custom Agora integration layer, browser SDK bundle, video views, camera controls, screen-sharing controls, device settings, and Agora-specific WebGL build hooks are removed. The custom WebGL template is renamed from `PWAwithAgora` to `MANGOsPWA`, while retaining its authentication, pointer-lock, service-worker, and MANGOs UI behavior.
+
+Voice communication is now a separate, user-initiated WebGL feature. `VoiceCommunicationManager` connects the existing microphone button to a browser bridge. The browser client joins and leaves the documented game-room REST API, uses the server-provided WHIP URL to publish the local microphone, uses WHEP URLs to subscribe to remote participants, and uses Socket.IO room events for membership updates. It does not add a second local microphone loopback or expose voice credentials in Unity.
+
+The voice server was inspected read-only through the authorized `ntserver01` SSH target. The deployed backend uses Socket.IO 4.7.5, accepts `https://plus.mangosgo.com` in its CORS allowlist, exposes STUN/TURN configuration through `GET /video-streaming/api/v1/ice-servers`, and implements the following endpoints and events:
+
+- `POST /video-streaming/api/v1/game-rooms/:roomId/join`
+- `GET /video-streaming/api/v1/game-rooms/:roomId`
+- `POST /video-streaming/api/v1/game-rooms/:roomId/leave`
+- `join-game-room`, `leave-game-room`, participant snapshot/join/leave events, and join errors
+
+The game-room API currently does not require MANGOsAuth or an API key by backend design. The client therefore sends no MANGOs cookie, bearer token, or secret to the voice protocol. If authenticated or access-controlled rooms are required later, that policy must be implemented and documented by the voice backend rather than inferred in Unity.
+
+The pinned browser client and its license are bundled in the WebGL template so builds do not depend on a public CDN. The Service Worker uses a new cache generation and includes both voice scripts in the application shell. Voice starts only after the player clicks the microphone button, satisfying browser microphone permission and autoplay policies. Multiplayer microphone status remains synchronized through the existing generalized FishNet `OnMic` field; obsolete camera and projector fields remain serialized only for wire compatibility and are no longer connected to UI or Agora.
+
+## Avatar Thumbnail Queue
+
+The previous avatar UI created buttons immediately but only generated an image when the shared gameplay `AvatarLoadedEvent` happened. As a result, only an avatar that had already been selected showed a preview. The new `AvatarThumbnailService` uses a dedicated sequential queue. It imports one account avatar at a time into an isolated off-screen preview, disables animation, calculates renderer bounds, captures a consistently framed square image, releases the temporary model/import resources, and then proceeds to the next avatar.
+
+This preview path does not use `AvatarLoader`, does not publish global gameplay avatar events, does not modify Humanoid mappings, and does not populate the gameplay model cache. Avatar selection, the active network avatar, animation setup, RajPattern detection, and pull/download behavior therefore remain on their existing code path. Generated textures are cached by normalized HTTPS asset URL and are also used for the active account profile image.
+
 ## Files Added
 
 - `MANGOS_AUTH_UPGRADE_REPORT.md`
 - `Assets/_Modules/Authentication/MangosApiClient.cs` and `.meta`
 - `Assets/_Modules/Authentication/MangosAuthConfig.asset` and `.meta`
-- `Assets/Plugins/RTC/Agora_Unity_WebGL_Refactor 10 Release/AgoraEngine/Plugins/WebGL/AgoraWebGLSDK.jslib` and its folder/plugin `.meta` files
+- `Assets/_Modules/VoiceCommunication/VoiceCommunicationConfig.cs`, `VoiceCommunicationManager.cs`, and metadata
+- `Assets/Resources/VoiceCommunicationConfig.asset` and metadata
+- `Assets/Plugins/WebGL/VoiceCommunication.jslib` and metadata
+- `Assets/WebGLTemplates/MANGOsPWA/VoiceCommunication/VoiceCommunication.js`
+- `Assets/WebGLTemplates/MANGOsPWA/VoiceCommunication/socket.io-4.7.5.min.js` and `SOCKET.IO-LICENSE.txt`
+- `Assets/_Modules/AvatarSystem/Scripts/AvatarThumbnailService.cs` and metadata
 - `Assets/_Project/Scripts/Runtime/PlayerTypeController.cs` and `.meta`
 - The selected Flyable prefab, controller scripts, animation assets, controller, physics material, and `LockTarget` listed above
 - Legacy Humanoid mappings and their `.meta` files: `FruitAvatar.asset`, `full_derssAvatar.asset`, `MonkAvatar.asset`, `PHAvatar.asset`, `ShortBone.asset`, and `VrmAvatar.asset` under `Assets/Resources/AvatarLoader`
@@ -173,9 +201,11 @@ The target now retrieves the documented wallet with the selected authentication 
 ## Files Modified or Rewritten
 
 - Rewritten: `AuthConfig.cs`, `ApiService.cs`, `Launcher.cs`, and `WebAuth.jslib`.
-- Repository tracking: `.gitignore` now keeps the required Agora WebGL bridge while continuing to ignore the other platform-specific Agora plugin binaries.
+- Repository tracking: `.gitignore` no longer contains obsolete Agora plugin exceptions.
 - Merged/adapted: `NetworkedPlayerSpawner.cs`, `NetworkedPlayerComponent.cs`, `NetworkObjectSpecialMove.cs`, `UserReferencePersistent.cs`, and `UserDataCanvas.cs`.
 - Scene/configuration: `BaseWorld.unity`, `Bootstrap.unity`, three FishNet prefab collections, and `InputManager.asset`.
+- WebGL/voice: `ChatCanvas.cs`, `PersistentCanvas.cs`, `EventHandler.cs`, `NetworkedPlayerComponent.cs`, `MANGOsPWA/index.html`, `MANGOsPWA/ServiceWorker.js`, and `ProjectSettings.asset`.
+- Avatar preview: `AvatarSystem.cs`, `AvatarIcon.cs`, and `AvatarImageGenerator.cs`.
 - Adapted legacy copy: `BasicBehaviour.cs`, `ThirdPersonOrbitCamBasic.cs`, `CharacterController.controller`, and `NetworkPlayer_Flyable.prefab`.
 
 ## Components Deprecated
@@ -185,6 +215,7 @@ The target now retrieves the documented wallet with the selected authentication 
 - Client-side Basic credential generation and serialized OAuth secret.
 - The obsolete mock authentication exchange.
 - Legacy direct-buy coupling in the special-movement interaction.
+- Agora RTC, Agora video/device/screen-sharing UI, and the `PWAwithAgora` template.
 
 ## Backward Compatibility
 
@@ -197,12 +228,17 @@ The target now retrieves the documented wallet with the selected authentication 
 
 Completed validation:
 
-- Full C# solution build through the Unity-generated `Assembly-CSharp.csproj`: **0 errors**. Existing Unity/dependency assembly-version warnings remain; new browser-response DTO fields also produce expected `JsonUtility` assignment warnings.
+- Unity 2022.3.62f3 batch-mode script compilation completed successfully, including FishNet IL post-processing and the WebGL player assemblies.
+- All enabled build scenes (`Bootstrap`, `Launcher`, and `BaseWorld`) opened in batch mode with no missing `MonoBehaviour` script references.
+- The runtime prefab scan found one pre-existing missing component repeated on the `Spinner` children in `Assets/_Project/Prefabs/UIs/Prefabs/SpinnerCanvas.prefab`. This unchanged prefab is not instantiated in an enabled build scene and did not prevent the WebGL build; it remains a maintenance warning.
+- A clean-output WebGL player build completed with `BuildResult.Succeeded` at `Builds/MANGOsPWA_Validation_20260814` (67,180,445 bytes). The build produced the expected data, framework JavaScript, loader, and WebAssembly files with no C# compiler errors, linker failures, undefined symbols, or Agora native references.
+- The only error-class messages in the validation log were Unity Licensing token-refresh messages during startup. Unity subsequently resolved the entitlement and completed the player build successfully. The two build warnings were glTF shader `pow` warnings for GLES3.
+- The generated build contains the local Socket.IO 4.7.5 client, its license, and `VoiceCommunication.js`. SHA-256 checks confirmed that both generated JavaScript files are byte-identical to their template sources.
+- JavaScript syntax checks passed for the source and generated voice client and for the generated Service Worker. The source Service Worker contains Unity template directives and is validated after template expansion.
+- Project-source and generated-build scans found no Agora or `PWAwithAgora` runtime references.
 - `.jslib` JavaScript syntax check: passed.
-- Agora WebGL native-link coverage: all 429 active `DllImport` symbols in `IAgoraGamingRtcEngineNative.cs` have matching bridge exports; the bridge is byte-identical to the compatible legacy asset and its importer is enabled only for WebGL.
 - Changed Scene/Prefab YAML duplicate object-id check: passed.
 - Changed Scene/Prefab local fileID integrity check: passed.
-- Missing script GUID check: passed.
 - New asset GUID/reference check: passed. Two unrelated missing asset GUIDs already existed in `Bootstrap.unity` before this upgrade.
 - Standard and Flyable prefab references are both assigned in `BaseWorld.unity`.
 - Flyable prefab registration appears exactly once in each relevant FishNet collection.
@@ -212,9 +248,7 @@ Completed validation:
 - Credential logging scan: passed for upgrade code.
 - Legacy source remained read-only.
 
-Unity batch-mode compilation, EditMode tests, PlayMode tests, and interactive multiplayer validation could not run because this project was already open in another Unity Editor instance. Unity rejected a second process with `HandleProjectAlreadyOpenInAnotherInstance`. The successful C# solution build included the newly added scripts, but it does not replace PlayMode or build-target validation.
-
-The first interactive WebGL build exposed 434 undefined Agora native symbols because the Agora plugin directory had been ignored and the required `AgoraWebGLSDK.jslib` was absent from the target clone. The compatible legacy bridge and its original WebGL-only importer metadata were restored, and static symbol and JavaScript syntax validation passed. A fresh interactive WebGL rebuild after Unity imports the restored bridge remains required.
+The WebGL build validates compilation, linking, template expansion, and generated-file inclusion. Browser microphone permission, WHIP/WHEP media flow, deployed CORS behavior, avatar thumbnail rendering, and multiplayer behavior still require the planned deployed interactive test.
 
 ### Player Configuration A: Flyable Player Disabled
 
@@ -232,20 +266,22 @@ Static validation confirms `NetworkPlayer_Flyable` is selected before instantiat
 - Wallet transaction and login-claim UI/actions remain unimplemented pending documented schemas.
 - Marketplace remains intentionally unavailable in OAuth mode.
 - Legacy emote-only animation layers use the local idle clip instead of migrating the unrelated emote package.
-- A fresh WebGL build after the Agora bridge restoration, a Standalone build, both PlayMode player configurations, and a multiplayer host/client session remain manual validation items.
+- EditMode tests, PlayMode tests, a Standalone build, both interactive player configurations, a multiplayer host/client session, and deployed WebGL voice/media validation remain manual validation items.
+- `SpinnerCanvas.prefab` contains a pre-existing missing component on its spinner children. It is not referenced by the enabled build scenes and did not block the successful WebGL build, but it should be repaired or removed before that prefab is used again.
 
 ## Manual Unity Editor Steps
 
-1. Return focus to Unity, allow the restored Agora WebGL bridge to import, and confirm the Console has no script or import errors.
+1. Open the project in Unity 2022.3.62f3, allow the removed Agora assets and new voice assets to import, and confirm the Console has no script or import errors.
 2. Open `Assets/_Project/Scenes/BaseWorld.unity`.
 3. Select `PlayerTypeController`, disable **Flyable Player**, start a host/client session, and verify standard movement, camera, avatar loading, ownership, synchronization, and single-player spawning.
 4. Stop Play Mode, enable **Flyable Player**, repeat the session, press F to enter/leave flight, and verify flight movement, camera, avatar loading, ownership, synchronization, and single-player spawning.
 5. Inspect the active FishNet NetworkManager prefab collection after import and confirm both player prefabs are listed.
 6. Open `Bootstrap.unity` and visually verify the MANGOs Gold label layout at supported aspect ratios.
-7. Build WebGL into a fresh output directory. If the old undefined-symbol list persists, close Unity, remove the generated `Library/Bee` cache, reopen the project, and rebuild. Then deploy under `*.mangosgo.com` and verify anonymous startup, credentialed `/users/me`, explicit login redirect/return, local disconnect, global logout, avatar URL resolution, and wallet refresh using a test account.
-8. Configure only public OAuth settings in `MangosAuthConfig`. Connect a trusted code-exchange backend before enabling a production third-party OAuth Login action.
-9. Run Standalone/Mobile OAuth, EditMode, PlayMode, and production-backend integration tests before release.
-10. In the rebuilt WebGL client, select at least one VRoid/VRM avatar and one non-Avaturn legacy rig, then verify idle and movement animation, avatar switching, local ownership, and remote-client animation synchronization.
+7. Deploy the validation output from `Builds/MANGOsPWA_Validation_20260814` under `*.mangosgo.com`. Verify anonymous startup, credentialed `/users/me`, explicit login redirect/return, local disconnect, global logout, avatar URL resolution, and wallet refresh using a test account.
+8. In the deployed build, click the microphone button, grant permission, verify join/mute/unmute/leave behavior, and confirm local and remote audio through the production Socket.IO and WHIP/WHEP services. Verify that voice starts only after explicit interaction and stops on disconnect.
+9. Open the avatar selector on first entry and confirm every account avatar thumbnail appears before the selector becomes interactive. Select at least one VRoid/VRM avatar and one non-Avaturn legacy rig, then verify idle and movement animation, repeated avatar switching, local ownership, and remote-client animation synchronization.
+10. Configure only public OAuth settings in `MangosAuthConfig`. Connect a trusted code-exchange backend before enabling a production third-party OAuth Login action.
+11. Run Standalone/Mobile OAuth, EditMode, PlayMode, and production-backend integration tests before release.
 
 ## Cookie SSO Deployment Follow-up
 

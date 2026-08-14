@@ -19,16 +19,8 @@ public static class EventHandler
     
     public static event Action ServerStartedEvent;
 
-    //Communication Events
+    // Communication events
     public static event Action<uint, bool> UserMicMuteUpdateEvent;
-    public static event Action<uint, bool> UserCamMuteUpdateEvent;
-
-    public static event Action<uint> UserShareScreenStartedEvent;
-    public static event Action<uint> UserShareScreenStoppedEvent;
-
-    public static event Action<uint, float> ScreenRatioUpdateEvent;
-
-    public static event Action<uint> CheckDeviceStatusEvent;
 
     //Interactables
     public static event Action InteractionEnterEvent;
@@ -89,31 +81,10 @@ public static class EventHandler
         if(ClientSpawnFailedEvent != null) ClientSpawnFailedEvent();
     }
 
-    #region AgoraEvent
+    #region Communication
     public static void OnUserMicMuteUpdate(uint userId, bool isMute)
     {
         if(UserMicMuteUpdateEvent != null) UserMicMuteUpdateEvent(userId, isMute);
-    }
-    public static void OnUserCamMuteUpdate(uint userId, bool isMute)
-    {
-        if (UserCamMuteUpdateEvent != null) UserCamMuteUpdateEvent(userId, isMute);
-    }
-    public static void OnUserShareScreenStarted(uint screenId)
-    {
-        if (UserShareScreenStartedEvent != null) UserShareScreenStartedEvent(screenId);
-    }
-    public static void OnUserShareScreenStopped(uint screenId)
-    {
-        if(UserShareScreenStoppedEvent != null) UserShareScreenStoppedEvent(screenId);
-    }
-    public static void OnScreenResolutionUpdate(uint screenId, float aspectRatio)
-    {
-        if(ScreenRatioUpdateEvent != null) ScreenRatioUpdateEvent(screenId, aspectRatio);
-    }
-
-    public static void OnCheckDeviceStatus(uint uid)
-    {
-        if(CheckDeviceStatusEvent != null) CheckDeviceStatusEvent(uid);
     }
     #endregion
 

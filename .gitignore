@@ -79,12 +79,6 @@ crashlytics-build.properties
 /[Aa]ssets/_APPID/IntaniaVerse_Appid.asset
 /[Aa]ssets/_APPID/IntaniaVerse_Appid.asset.meta
 
-#Agora Plugins
-/[Aa]ssets/Plugins/RTC/Agora_Unity_WebGL_Refactor 10 Release/AgoraEngine/Plugins/*
-!/[Aa]ssets/Plugins/RTC/Agora_Unity_WebGL_Refactor 10 Release/AgoraEngine/Plugins/WebGL.meta
-!/[Aa]ssets/Plugins/RTC/Agora_Unity_WebGL_Refactor 10 Release/AgoraEngine/Plugins/WebGL/
-!/[Aa]ssets/Plugins/RTC/Agora_Unity_WebGL_Refactor 10 Release/AgoraEngine/Plugins/WebGL/**
-
 #Exclude Assets
 /[Aa]ssets/_ExcludeAssets/
 /[Aa]ssets/_ExcludeAssets.meta

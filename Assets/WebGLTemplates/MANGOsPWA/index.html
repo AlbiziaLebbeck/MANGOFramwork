@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity WebGL Player | {{{ PRODUCT_NAME }}}</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
+    <link rel="manifest" href="manifest.webmanifest">
+    <script src="VoiceCommunication/socket.io-4.7.5.min.js"></script>
+    <script src="VoiceCommunication/VoiceCommunication.js"></script>
+  </head>
+  <body>
+    <div id="startOverlay" style="
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      background:black;color:white;display:flex;
+      align-items:center;justify-content:center;
+      font-size:24px;cursor:pointer;z-index:9999;">
+      Click to Start
+    </div>
+
+    <div id="unity-container">
+      <canvas id="unity-canvas" width={{{ WIDTH }}} height={{{ HEIGHT }}} tabindex="-1"></canvas>
+      <div id="unity-loading-bar">
+        <div id="unity-logo"></div>
+        <div id="unity-progress-bar-empty">
+          <div id="unity-progress-bar-full"></div>
+        </div>
+      </div>
+      <div id="unity-warning"> </div>
+    </div>
+    <script>
+      window.addEventListener("load", function () {
+        if ("serviceWorker" in navigator) {
+          const hadServiceWorkerController = Boolean(navigator.serviceWorker.controller);
+          let isReloadingForServiceWorkerUpdate = false;
+
+          if (hadServiceWorkerController) {
+            navigator.serviceWorker.addEventListener("controllerchange", function () {
+              if (isReloadingForServiceWorkerUpdate) {
+                return;
+              }
+
+              isReloadingForServiceWorkerUpdate = true;
+              window.location.reload();
+            });
+          }
+
+          navigator.serviceWorker
+            .register("ServiceWorker.js", { updateViaCache: "none" })
+            .then(function (registration) {
+              return registration.update();
+            })
+            .catch(function (error) {
+              console.warn("Service worker registration failed:", error);
+            });
+        }
+      });
+
+      var unityInstance;
+      var container = document.querySelector("#unity-container");
+      var canvas = document.querySelector("#unity-canvas");
+      var loadingBar = document.querySelector("#unity-loading-bar");
+      var progressBarFull = document.querySelector("#unity-progress-bar-full");
+      var warningBanner = document.querySelector("#unity-warning");
+
+      // Shows a temporary message banner/ribbon for a few seconds, or
+      // a permanent error message on top of the canvas if type=='error'.
+      // If type=='warning', a yellow highlight color is used.
+      // Modify or remove this function to customize the visually presented
+      // way that non-critical warnings and error messages are presented to the
+      // user.
+      function unityShowBanner(msg, type) {
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        }
+        var div = document.createElement('div');
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type == 'error') div.style = 'background: red; padding: 10px;';
+        else {
+          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+          setTimeout(function() {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
+      }
+
+      var buildUrl = "Build";
+      var buildRevision = "20260814-voice-avatar-thumbnails-v1";
+      var versionedBuildUrl = function (filename) {
+        return buildUrl + "/" + filename + "?v=" + encodeURIComponent(buildRevision);
+      };
+      var loaderUrl = versionedBuildUrl("{{{ LOADER_FILENAME }}}");
+      var config = {
+        dataUrl: versionedBuildUrl("{{{ DATA_FILENAME }}}"),
+        frameworkUrl: versionedBuildUrl("{{{ FRAMEWORK_FILENAME }}}"),
+#if USE_THREADS
+        workerUrl: versionedBuildUrl("{{{ WORKER_FILENAME }}}"),
+#endif
+#if USE_WASM
+        codeUrl: versionedBuildUrl("{{{ CODE_FILENAME }}}"),
+#endif
+#if MEMORY_FILENAME
+        memoryUrl: versionedBuildUrl("{{{ MEMORY_FILENAME }}}"),
+#endif
+#if SYMBOLS_FILENAME
+        symbolsUrl: versionedBuildUrl("{{{ SYMBOLS_FILENAME }}}"),
+#endif
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+        productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+        productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+        showBanner: unityShowBanner,
+        devicePixelRatio: window.devicePixelRatio || 1,
+      };
+
+      // By default Unity keeps WebGL canvas render target size matched with
+      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
+      // Set this to false if you want to decouple this synchronization from
+      // happening inside the engine, and you would instead like to size up
+      // the canvas DOM size and WebGL render target sizes yourself.
+      // config.matchWebGLToCanvasSize = false;
+
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // Mobile device style: fill the whole browser client area with the game canvas:
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        document.getElementsByTagName('head')[0].appendChild(meta);
+      }
+
+#if BACKGROUND_FILENAME
+      canvas.style.background = "url('" + versionedBuildUrl("{{{ BACKGROUND_FILENAME.replace(/'/g, '%27') }}}") + "') center / cover";
+#endif
+      loadingBar.style.display = "block";
+
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          progressBarFull.style.width = 100 * progress + "%";
+        }).then((unityInstance2) => {
+          unityInstance = unityInstance2;
+          loadingBar.style.display = "none";
+        }).catch((message) => {
+          alert(message);
+        });
+      };
+      document.body.appendChild(script);
+
+    document.getElementById("startOverlay").addEventListener("click", () => {
+      document.getElementById("startOverlay").style.display = "none";
+      const unityModule = typeof Module !== "undefined"
+        ? Module
+        : (unityInstance && unityInstance.Module ? unityInstance.Module : null);
+      const ctx = unityModule ? unityModule.audioContext : null;
+      if (ctx && ctx.state === "suspended") {
+        ctx.resume();
+      }
+    });
+
+    </script>
+  </body>
+</html>
