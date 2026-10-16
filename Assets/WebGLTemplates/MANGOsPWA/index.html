@@ -7,8 +7,9 @@
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     <link rel="manifest" href="manifest.webmanifest">
-    <script src="VoiceCommunication/socket.io-4.7.5.min.js"></script>
-    <script src="VoiceCommunication/VoiceCommunication.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <script src="mangos-config.js"></script>
+    <script src="voice-app.js"></script>
   </head>
   <body>
     <div id="startOverlay" style="
@@ -144,6 +145,7 @@
           progressBarFull.style.width = 100 * progress + "%";
         }).then((unityInstance2) => {
           unityInstance = unityInstance2;
+          window.unityInstance = unityInstance2;
           loadingBar.style.display = "none";
         }).catch((message) => {
           alert(message);

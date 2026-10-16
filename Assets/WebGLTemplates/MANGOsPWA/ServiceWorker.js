@@ -4,13 +4,12 @@ const previousCacheNames = [
     legacyCacheName,
     legacyCacheName + "-static-v2",
     legacyCacheName + "-static-v3",
-    legacyCacheName + "-static-v4"
+    legacyCacheName + "-static-v4",
+    legacyCacheName + "-static-v5"
 ];
-const cacheName = legacyCacheName + "-static-v5";
+const cacheName = legacyCacheName + "-static-v6";
 const contentToCache = [
-    "TemplateData/style.css",
-    "VoiceCommunication/socket.io-4.7.5.min.js",
-    "VoiceCommunication/VoiceCommunication.js"
+    "TemplateData/style.css"
 ];
 #endif
 
@@ -44,11 +43,14 @@ self.addEventListener('fetch', function (e) {
     if (e.request.method !== 'GET' || requestUrl.origin !== self.location.origin) {
       return;
     }
+    // Cache application assets only; account/session/API responses stay private.
+    if (!/\/(Build|TemplateData|voice-overlay)\//.test(requestUrl.pathname) &&
+        !/\/(index\.html|voice-app\.js)$/.test(requestUrl.pathname)) return;
 
     e.respondWith((async function () {
       const cache = await caches.open(cacheName);
       console.log(`[Service Worker] Fetching resource: ${e.request.url}`);
-      const useNetworkFirst = e.request.mode === 'navigate' || requestUrl.pathname.includes('/Build/');
+      const useNetworkFirst = e.request.mode === 'navigate' || requestUrl.pathname.includes('/Build/') || requestUrl.pathname.endsWith('.js');
 
       if (!useNetworkFirst) {
         const cachedResponse = await cache.match(e.request);

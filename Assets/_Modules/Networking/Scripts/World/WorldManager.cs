@@ -456,6 +456,7 @@ public class WorldManager : SingletonNetworkBehaviour<WorldManager>
     private void TargetJoinRoomSuccess(NetworkConnection conn, WorldDetails worldDetails)
     {
         CurrentWorld = worldDetails;
+        MangosBrowserBridge.SetRoom(worldDetails.ID.ToString());
         Debug.Log($"You are now joined {CurrentWorld.Name} !!");
         // you can use this to update canvas about you joining the world.
     }
@@ -464,6 +465,7 @@ public class WorldManager : SingletonNetworkBehaviour<WorldManager>
     {
         CurrentWorld = null;
         Debug.Log($"Join world failed for a reason: {failedReason} !!");
+        MangosBrowserBridge.ClearRoom();
 
     }
     #endregion
