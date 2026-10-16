@@ -22,6 +22,7 @@ public class ConnectionStarter : MonoBehaviour
 
     private LocalConnectionState clientState = LocalConnectionState.Stopped;
     private LocalConnectionState serverState = LocalConnectionState.Stopped;
+    private bool serverObjectsSpawned;
 
     [SerializeField] private NetworkObject serverScenePrewarmerPrefab;
     [SerializeField] private NetworkObject worldManagerPrefab;
@@ -99,6 +100,7 @@ public class ConnectionStarter : MonoBehaviour
     private void ClientManager_OnClientConnectionState(ClientConnectionStateArgs obj)
     {
         clientState = obj.ConnectionState;
+        Debug.Log($"MANGOS_CLIENT_STATE {obj.ConnectionState}");
 
         if(clientState == LocalConnectionState.Started)
         {
@@ -119,8 +121,14 @@ public class ConnectionStarter : MonoBehaviour
     private void ServerManager_OnServerConnectionState(ServerConnectionStateArgs obj)
     {
         serverState = obj.ConnectionState;
+        Debug.Log($"MANGOS_SERVER_STATE {obj.ConnectionState}");
 
-        if (obj.ConnectionState != LocalConnectionState.Started) return;
+        if (obj.ConnectionState != LocalConnectionState.Started)
+        {
+            if (obj.ConnectionState == LocalConnectionState.Stopped && !networkManager.ServerManager.OneServerStarted()) serverObjectsSpawned = false;
+            return;
+        }
+        if (serverObjectsSpawned) return;
 #if UNITY_WEBGL
          if (!networkManager.ServerManager.OneServerStarted()) return;
 #endif
@@ -132,6 +140,7 @@ public class ConnectionStarter : MonoBehaviour
 
         Scene scene = UnitySceneManager.GetSceneByName("Bootstrap");
         if (!scene.IsValid()) return;
+        serverObjectsSpawned = true;
 
         NetworkObject serverPrewarmer = Instantiate(serverScenePrewarmerPrefab);
         UnitySceneManager.MoveGameObjectToScene(serverPrewarmer.gameObject, scene);

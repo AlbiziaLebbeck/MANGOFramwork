@@ -15,7 +15,6 @@ namespace JamesFrowen.SimpleWeb
         const int ResponseLength = 129;
         const int KeyLength = 24;
         const int MergedKeyLength = 60;
-        const string KeyHeaderString = "Sec-WebSocket-Key: ";
         // this isnt an offical max, just a reasonable size for a websocket handshake
         readonly int maxHttpHeaderSize = 3000;
 
@@ -112,10 +111,27 @@ namespace JamesFrowen.SimpleWeb
 
         static void GetKey(string msg, byte[] keyBuffer)
         {
-            int start = msg.IndexOf(KeyHeaderString) + KeyHeaderString.Length;
+            // HTTP field names are case-insensitive. Proxies and non-browser
+            // clients can legally send sec-websocket-key in lowercase.
+            string key = null;
+            foreach (var line in msg.Split(new[] { "\r\n" }, StringSplitOptions.None))
+            {
+                int colon = line.IndexOf(':');
+                if (colon > 0 && string.Equals(line.Substring(0, colon).Trim(), "Sec-WebSocket-Key", StringComparison.OrdinalIgnoreCase))
+                {
+                    key = line.Substring(colon + 1).Trim();
+                    break;
+                }
+            }
+            if (key == null || key.Length != KeyLength)
+                throw new ArgumentException("A valid Sec-WebSocket-Key header is required.");
+            try
+            {
+                if (Convert.FromBase64String(key).Length != 16) throw new ArgumentException("WebSocket key must encode 16 bytes.");
+            }
+            catch (FormatException) { throw new ArgumentException("WebSocket key must be Base64."); }
 
-            Log.Verbose($"Handshake Key: {msg.Substring(start, KeyLength)}");
-            Encoding.ASCII.GetBytes(msg, start, KeyLength, keyBuffer, 0);
+            Encoding.ASCII.GetBytes(key, 0, KeyLength, keyBuffer, 0);
         }
 
         static void AppendGuid(byte[] keyBuffer)

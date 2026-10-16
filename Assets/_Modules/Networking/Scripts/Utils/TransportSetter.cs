@@ -8,6 +8,7 @@ public class TransportSetter : MonoBehaviour
     private void Awake()
     {
         Multipass mp = GetComponent<Multipass>();
+        MangosRuntimeConfig.Load().Apply(gameObject);
 
 #if UNITY_WEBGL && !UNITY_SERVER && !UNITY_EDITOR
         mp.SetClientTransport<Bayou>();

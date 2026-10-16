@@ -248,6 +248,10 @@ namespace FishNet.Transporting.Bayou
         {
             _useWss = useWss;
         }
+        public void SetClientPath(string path) => _clientPath = path ?? string.Empty;
+#if UNITY_SERVER || UNITY_EDITOR
+        public void SetServerSslConfiguration(SslConfiguration configuration) => _sslConfiguration = configuration;
+#endif
         /// <summary>
         /// How long in seconds until either the server or client socket must go without data before being timed out.
         /// </summary>

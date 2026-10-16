@@ -1,0 +1,15 @@
+{
+  "deployment": "mangos",
+  "network": {
+    "serverPort": 7770,
+    "serverWss": false,
+    "clientPort": 443,
+    "clientWss": true,
+    "clientHost": "multiplayer-plus.mangosgo.com",
+    "clientPath": "/systemtester",
+    "roomNamespace": "mangos",
+    "serverCertificatePath": "",
+    "serverCertificatePasswordVariable": "MANGOS_TLS_PASSWORD"
+  },
+  "development": false
+}

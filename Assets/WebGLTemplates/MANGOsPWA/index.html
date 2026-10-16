@@ -90,7 +90,7 @@
       }
 
       var buildUrl = "Build";
-      var buildRevision = "20260814-voice-avatar-thumbnails-v1";
+      var buildRevision = window.MANGOS_BUILD_ID || {{{ JSON.stringify(PRODUCT_VERSION) }}};
       var versionedBuildUrl = function (filename) {
         return buildUrl + "/" + filename + "?v=" + encodeURIComponent(buildRevision);
       };
