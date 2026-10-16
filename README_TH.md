@@ -130,7 +130,7 @@ Build Linux IL2CPP และ WebGL สำเร็จ Client ที่ Build จ
 
 ยังต้องเล่นบน iOS/Android จริง ตรวจ microphone/account/TURN สด และ VRM/ท่า Avatar จริงเพิ่มเติม ปุ่ม Editor แบบ GUI ยังไม่ได้คลิกใน automated UI test ส่วน build pipeline ผ่าน batch runner แล้ว
 
-Unity API Updater อาจพิมพ์ Mono/Cecil diagnostics แม้ BuildReport สำเร็จ ให้ตรวจ Editor logs และ `build-diagnostics.txt` ของ output ดู [รายงานผลตรวจ](Documentation/VALIDATION.md) สำหรับหลักฐานและขอบเขต
+แก้จุดเรียก Rigidbody API เดิมที่กระตุ้น Unity 6 API Updater error โดยย้ายไปใช้ `linearVelocity` แล้ว ตัวสั่ง Build ปฏิเสธ ScriptUpdater ที่ล้มเหลว และ pipeline ปฏิเสธ BuildReport ที่มี error ดู [รายงานผลตรวจ](Documentation/VALIDATION.md) สำหรับผล Build ซ้ำ คำเตือนที่เหลือ และขอบเขตการทดสอบ
 
 รัน Editor checks และ Build profile ทดสอบในเครื่องบน Windows:
 

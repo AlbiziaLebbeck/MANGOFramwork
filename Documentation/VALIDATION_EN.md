@@ -39,7 +39,7 @@ The images under [Validation/](Validation/) come from the compiled Client. [brow
 
 ## Remaining diagnostics
 
-Unity API Updater prints Mono/Cecil `Argument null or empty (name)` while scanning some existing assemblies, even when BuildReport succeeds. These builds still have diagnostics; inspect `build-diagnostics.txt` in each output and logs in `Builds/Logs`.
+The original 16 October build logs include Mono/Cecil `Argument null or empty (name)` from ScriptUpdater even when BuildReport succeeded. Those historical logs are retained as evidence. The 17 October correction below removes the triggering legacy Rigidbody calls; the repeated builds have no ScriptUpdater or C# errors. Other warnings described here still apply.
 
 The headless browser reports warnings for some internal shaders and software decompression of ASTC textures unsupported by its emulated GPU. Screenshots show the scene, sample GLB, and main text rendering, but real target GPUs/devices still need checks. Logs also include incomplete-audio-loading warnings and JobTempAlloc messages when Editor exits.
 
@@ -52,3 +52,17 @@ The headless browser reports warnings for some internal shaders and software dec
 - The original wider browser QA scripts and full logs are in the `validation` directory of the `html-voice-tester-main` workspace.
 
 For this screenshot refresh, the Browser plugin/`browser` skill was not available, so the existing Playwright/Edge workflow was used. The flow was: local WebGL entry → start → guest login as PoppyValidation → BaseWorld → desktop/portrait/landscape capture. Voice used a mock service; this run does not extend the live-service claims above.
+
+## Unity 6 API Updater correction — 17 October 2026
+
+Opening the project reproduced ScriptUpdater exit 130 for FishNet.Runtime and Assembly-CSharp. Legacy `Rigidbody.velocity` / `Rigidbody2D.velocity` calls generated UnityUpgradable warnings, then Unity's updater failed while resolving replacement-member metadata through Mono.Cecil. This was an incomplete API migration, not a missing FishNet DLL.
+
+Seven source files now use Unity 6's [Rigidbody.linearVelocity](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/Rigidbody-linearVelocity.html) and [Rigidbody2D.linearVelocity](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/Rigidbody2D-linearVelocity.html), including prediction state capture/restore and the walking/flying controller. FishNet serialized field names and packet order remain unchanged. CharacterController.velocity remains valid and was not changed. API Updater remains enabled; errors are not hidden or suppressed.
+
+The stricter BuildReport check also caught three headless-build errors from TextMeshPro trying to open its resource importer. TMP Settings still used the old schema despite the earlier shader update. It has now been migrated from the installed Unity 6 TMP Essential Resources package to schema version 2, preserving all existing settings, font/sprite/style references, and asset GUID. The schema/default-font check runs with the physics checks. The repeated builds do not produce those importer-window errors.
+
+Validation: Unity 6000.3.26f1 Editor compilation passed, followed by Linux IL2CPP Server and WebGL builds in job `20261016-172024-192144`, both with BuildReport errors=0 and no ScriptUpdater/C# errors. `MangosUnity6PhysicsValidation.Run` passed 3D/2D state capture, restore, angular-state preservation, and prediction velocity checks. It runs before `Tools/BuildBoth.ps1 -Validation` builds, and is also available at **MANGOs Framework > Validation > Unity 6 Physics**. The build-runner failure guard was checked against the original failing log and rejects it.
+
+The test used an isolated project copy so the user's open Editor and existing project-setting edits were preserved. The default deployment profile remains 7770/WS and 443/WSS; these repeated builds use the local 7788/WS validation profile. This correction verifies compilation/builds and physics state, not a new live-voice or physical-mobile playtest. [Machine-readable evidence](Validation/unity6-api-updater-fix.json) records the build id, log hashes, and source hashes.
+
+After updating an already-open Editor, use **Assets > Refresh** and allow compilation to finish. Clear old Console entries to inspect the new run; old entries from before the source update do not disappear automatically. A new project opening uses the corrected sources. Other deprecation/package/shader warnings may still appear; any new error needs investigation.

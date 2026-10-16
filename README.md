@@ -130,7 +130,7 @@ Linux IL2CPP and WebGL builds have succeeded. A compiled WebGL client connected 
 
 Physical iOS/Android playtests, live microphone/account/TURN verification, and broader real-world VRM/avatar pose checks are still required. The graphical Editor buttons have not been clicked in an automated UI test; the build pipeline has been exercised through its batch runner.
 
-Unity's API Updater can emit Mono/Cecil diagnostics even when BuildReport succeeds. Inspect the Editor logs and each output's `build-diagnostics.txt`. The [validation report](Documentation/VALIDATION_EN.md) records these diagnostics and the limits of the tests.
+The legacy Rigidbody API calls that triggered Unity 6 API Updater errors have been migrated to `linearVelocity`. The build runner now rejects ScriptUpdater failures, and the build pipeline rejects BuildReports with errors. The [validation report](Documentation/VALIDATION_EN.md) records the fix, repeated builds, remaining warnings, and test limits.
 
 To run local Editor checks and build the localhost validation profile on Windows:
 

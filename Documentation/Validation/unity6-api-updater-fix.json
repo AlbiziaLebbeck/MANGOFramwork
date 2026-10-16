@@ -1,0 +1,98 @@
+{
+  "date": "2026-10-17",
+  "timezone": "Asia/Bangkok",
+  "unityVersion": "6000.3.26f1",
+  "buildId": "20261016-172024-192144",
+  "failure": {
+    "assemblies": [
+      "FishNet.Runtime",
+      "Assembly-CSharp"
+    ],
+    "tool": "ScriptUpdater",
+    "exitCode": 130,
+    "exception": "Mono.Cecil: Argument null or empty (name)"
+  },
+  "fix": "Migrate Rigidbody/Rigidbody2D velocity calls to linearVelocity; keep API Updater enabled",
+  "editorCompilation": "passed",
+  "physicsChecks": "3D/2D state capture, restore, angular state and prediction velocity passed",
+  "tmpSettings": {
+    "schemaVersion": "2",
+    "source": "Unity 6000.3.26f1 uGUI TMP Essential Resources",
+    "existingValuesAndGuidsPreserved": true,
+    "headlessImporterErrors": 0
+  },
+  "buildReports": {
+    "Server": {
+      "result": "Succeeded",
+      "errors": 0
+    },
+    "Client": {
+      "result": "Succeeded",
+      "errors": 0
+    }
+  },
+  "updaterFailures": 0,
+  "csharpErrors": 0,
+  "historicalFailingLogRejectedByGuard": true,
+  "logs": [
+    {
+      "path": "Builds/Logs/20261016-172008-0-Linux64.log",
+      "sha256": "f4b0734701af1b799df73165fc381186bb9ea63c01621c57943ac62c5c36a10e"
+    },
+    {
+      "path": "Builds/Logs/20261016-172008-1-WebGL.log",
+      "sha256": "f8f02e9495a3a5897f069b3099e3f4a1a7118cdd8abd932c5112267b35a2f48f"
+    }
+  ],
+  "sources": [
+    {
+      "path": "Assets/3rdPerson+Fly/Scripts/PlayerScripts/MoveBehaviour.cs",
+      "sha256": "85fb31e07bd69727e8b2bd21135adc3326b08abb385e267df2b4d9019e203ff4"
+    },
+    {
+      "path": "Assets/Plugins/Networking/FishNet/Runtime/Generated/Component/Prediction/RigidbodyState.cs",
+      "sha256": "ff50d757eba5613997d7d7d386711bbdf8b1ff8fd00fb02e0065a93c67414420"
+    },
+    {
+      "path": "Assets/Plugins/Networking/FishNet/Runtime/Generated/Component/Prediction/RigidbodyPauser.cs",
+      "sha256": "00ea3c0b0429140677415bd33d0b3c79ee7973ba09171e6e185eec1f1e432935"
+    },
+    {
+      "path": "Assets/Plugins/Networking/FishNet/Runtime/Generated/Component/Prediction/PredictedObject.Rigidbodies.cs",
+      "sha256": "5a24d49882fdf99e683ce0aea8482f0b811b9e80e53a64ec7ff606803ee988ed"
+    },
+    {
+      "path": "Assets/Plugins/Networking/FishNet/Runtime/Object/NetworkBehaviour.Prediction.cs",
+      "sha256": "d5c58539303c7b8486e944c76e0853d70226f6c8c61c7a248be58924e35520e6"
+    },
+    {
+      "path": "Assets/Plugins/Networking/FishNet/Runtime/Object/Prediction/PredictionRigidbody.cs",
+      "sha256": "a1bc223a3b36fc8379e5593a9f20b1ec4fbe5ba7bc513b270a282f6eae55ad8b"
+    },
+    {
+      "path": "Assets/Plugins/Networking/FishNet/Runtime/Object/Prediction/PredictionRigidbody2D.cs",
+      "sha256": "f97d9ebb37bd7ca26b7e24b39f51deb43bcaec15f6f758ba9acad5950e3bb4dd"
+    },
+    {
+      "path": "Assets/Plugins/UI/TextMesh Pro/Resources/TMP Settings.asset",
+      "sha256": "7be438062cdc296835a1258b68bcbeb8e9fdc4b01ea27c05a24a1074260f7424"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Editor/MangosBuildPipeline.cs",
+      "sha256": "d0ece37de08b49854d279b877c2bac2ea76e871793336087c2676622510f13a5"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Editor/MangosUnity6PhysicsValidation.cs",
+      "sha256": "3109a1538697e2c3c44fbd0454cbb59686c201375e4346730daea6fd75136ec7"
+    },
+    {
+      "path": "Tools/BuildBoth.ps1",
+      "sha256": "a59d33d05ab5cf0d7f8dedaf57848870b0d91b625074d60dd256798d61f880c9"
+    }
+  ],
+  "limitations": [
+    "Remaining deprecation/package/shader warnings",
+    "No new production deployment, live voice, or physical-mobile playtest in this correction"
+  ],
+  "sourceCommit": "2d9679525123910fbf73be3348a929cd1b8851f7"
+}

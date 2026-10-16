@@ -65,7 +65,7 @@ Browser automation ครอบคลุม PC, โทรศัพท์, Androi
 
 รัน Unity C# compilation และ Build ตรวจ Linux IL2CPP/WebGL แล้ว และเปิด Linux binary ใน WSL แล้ว การตรวจ lifecycle ของ browser overlay ใช้ mock room จึงไม่ยืนยัน microphone/media สด account cookies หรือ production TURN ต้องทดสอบอุปกรณ์ iOS/Android จริงและซ้อม production deployment ก่อนรับรอง release
 
-Unity 6.3 automatic script updater ยังพิมพ์ Mono/Cecil diagnostics ระหว่างสแกน assembly เดิมบางส่วน แม้ Build จะรายงาน Succeeded ให้ตรวจ `build-diagnostics.txt` และ Editor log ไม่ใช้ exit code เพียงอย่างเดียวตัดสินว่าไม่มีปัญหา แยกคำเตือน GPU ของ headless browser ออกจาก shader/material ที่แสดงผลเสียจริงด้วย
+แก้ ScriptUpdater exit 130 ที่เกิดจาก Rigidbody API เดิมเมื่อ 17 ตุลาคม 2026 โดยย้ายไปใช้ `linearVelocity` แล้ว `Tools/BuildBoth.ps1` ตรวจ log ของทุก phase ว่ามี ScriptUpdater failure หรือ C# error หรือไม่ รวม phase ที่ออกเพื่อสลับ platform ส่วน pipeline ปฏิเสธ BuildReport ที่มี error แม้ result ระบุ Succeeded ให้ตรวจ `build-diagnostics.txt` และ Editor log ด้วย ดูคำเตือนที่เหลือและข้อผิดพลาดของ Build เก่าใน [ผลตรวจ](VALIDATION.md) และยังต้องแยกคำเตือน GPU ของ headless browser ออกจาก shader/material ที่แสดงผลเสียจริง
 
 ## ตรวจภาพ WebGL ซ้ำ
 

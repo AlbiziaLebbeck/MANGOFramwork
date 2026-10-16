@@ -39,7 +39,7 @@
 
 ## Diagnostics ที่ยังมี
 
-Unity API Updater พิมพ์ Mono/Cecil `Argument null or empty (name)` เมื่อสแกน assembly เดิมบางส่วน แม้ BuildReport จะสำเร็จ จึงยังไม่เรียกว่า build ที่ไม่มี diagnostics ให้ดู `build-diagnostics.txt` ในผล Build และ log ใน `Builds/Logs` ด้วย
+Log ของ Build เดิมวันที่ 16 ตุลาคมมี Mono/Cecil `Argument null or empty (name)` จาก ScriptUpdater แม้ BuildReport สำเร็จ เก็บ log เก่าไว้เป็นหลักฐาน ส่วนการแก้วันที่ 17 ตุลาคมด้านล่างถอดการเรียก Rigidbody API เก่าที่เป็นตัวกระตุ้นแล้ว ผล Build ซ้ำไม่มี ScriptUpdater หรือ C# error คำเตือนอื่นที่อธิบายไว้ยังคงมีอยู่
 
 Headless browser มีคำเตือน shader ภายในบางตัวและการคลาย ASTC texture ที่ GPU จำลองไม่รองรับ ตรวจภาพแล้วว่าฉาก, GLB ตัวอย่าง และข้อความหลักแสดงได้ แต่ยังต้องตรวจ GPU/เครื่องเป้าหมายจริง ส่วนคำเตือนเสียงที่ยังโหลดไม่ครบและ JobTempAlloc ตอนปิด Editor ก็ยังปรากฏใน log
 
@@ -52,3 +52,17 @@ Headless browser มีคำเตือน shader ภายในบางต�
 - สคริปต์ browser QA ชุดเดิมและ log เต็มอยู่ในโฟลเดอร์ `validation` ของ workspace `html-voice-tester-main`
 
 การถ่ายภาพรอบนี้ไม่มี Browser plugin/skill ชื่อ browser จึงใช้ Playwright/Edge workflow เดิม เส้นทางตรวจคือเปิด WebGL local → กดเริ่ม → เข้า guest ชื่อ PoppyValidation → BaseWorld → ถ่าย desktop/portrait/landscape ระบบเสียงใช้ mock รอบนี้จึงไม่เพิ่มข้ออ้างว่าผ่านบริการสดจากขอบเขตข้างต้น
+
+## แก้ Unity 6 API Updater — 17 ตุลาคม 2026
+
+เปิดโปรเจกต์แล้วทำซ้ำ ScriptUpdater exit 130 ของ FishNet.Runtime และ Assembly-CSharp ได้ จุดเรียก `Rigidbody.velocity` / `Rigidbody2D.velocity` เดิมสร้าง UnityUpgradable warnings แล้วตัว updater ล้มเหลวขณะ resolve metadata ของสมาชิกทดแทนผ่าน Mono.Cecil เป็นการย้าย API ที่ยังไม่ครบ ไม่ใช่ DLL ของ FishNet หาย
+
+แก้เจ็ดไฟล์ให้ใช้ [Rigidbody.linearVelocity](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/Rigidbody-linearVelocity.html) และ [Rigidbody2D.linearVelocity](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/Rigidbody2D-linearVelocity.html) ของ Unity 6 รวมการเก็บ/คืน prediction state และ controller เดิน/บิน ชื่อ serialized fields และลำดับ packet ของ FishNet คงเดิม ส่วน CharacterController.velocity ยังเป็น API ที่ถูกต้องจึงไม่เปลี่ยน API Updater ยังเปิดใช้งาน ไม่ซ่อนหรือ suppress error
+
+การตรวจ BuildReport ที่เข้มขึ้นพบอีกสาม error จาก TextMeshPro พยายามเปิดหน้าต่างนำเข้า resource ระหว่าง headless build เพราะ TMP Settings ยังเป็น schema เก่าแม้ปรับ shader แล้ว จึงย้ายตาม TMP Essential Resources ของ Unity 6 ที่ติดตั้งเป็น schema version 2 โดยคงค่าที่มีอยู่ font/sprite/style references และ asset GUID ทั้งหมด เพิ่มการตรวจ schema/default font ร่วมกับ physics checks แล้ว ผล Build ซ้ำไม่มี error จากหน้าต่าง importer นี้
+
+ผลตรวจ: คอมไพล์ Editor ด้วย Unity 6000.3.26f1 ผ่าน แล้ว Build Linux IL2CPP Server และ WebGL ในงาน `20261016-172024-192144` ผ่านทั้งคู่ โดย BuildReport errors=0 และไม่มี ScriptUpdater/C# error `MangosUnity6PhysicsValidation.Run` ผ่านการตรวจ 3D/2D state capture, restore, angular state และ prediction velocity โดยเรียกก่อน Build ของ `Tools/BuildBoth.ps1 -Validation` และเปิดผ่าน **MANGOs Framework > Validation > Unity 6 Physics** ได้ด้วย ตรวจ failure guard ของตัวสั่ง Build กับ log เดิมแล้วว่าปฏิเสธ log ที่มี error ได้
+
+ทดสอบในสำเนาแยกเพื่อรักษา Editor ที่ผู้ใช้เปิดและ project settings ที่แก้ไว้ Profile deployment เริ่มต้นยังเป็น 7770/WS และ 443/WSS ส่วน Build รอบนี้ใช้ local validation 7788/WS การแก้นี้ตรวจ compile/build และ physics state ไม่ใช่การทดสอบเสียงสดหรือมือถือจริงรอบใหม่ ดู build id, log hashes และ source hashes ใน [หลักฐานแบบ JSON](Validation/unity6-api-updater-fix.json)
+
+หลังอัปเดตขณะที่ Editor เปิดอยู่ ให้กด **Assets > Refresh** แล้วรอคอมไพล์เสร็จ จากนั้นล้างรายการ Console เดิมเพื่อดูผลรอบใหม่ รายการจากก่อนแก้ source ไม่หายเอง การเปิดโปรเจกต์ครั้งใหม่จะใช้ source ที่แก้แล้ว ยังอาจมี deprecation/package/shader warnings อื่น ต้องตรวจต่อหากมี error ใหม่

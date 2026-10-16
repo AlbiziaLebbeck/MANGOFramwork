@@ -65,7 +65,7 @@ Browser automation covers PC, phone, Android tablet, iPad desktop UA, and PC tou
 
 Unity C# compilation and Linux IL2CPP/WebGL compatibility builds have run. The Linux binary has been launched in WSL. Browser overlay lifecycle checks use mock rooms and do not prove live microphone/media quality, account cookies, or production TURN connectivity. Physical iOS/Android testing and a production deployment rehearsal are still required before a release is declared validated.
 
-Unity 6.3's automatic script updater currently emits Mono/Cecil diagnostics while scanning some existing assemblies. Builds can still report Succeeded; inspect `build-diagnostics.txt` and the Editor log instead of treating an exit code alone as proof of a clean build. Headless browser GPU warnings must also be distinguished from visible shader/material failures.
+The ScriptUpdater exit-130 errors from legacy Rigidbody APIs were fixed on 17 October 2026 by migrating physics calls to `linearVelocity`. `Tools/BuildBoth.ps1` now checks every phase log for ScriptUpdater failures and C# errors, including phases that exit to switch platforms. The pipeline rejects a BuildReport with a nonzero error count even if its result says Succeeded. Inspect `build-diagnostics.txt` and Editor logs; remaining warnings and historical failures are explained in [Validation](VALIDATION_EN.md). Headless browser GPU warnings must still be distinguished from visible shader/material failures.
 
 ## Repeat the WebGL screenshot check
 
