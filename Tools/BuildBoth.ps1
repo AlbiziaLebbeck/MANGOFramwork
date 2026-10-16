@@ -20,6 +20,12 @@ for ($taskPhase = 0; $taskPhase -lt 3; $taskPhase++) {
     Write-Output "Building $taskTarget; log: $taskLog"
     $taskProcess = Start-Process -FilePath $Unity -ArgumentList $taskArgs -WindowStyle Hidden -PassThru
     $taskProcess.WaitForExit()
+    # Unity can return zero (or the platform-restart code) after ScriptUpdater crashes.
+    # Reject that phase before accepting either a restart or a successful build.
+    $taskLogText = Get-Content -LiteralPath $taskLog -Raw
+    if ($taskLogText -match '(?im)^Script updater for .+ failed with exitcode (?!0\b)\d+' -or $taskLogText -match '(?m)\berror CS\d{4}:') {
+        throw "Unity script compilation/API Updater failed. See $taskLog"
+    }
     if ($taskProcess.ExitCode -eq 2 -and (Test-Path -LiteralPath $taskJobPath)) {
         $taskJob = Get-Content -LiteralPath $taskJobPath -Raw | ConvertFrom-Json
         if ($taskJob.phase -ne 'switching') { throw "Unexpected saved build phase: $($taskJob.phase)" }

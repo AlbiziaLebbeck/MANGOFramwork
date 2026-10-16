@@ -151,7 +151,8 @@ public static class MangosBuildPipeline
         var messages = report.steps.SelectMany(s => s.messages).Where(m => m.type == LogType.Error || m.type == LogType.Exception).Select(m => m.content);
         File.WriteAllLines(Path.Combine(output, "build-diagnostics.txt"), messages);
         Debug.Log($"MANGOS_BUILD {name}: {report.summary.result}, errors={report.summary.totalErrors}, output={output}");
-        if (report.summary.result != BuildResult.Succeeded) throw new InvalidOperationException(name + " build failed. See build-diagnostics.txt.");
+        if (report.summary.result != BuildResult.Succeeded || report.summary.totalErrors > 0)
+            throw new InvalidOperationException(name + " build failed or reported errors. See build-diagnostics.txt.");
         if (server)
         {
             if (!File.Exists(Path.Combine(output, "MANGOsServer.x86_64")) || !File.Exists(Path.Combine(output, "GameAssembly.so"))) throw new IOException("Incomplete Linux IL2CPP package.");

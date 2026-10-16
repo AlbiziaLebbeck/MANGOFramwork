@@ -84,7 +84,7 @@ public class MoveBehaviour : GenericBehaviour
 				behaviourManager.GetRigidBody.AddForce(transform.forward * (jumpInertialForce * Physics.gravity.magnitude * sprintSpeed), ForceMode.Acceleration);
 			}
 			// Has landed?
-			if ((behaviourManager.GetRigidBody.velocity.y < 0) && behaviourManager.IsGrounded())
+			if ((behaviourManager.GetRigidBody.linearVelocity.y < 0) && behaviourManager.IsGrounded())
 			{
 				behaviourManager.GetAnim.SetBool(groundedBool, true);
 				// Change back player friction to default.
@@ -106,7 +106,7 @@ public class MoveBehaviour : GenericBehaviour
 			behaviourManager.GetRigidBody.useGravity = true;
 
 		// Avoid takeoff when reached a slope end.
-		else if (!behaviourManager.GetAnim.GetBool(jumpBool) && behaviourManager.GetRigidBody.velocity.y > 0)
+		else if (!behaviourManager.GetAnim.GetBool(jumpBool) && behaviourManager.GetRigidBody.linearVelocity.y > 0)
 		{
 			RemoveVerticalVelocity();
 		}
@@ -133,9 +133,9 @@ public class MoveBehaviour : GenericBehaviour
 	// Remove vertical rigidbody velocity.
 	private void RemoveVerticalVelocity()
 	{
-		Vector3 horizontalVelocity = behaviourManager.GetRigidBody.velocity;
+		Vector3 horizontalVelocity = behaviourManager.GetRigidBody.linearVelocity;
 		horizontalVelocity.y = 0;
-		behaviourManager.GetRigidBody.velocity = horizontalVelocity;
+		behaviourManager.GetRigidBody.linearVelocity = horizontalVelocity;
 	}
 
 	// Rotate the player to match correct orientation, according to camera and key pressed.
