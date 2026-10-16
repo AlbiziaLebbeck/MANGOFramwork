@@ -14,8 +14,6 @@ public class WorldSceneConfigurations : ScriptableObject
     [SerializeField, HideInInspector]
     private string[] _sceneNames = new string[0];
 
-    [SerializeField] 
-
     private void OnValidate()
     {
         List<string> additives = new List<string>();
