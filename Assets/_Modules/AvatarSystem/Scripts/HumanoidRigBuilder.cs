@@ -51,6 +51,7 @@ public static class HumanoidRigBuilder
         if (selected.Values.Distinct().Count() != selected.Count) throw new InvalidOperationException("One bone was mapped to multiple humanoid roles.");
         foreach (var node in selected.Values)
             if (nodes.Count(n => n.name == node.name) != 1) throw new InvalidOperationException("Ambiguous bone name: " + node.name);
+        CalibrateTPose(model.transform, selected);
         var description = new HumanDescription {
             human = selected.Select(pair => new HumanBone { humanName = pair.Key, boneName = pair.Value.name, limit = new HumanLimit { useDefaultValues = true } }).ToArray(),
             skeleton = nodes.Select(n => new SkeletonBone { name = n.name, position = n.localPosition, rotation = n.localRotation, scale = n.localScale }).ToArray(),
@@ -69,6 +70,42 @@ public static class HumanoidRigBuilder
         }
         avatar.name = model.name + "_OwnHumanoid";
         return avatar;
+    }
+    private static void CalibrateTPose(Transform root, Dictionary<string, Transform> bones)
+    {
+        Transform Bone(HumanBodyBones role) => bones.TryGetValue(HumanTrait.BoneName[(int)role], out var bone) ? bone : null;
+        var hips = Bone(HumanBodyBones.Hips);
+        var head = Bone(HumanBodyBones.Head);
+        var leftArm = Bone(HumanBodyBones.LeftUpperArm);
+        var rightArm = Bone(HumanBodyBones.RightUpperArm);
+        var up = (head.position - hips.position).normalized;
+        var right = Vector3.ProjectOnPlane(rightArm.position - leftArm.position, up).normalized;
+        if (up.sqrMagnitude < .5f || right.sqrMagnitude < .5f) throw new InvalidOperationException("Cannot determine the humanoid's up/right axes.");
+        var correction = Quaternion.Inverse(Quaternion.LookRotation(Vector3.Cross(right, up), up));
+        // Rotate mesh and skeleton together. Skin bind matrices remain unchanged.
+        foreach (Transform child in root)
+        {
+            child.localPosition = correction * child.localPosition;
+            child.localRotation = correction * child.localRotation;
+        }
+        void Align(HumanBodyBones parent, HumanBodyBones child, Vector3 direction)
+        {
+            var from = Bone(parent); var to = Bone(child);
+            if (from == null || to == null) return;
+            var vector = to.position - from.position;
+            if (vector.sqrMagnitude < 1e-8f) throw new InvalidOperationException("Zero-length humanoid segment: " + parent);
+            from.rotation = Quaternion.FromToRotation(vector.normalized, direction) * from.rotation;
+        }
+        // AvatarBuilder expects a T-pose; many GLBs are exported in an A/relaxed pose.
+        // Rotate joints into calibration pose, never alter bone lengths or skin weights.
+        Align(HumanBodyBones.LeftUpperArm, HumanBodyBones.LeftLowerArm, Vector3.left);
+        Align(HumanBodyBones.LeftLowerArm, HumanBodyBones.LeftHand, Vector3.left);
+        Align(HumanBodyBones.RightUpperArm, HumanBodyBones.RightLowerArm, Vector3.right);
+        Align(HumanBodyBones.RightLowerArm, HumanBodyBones.RightHand, Vector3.right);
+        Align(HumanBodyBones.LeftUpperLeg, HumanBodyBones.LeftLowerLeg, Vector3.down);
+        Align(HumanBodyBones.LeftLowerLeg, HumanBodyBones.LeftFoot, Vector3.down);
+        Align(HumanBodyBones.RightUpperLeg, HumanBodyBones.RightLowerLeg, Vector3.down);
+        Align(HumanBodyBones.RightLowerLeg, HumanBodyBones.RightFoot, Vector3.down);
     }
     private static string Normalize(string value) => Regex.Replace(value.ToLowerInvariant().Replace("mixamorig:", "").Replace("mixamorig", ""), "[^a-z0-9]", "");
     private static HashSet<string> Aliases(HumanBodyBones bone)
