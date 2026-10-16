@@ -167,28 +167,15 @@ namespace MANGOsFramework.Experiment
             string url,
             CancellationToken cancellationToken)
         {
-            var gltf = new GltfImport();
             GameObject previewRoot = null;
 
             try
             {
-                bool loaded = await gltf.Load(url, cancellationToken: cancellationToken);
-                if (!loaded || cancellationToken.IsCancellationRequested)
-                {
-                    return null;
-                }
-
-                previewRoot = new GameObject("AvatarThumbnailPreview");
+                previewRoot = await AvatarModelImporter.Load(url, cancellationToken);
                 previewRoot.hideFlags = HideFlags.HideAndDontSave;
                 previewRoot.transform.position = new Vector3(10000f, -10000f, 10000f);
 
-                bool instantiated = await gltf.InstantiateMainSceneAsync(
-                    previewRoot.transform,
-                    cancellationToken);
-                if (!instantiated || cancellationToken.IsCancellationRequested)
-                {
-                    return null;
-                }
+                cancellationToken.ThrowIfCancellationRequested();
 
                 SetLayerRecursively(previewRoot.transform, PreviewLayer);
                 DisableAnimation(previewRoot);
@@ -209,7 +196,6 @@ namespace MANGOsFramework.Experiment
                     Destroy(previewRoot);
                 }
 
-                gltf.Dispose();
             }
         }
 

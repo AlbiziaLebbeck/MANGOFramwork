@@ -14,6 +14,7 @@ public class PlayerMovementHandler : MonoBehaviour
     private int interactableLayer;
     private int uILayer;
     private Animator animator;
+    public void SetAnimator(Animator value) => animator = value;
     private ThirdPersonController thirdPersonController;
     private CharacterController characterController;
     private PlayerActions playerActions;

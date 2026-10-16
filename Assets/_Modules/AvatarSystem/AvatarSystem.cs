@@ -28,7 +28,6 @@ namespace MANGOsFramework.Experiment
         [Header("Debug")]
         [SerializeField] private List<string> userAvatarUrls = new();
         private List<AvatarIcon> avatarButtons = new();
-        private LimitedDictionary<string, GameObject> cachedAvatarModel = new(100);
         [SerializeField] private string currentSelectAvatar;
 
         private bool inCooldown;
@@ -82,12 +81,8 @@ namespace MANGOsFramework.Experiment
             {
                 resetAnimatorButton.onClick.AddListener(() =>
                 {
-                    if(localPlayerAnim == null)
-                    {
-                        localPlayerAnim = UserReferencePersistent.Instance.PlayerGameObject.GetComponent<Animator>();
-                    }
-
-                    StartCoroutine(RestartAnimator(localPlayerAnim));
+                    localPlayerAnim = MangosAvatarRuntime.ResolveAnimator(UserReferencePersistent.Instance.PlayerGameObject);
+                    if (localPlayerAnim != null) StartCoroutine(RestartAnimator(localPlayerAnim));
                 });
             }
         }
@@ -196,12 +191,8 @@ namespace MANGOsFramework.Experiment
 
         private void OnAvatarLoaded(GameObject _modelToCache, string _url)
         {
-            string normalizedUrl = NormalizeAvatarUrl(_url);
-            if (!string.IsNullOrWhiteSpace(normalizedUrl) && !cachedAvatarModel.ContainsKey(normalizedUrl))
-            {
-                var clonedAvatar = Instantiate(_modelToCache, cachedAvatarHolder);
-                cachedAvatarModel.Add(normalizedUrl, clonedAvatar);
-            }
+            // Live imported models own native resources and are not cloned into
+            // an unbounded hidden cache. Browser HTTP and thumbnail caches remain.
         }
 
         private void Update()
@@ -223,7 +214,7 @@ namespace MANGOsFramework.Experiment
         public bool IsAvatarCached(string _url)
         {
             string normalizedUrl = NormalizeAvatarUrl(_url);
-            return !string.IsNullOrWhiteSpace(normalizedUrl) && cachedAvatarModel.ContainsKey(normalizedUrl);
+            return false;
         }
 
         public Texture GetAvatarTexture(string _url)
@@ -245,15 +236,7 @@ namespace MANGOsFramework.Experiment
         public GameObject LoadAvatarFromCached(string _url)
         {
             string normalizedUrl = NormalizeAvatarUrl(_url);
-            if(!string.IsNullOrWhiteSpace(normalizedUrl) &&
-               cachedAvatarModel.TryGetValue(normalizedUrl, out GameObject loadedAvatar))
-            {
-                return loadedAvatar;
-            }
-            else
-            {
-                return null;
-            }
+            return null;
         }
 
         public IEnumerator LoadAvatarSelection(Action onComplete = null)

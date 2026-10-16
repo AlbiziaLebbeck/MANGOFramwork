@@ -40,6 +40,7 @@ public class BasicBehaviour : MonoBehaviour
 
     // Get the player's animator controller.
     public Animator GetAnim => anim;
+    public void SetAnimator(Animator value) => anim = value;
 
     // Get current default behaviour.
     public int GetDefaultBehaviour => defaultBehaviour;

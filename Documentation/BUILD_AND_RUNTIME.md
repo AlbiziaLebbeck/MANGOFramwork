@@ -33,6 +33,18 @@ The account/voice/media services remain external. Their existing default URLs ar
 
 Source overlay modules are supplied in the template, so the Unity project builds independently of the sibling voice-tester directory. Keep the template copy synchronized when updating the original overlay source.
 
+## Avatar loading and animation
+
+VRM 0.x/1.0 use pinned UniVRM 0.128.0. The imported model's own Humanoid Avatar and raw skeleton drive its meshes. Ordinary GLB uses glTFast and builds a new Unity Avatar from the loaded transforms/rest pose. Existing reference Avatar assets contribute bone names only; their Avatar objects and skeleton dimensions are not reused on a different model.
+
+The current movement/fly Animator Controller is retained, with state/parameters transferred to the new model. FishNet NetworkAnimator, Starter Assets, fly movement and interactions are rebound to the active Animator. Each loaded model owns its imported native assets and disposes them when replaced. Live models are no longer cloned into the old hidden 100-model cache. Thumbnails use the same importer, so VRM rendering takes the same material route as the player model.
+
+AvatarLoader defaults to uniform visual height normalization at 1.7m, preserving body proportions and the game's existing authoritative collider policy. Change `normalizeHeight`/`targetHeight` on the player/preview prefab if another visual policy is needed; retaining arbitrary natural heights also requires a consistent gameplay/collision policy. Camera/nameplate offsets follow the resulting visual height. Bone lengths, skin weights and inverse bind matrices are not stretched to match a reference rig.
+
+For an unmapped humanoid GLB, create **MANGOs Framework > Avatar Rig Profile** from the asset creation menu. Map Humanoid roles to node paths and either assign the profile to AvatarLoader or place it under `Resources/AvatarRigProfiles` with a matching URL prefix. Incomplete/ambiguous rigs are rejected with `LastLoadError` and keep the previous/default model. A file without a humanoid rig cannot automatically use humanoid animation.
+
+**MANGOs Framework > Avatar > Export Animation Audit** writes `Library/MangosAnimationAudit.csv`, including clips embedded in imported model assets. The initial audit found 52 Humanoid clips and no Transform position/scale curves. Synthetic rigs with different proportions are tested over 60 animation frames; a synthetic VRM 1.0 is also imported with its own valid Humanoid. Real account avatars, cloth, spring bones, extreme proportions and all interaction poses still need visual checks using the actual model files.
+
 ## Validation boundaries
 
 Unity C# compilation and Linux IL2CPP/WebGL compatibility builds have run. The Linux binary has been launched in WSL. Browser overlay lifecycle checks use mock rooms and do not prove live microphone/media quality, account cookies, or production TURN connectivity. Physical iOS/Android testing and a production deployment rehearsal are still required before a release is declared validated.

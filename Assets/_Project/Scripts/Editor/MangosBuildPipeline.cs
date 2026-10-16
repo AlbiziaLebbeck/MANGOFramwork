@@ -98,6 +98,7 @@ public static class MangosBuildPipeline
     }
     public static void Preflight(MangosBuildProfile profile, string[] targets)
     {
+        MangosAvatarSetup.Configure();
         profile.Validate();
         if (targets.Length == 0 || targets.Any(t => t != "Server" && t != "Client")) throw new ArgumentException("Choose Server, Client or Both.");
         foreach (var target in targets)

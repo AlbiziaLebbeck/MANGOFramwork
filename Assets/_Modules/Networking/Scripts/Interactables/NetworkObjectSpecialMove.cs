@@ -26,7 +26,8 @@ public class NetworkObjectSpecialMove : NetworkInteractable
     {
         if (IsOverriding.Value)
         {
-            if (CurrentInteractingNetworkObject.Value.TryGetComponent(out Animator animator))
+            var animator = MangosAvatarRuntime.ResolveAnimator(CurrentInteractingNetworkObject.Value.gameObject);
+            if (animator != null)
             {
                 DoOverride(animator);
             }
@@ -59,7 +60,7 @@ public class NetworkObjectSpecialMove : NetworkInteractable
             localPlayer_MoveBehaviour = player.GetComponent<MoveBehaviour>();
             localPlayer_FlyBehaviour = player.GetComponent<FlyBehaviour>();
             localPlayer_LockTarget = player.GetComponent<LockTarget>();
-            localPlayer_Animator = player.GetComponent<Animator>();
+            localPlayer_Animator = MangosAvatarRuntime.ResolveAnimator(player.gameObject);
         }
 
         if (localPlayer_BasicBehaviour != null)
@@ -99,6 +100,7 @@ public class NetworkObjectSpecialMove : NetworkInteractable
             if (localPlayer_ThirdPersonController != null) localPlayer_ThirdPersonController.enabled = true;
             if (localPlayer_PlayerMovementHandler != null) localPlayer_PlayerMovementHandler.SetLockToPlatformTarget(null);
         }
+        localPlayer_Animator = MangosAvatarRuntime.ResolveAnimator(localPlayer.gameObject);
         if (localPlayer_Animator != null) localPlayer_Animator.SetInteger("Motion", 0);
         #endregion
 
@@ -122,7 +124,8 @@ public class NetworkObjectSpecialMove : NetworkInteractable
     {
         if (isOverride)
         {
-            if(player.TryGetComponent(out Animator animator))
+            var animator = MangosAvatarRuntime.ResolveAnimator(player.gameObject);
+            if(animator != null)
             {
                 DoOverride(animator);
             }
