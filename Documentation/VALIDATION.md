@@ -1,5 +1,7 @@
 # ผลตรวจการปรับ MANGOs Framework
 
+[ภาษาไทย](VALIDATION.md) | [English](VALIDATION_EN.md) | [เอกสารทั้งหมด / All documentation](README.md)
+
 วันที่: 16 ตุลาคม 2026 — Unity 6000.3.26f1
 
 ฐานเดิม: `e461cdcad0b5bf7191f903afc828ea248b296a6f` / Unity 2022.3.62f3
@@ -24,7 +26,7 @@
 | .anim | ตรวจ 52 คลิป เป็น Humanoid และไม่พบ Transform position/scale curve ที่ใช้ยืดกระดูกโดยตรง มีเมนูส่งออก CSV สำหรับตรวจต่อ |
 | Shader / UI | ปรับ TextMeshPro shader จาก Essential Resources ของ Unity 6 โดยคง GUID เดิม แก้ตัวอักษรเป็นสี่เหลี่ยม ตรวจภาพ Launcher และ world ทั้งแนวตั้ง/แนวนอนแล้ว |
 
-ภาพใน `Validation/` มาจาก Client ที่ Build จริง ไม่ใช่ภาพ UI mock ส่วน `browser-summary.json` ระบุ build id และผลที่บันทึกไว้
+ภาพใน [Validation/](Validation/) มาจาก Client ที่ Build จริง ส่วน [browser-summary.json](Validation/browser-summary.json) ระบุ build id และผลที่บันทึกไว้ ชื่อ guest คือ **PoppyValidation** โดยถ่ายภาพ desktop, portrait และ landscape ใหม่ด้วยชื่อนี้ เป็นข้อมูลทดสอบ ไม่ใช่บัญชี production หรือชื่อผู้เล่นเริ่มต้นที่บังคับใช้
 
 ## ขอบเขตที่ยังไม่ได้ยืนยันกับระบบจริง
 
@@ -46,4 +48,7 @@ Headless browser มีคำเตือน shader ภายในบางต�
 - `Tools/BuildBoth.ps1 -Validation` รัน checks ฝั่ง Editor และสร้างคู่ local validation ที่ 7788/WS
 - `MangosAvatarValidation.Run` ตรวจ synthetic Humanoid/VRM และ animation audit
 - `MangosRealAvatarValidation.Run` พร้อม `-mangosAvatarFixture <path-to-glb>` ตรวจ fixture Humanoid จริง โดยไม่ดาวน์โหลดหรือ bundle โมเดลให้อัตโนมัติ
-- สคริปต์ browser QA และ log เต็มอยู่ในโฟลเดอร์ `validation` ของ workspace `html-voice-tester-main`
+- [สคริปต์ WebGL integration ที่นำไปรันซ้ำได้](../Tools/Validation/check-integration-webgl.cjs) ใช้ชื่อ **PoppyValidation** เริ่มต้น ดูวิธีใช้ใน [คู่มือ Build/runtime](BUILD_AND_RUNTIME_TH.md)
+- สคริปต์ browser QA ชุดเดิมและ log เต็มอยู่ในโฟลเดอร์ `validation` ของ workspace `html-voice-tester-main`
+
+การถ่ายภาพรอบนี้ไม่มี Browser plugin/skill ชื่อ browser จึงใช้ Playwright/Edge workflow เดิม เส้นทางตรวจคือเปิด WebGL local → กดเริ่ม → เข้า guest ชื่อ PoppyValidation → BaseWorld → ถ่าย desktop/portrait/landscape ระบบเสียงใช้ mock รอบนี้จึงไม่เพิ่มข้ออ้างว่าผ่านบริการสดจากขอบเขตข้างต้น

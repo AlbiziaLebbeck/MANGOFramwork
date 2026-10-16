@@ -1,5 +1,7 @@
 # MANGOs build and runtime
 
+[English](BUILD_AND_RUNTIME.md) | [ภาษาไทย](BUILD_AND_RUNTIME_TH.md) | [All documentation / เอกสารทั้งหมด](README.md)
+
 Open this project with Unity **6000.3.26f1** on branch `MANGOsFramework_U6`. The original Unity 2022 baseline remains available in Git history at commit `e461cdcad0b5bf7191f903afc828ea248b296a6f`.
 
 ## Build Center
@@ -64,3 +66,19 @@ Browser automation covers PC, phone, Android tablet, iPad desktop UA, and PC tou
 Unity C# compilation and Linux IL2CPP/WebGL compatibility builds have run. The Linux binary has been launched in WSL. Browser overlay lifecycle checks use mock rooms and do not prove live microphone/media quality, account cookies, or production TURN connectivity. Physical iOS/Android testing and a production deployment rehearsal are still required before a release is declared validated.
 
 Unity 6.3's automatic script updater currently emits Mono/Cecil diagnostics while scanning some existing assemblies. Builds can still report Succeeded; inspect `build-diagnostics.txt` and the Editor log instead of treating an exit code alone as proof of a clean build. Headless browser GPU warnings must also be distinguished from visible shader/material failures.
+
+## Repeat the WebGL screenshot check
+
+The [Tools/Validation/check-integration-webgl.cjs](../Tools/Validation/check-integration-webgl.cjs) script defaults to the guest name **PoppyValidation**. This is QA data; it does not rename accounts or force a player name in the game. Override the fixture through the `MANGOS_VALIDATION_GUEST_NAME` environment variable if needed.
+
+Requirements are Node.js, the `playwright` package resolvable by Node, and Microsoft Edge, launched with Playwright's `channel: 'msedge'`. First start the Server from the **local validation build** on 7788/WS, using the matching Server/Client pair. The script does not rebuild or deploy.
+
+From the project root, substitute the actual local build path:
+
+```powershell
+node Tools/Validation/check-integration-webgl.cjs 'C:\path\to\Builds\validation\<build-id>'
+```
+
+The script temporarily serves Client at `http://127.0.0.1:8767/`, joins as a guest, and captures desktop 1280×800, portrait 390×844, and landscape 844×390 screenshots plus JSON in `Builds/Validation/Browser/`. An optional second argument selects another evidence directory. Voice is mocked and the account API is simulated as logged out; this does not verify real voice/account services.
+
+Checks cover page identity, initial content, FishNet connection, Server confirmation of the guest name, world/controller readiness, rotation/joystick input, and runtime exceptions. Visually inspect the upper-right nameplate before promoting images into documentation evidence.

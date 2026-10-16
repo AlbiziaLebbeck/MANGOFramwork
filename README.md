@@ -1,10 +1,12 @@
 # MANGOs Framework
 
+[English](README.md) | [ภาษาไทย](README_TH.md) | [All documentation / เอกสารทั้งหมด](Documentation/README.md)
+
 Multiplayer Unity framework for a **WebGL client** and **Linux Dedicated Server**, built with **Unity 6.3 LTS — 6000.3.26f1** and **Universal Render Pipeline (URP)**.
 
 This version is maintained on the **`MANGOsFramework_U6`** branch.
 
-**[คู่มือใช้งานภาษาไทย](Documentation/HANDOFF_TH.md)** · [Build and runtime guide](Documentation/BUILD_AND_RUNTIME.md) · [Validation results and limitations](Documentation/VALIDATION.md)
+[Getting started](Documentation/HANDOFF_EN.md) · **[คู่มือใช้งานภาษาไทย](Documentation/HANDOFF_TH.md)** · [Build and runtime guide](Documentation/BUILD_AND_RUNTIME.md) · [Validation results and limitations](Documentation/VALIDATION_EN.md)
 
 ## Features
 
@@ -128,7 +130,7 @@ Linux IL2CPP and WebGL builds have succeeded. A compiled WebGL client connected 
 
 Physical iOS/Android playtests, live microphone/account/TURN verification, and broader real-world VRM/avatar pose checks are still required. The graphical Editor buttons have not been clicked in an automated UI test; the build pipeline has been exercised through its batch runner.
 
-Unity's API Updater can emit Mono/Cecil diagnostics even when BuildReport succeeds. Inspect the Editor logs and each output's `build-diagnostics.txt`. The [validation report](Documentation/VALIDATION.md) records these diagnostics and the limits of the tests.
+Unity's API Updater can emit Mono/Cecil diagnostics even when BuildReport succeeds. Inspect the Editor logs and each output's `build-diagnostics.txt`. The [validation report](Documentation/VALIDATION_EN.md) records these diagnostics and the limits of the tests.
 
 To run local Editor checks and build the localhost validation profile on Windows:
 
@@ -138,13 +140,17 @@ To run local Editor checks and build the localhost validation profile on Windows
 
 This profile uses port **7788**, WS, and localhost, so it is separate from the default deployment profile.
 
-![WebGL validation: loaded GLB avatar with the updated framework](Documentation/Validation/integration-world-desktop.png)
+The screenshots use the guest name **PoppyValidation**. See the [build guide](Documentation/BUILD_AND_RUNTIME.md#repeat-the-webgl-screenshot-check) to repeat the capture.
+
+![WebGL validation: PoppyValidation with a loaded GLB avatar](Documentation/Validation/integration-world-desktop.png)
 
 ## Documentation and migration history
 
+- [All documentation in English and Thai](Documentation/README.md)
+- [Getting started](Documentation/HANDOFF_EN.md)
 - [คู่มือใช้งานภาษาไทย](Documentation/HANDOFF_TH.md)
 - [Build and runtime details](Documentation/BUILD_AND_RUNTIME.md)
-- [Validation evidence and limitations](Documentation/VALIDATION.md)
-- [Original migration plan (Thai)](Documentation/MIGRATION_PLAN_TH.md)
+- [Validation evidence and limitations](Documentation/VALIDATION_EN.md)
+- [Original migration plan](Documentation/MIGRATION_PLAN_EN.md)
 
 The Unity 2022 baseline remains available in Git history at commit `e461cdcad0b5bf7191f903afc828ea248b296a6f`.

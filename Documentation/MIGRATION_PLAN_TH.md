@@ -1,6 +1,8 @@
 # แผนปรับปรุง MANGOs Framework: Unity 6.3, Browser Voice, Build, Avatar และ Mobile
 
-> เอกสารนี้เก็บแผนก่อนเริ่มลงมือไว้เป็นประวัติ ผลดำเนินงานล่าสุดและข้อจำกัดให้อ่าน `HANDOFF_TH.md` และ `VALIDATION.md`
+[ภาษาไทย](MIGRATION_PLAN_TH.md) | [English](MIGRATION_PLAN_EN.md) | [เอกสารทั้งหมด / All documentation](README.md)
+
+> เอกสารนี้เก็บแผนก่อนเริ่มลงมือไว้เป็นประวัติ ผลดำเนินงานล่าสุดและข้อจำกัดให้อ่าน [คู่มือใช้งาน](HANDOFF_TH.md) และ [ผลตรวจ](VALIDATION.md)
 
 วันที่ตรวจ: 16 ตุลาคม 2026 — สถานะ: แผนจากการอ่านซอร์ส ยังไม่ได้เปิดโปรเจกต์ด้วย Editor ใหม่ แก้ runtime หรือทดลอง Build
 

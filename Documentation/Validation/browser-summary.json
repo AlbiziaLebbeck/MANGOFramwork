@@ -1,6 +1,26 @@
 {
   "buildId": "20261016-160736-2dab27",
+  "guestName": "PoppyValidation",
+  "capturedAtUtc": "2026-10-16T16:57:47.7358566Z",
   "passed": true,
+  "page": {
+    "url": "http://127.0.0.1:8767/",
+    "title": "Unity WebGL Player | mangosframework"
+  },
+  "viewports": [
+    {
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "width": 390,
+      "height": 844
+    },
+    {
+      "width": 844,
+      "height": 390
+    }
+  ],
   "controller": {
     "family": "desktop",
     "orientation": "landscape",
@@ -46,5 +66,14 @@
       "status": 200
     }
   ],
-  "errors": []
+  "errors": [],
+  "validationScript": "Tools/Validation/check-integration-webgl.cjs",
+  "voiceMode": "mock",
+  "browser": "Microsoft Edge / Chromium, headless",
+  "browserPathReason": "Browser plugin not available",
+  "visuallyReviewed": [
+    "desktop",
+    "portrait",
+    "landscape"
+  ]
 }

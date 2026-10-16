@@ -1,5 +1,7 @@
 # วิธีใช้ MANGOs Framework หลังปรับระบบ
 
+[ภาษาไทย](HANDOFF_TH.md) | [English](HANDOFF_EN.md) | [เอกสารทั้งหมด / All documentation](README.md)
+
 เปิดโปรเจกต์ด้วย **Unity 6000.3.26f1** แล้วเปิดเมนู **MANGOs Framework > Build Center**
 
 โค้ดรุ่นปัจจุบันอยู่บน branch `MANGOsFramework_U6` ส่วนฐาน Unity 2022 เดิมยังอ้างอิงได้จาก Git history ที่ commit `e461cdcad0b5bf7191f903afc828ea248b296a6f`
@@ -22,7 +24,7 @@
 
 ต้องนำโฟลเดอร์ Server ไปทั้งชุด ไม่ใช่เฉพาะไฟล์ `.x86_64` จากนั้นเรียก `sh start-server.sh` บน Linux ส่วน Client ให้บริการผ่าน HTTPS พร้อม MIME type สำหรับ JavaScript และ WebAssembly
 
-หากต้องใช้ command line บน Windows เรียก `Tools/BuildBoth.ps1` ได้ ตัวสั่งงานจะเลือก platform และเปิด Unity ต่อให้ครบทั้งสองฝั่งเอง ดูรายละเอียดและตัวเลือกใน `BUILD_AND_RUNTIME.md`
+หากต้องใช้ command line บน Windows เรียก `Tools/BuildBoth.ps1` ได้ ตัวสั่งงานจะเลือก platform และเปิด Unity ต่อให้ครบทั้งสองฝั่งเอง ดูรายละเอียดและตัวเลือกใน [คู่มือ Build/runtime](BUILD_AND_RUNTIME_TH.md)
 
 ## ระบบเสียงใหม่
 
@@ -46,4 +48,6 @@ Touch ใช้ joystick ซ้าย เดิน, ลากด้านขว�
 
 ## ก่อนนำขึ้นระบบจริง
 
-ดูผลตรวจและข้อจำกัดใน `VALIDATION.md` และรายละเอียดเทคนิคใน `BUILD_AND_RUNTIME.md` การทดสอบ browser จำลองไม่แทนการเล่นบน iPhone/iPad/Android จริง และการทดสอบเสียงแบบ mock ไม่แทนการทดสอบบัญชีจริงกับ microphone, media backend และ TURN
+ดูผลตรวจและข้อจำกัดใน [ผลตรวจ](VALIDATION.md) และรายละเอียดเทคนิคใน [คู่มือ Build/runtime](BUILD_AND_RUNTIME_TH.md) การทดสอบ browser จำลองไม่แทนการเล่นบน iPhone/iPad/Android จริง และการทดสอบเสียงแบบ mock ไม่แทนการทดสอบบัญชีจริงกับ microphone, media backend และ TURN
+
+ชื่อ guest ในภาพประกอบคือ **PoppyValidation** เป็นข้อมูลทดสอบ ผู้เล่นทั่วไปยังใช้ชื่อที่เลือกหรือชื่อบัญชีของตนเอง
