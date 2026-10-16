@@ -33,7 +33,7 @@
 - ตรวจ GLB ตัวอย่างสาธารณะหนึ่งตัว และ synthetic VRM 1.0 ไม่ได้ตรวจ Avatar ทุกตัวในบัญชี หรือ VRM 0.x/1.0 จริงทุกชนิด ต้องตรวจ spring bones, cloth, extreme proportions และท่านั่ง/ปฏิสัมพันธ์ด้วยโมเดลจริงเพิ่มเติม
 - ไม่สามารถรับประกันว่า GLB ที่ไม่มี Humanoid skeleton หรือมี skin weights/bind pose ผิดจะใช้ animation เดิมได้ทุกตัว มี Rig Profile สำหรับแก้ mapping และมี fallback เมื่อโหลดไม่ผ่าน
 - เส้นทางหลักของ Build ถูกทดสอบผ่าน batch runner ปุ่มและการสลับ platform แบบ GUI ใน Editor ยังไม่ได้คลิกตรวจบนหน้าต่างจริง
-- ไม่มีการ deploy, push Git หรือเปลี่ยน reverse proxy ของระบบจริง
+- ไม่มีการ deploy หรือเปลี่ยน reverse proxy ของระบบจริง การเผยแพร่ source ผ่าน Git แยกจากการยืนยัน deployment และ runtime
 
 ## Diagnostics ที่ยังมี
 

@@ -2,7 +2,7 @@
 
 เปิดโปรเจกต์ด้วย **Unity 6000.3.26f1** แล้วเปิดเมนู **MANGOs Framework > Build Center**
 
-โค้ดรุ่นปรับปรุงอยู่บน branch `codex/mangos-unity6-runtime` ส่วน branch `MANGOsFramework_U6` คงฐาน Unity 2022 เดิมไว้ ยังไม่ได้ push ไป GitHub
+โค้ดรุ่นปัจจุบันอยู่บน branch `MANGOsFramework_U6` ส่วนฐาน Unity 2022 เดิมยังอ้างอิงได้จาก Git history ที่ commit `e461cdcad0b5bf7191f903afc828ea248b296a6f`
 
 ## Build Server และ Client
 

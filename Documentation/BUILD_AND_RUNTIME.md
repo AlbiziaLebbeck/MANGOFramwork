@@ -1,6 +1,6 @@
 # MANGOs build and runtime
 
-Open this project with Unity **6000.3.26f1** on branch `codex/mangos-unity6-runtime`. The original 2022 baseline is preserved at Git commit `e461cdcad0b5bf7191f903afc828ea248b296a6f` on branch `MANGOsFramework_U6`.
+Open this project with Unity **6000.3.26f1** on branch `MANGOsFramework_U6`. The original Unity 2022 baseline remains available in Git history at commit `e461cdcad0b5bf7191f903afc828ea248b296a6f`.
 
 ## Build Center
 
