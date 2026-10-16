@@ -1,0 +1,50 @@
+{
+  "buildId": "20261016-160736-2dab27",
+  "passed": true,
+  "controller": {
+    "family": "desktop",
+    "orientation": "landscape",
+    "mode": "auto",
+    "touch": false,
+    "ready": true,
+    "canFly": false,
+    "focused": false
+  },
+  "afterRotation": {
+    "family": "desktop",
+    "orientation": "landscape",
+    "mode": "touch",
+    "touch": true,
+    "ready": true,
+    "canFly": false,
+    "focused": false
+  },
+  "voiceRoom": {
+    "roomId": "validation:-496801793",
+    "connected": false,
+    "muted": false,
+    "ready": true
+  },
+  "network": [
+    {
+      "type": "websocket",
+      "url": "ws://localhost:7788/validation/game"
+    },
+    {
+      "type": "avatar-response",
+      "url": "https://www.mangosgo.com/avatar/RajPattern_Blue.glb",
+      "status": 200
+    },
+    {
+      "type": "avatar-response",
+      "url": "https://www.mangosgo.com/avatar/RajPattern_Blue.glb",
+      "status": 200
+    },
+    {
+      "type": "avatar-response",
+      "url": "https://www.mangosgo.com/avatar/CasualPop.glb",
+      "status": 200
+    }
+  ],
+  "errors": []
+}

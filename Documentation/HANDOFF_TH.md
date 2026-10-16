@@ -2,6 +2,8 @@
 
 เปิดโปรเจกต์ด้วย **Unity 6000.3.26f1** แล้วเปิดเมนู **MANGOs Framework > Build Center**
 
+โค้ดรุ่นปรับปรุงอยู่บน branch `codex/mangos-unity6-runtime` ส่วน branch `MANGOsFramework_U6` คงฐาน Unity 2022 เดิมไว้ ยังไม่ได้ push ไป GitHub
+
 ## Build Server และ Client
 
 1. เปลี่ยน **Client Path** เป็น path ของ WebSocket deployment ที่ต้องการ
@@ -30,7 +32,7 @@ Account API, voice/media backend และ TURN ยังเป็นบริ�
 
 ## Avatar และ animation
 
-GLB สร้าง Humanoid Avatar จากกระดูกและ rest pose ของโมเดลนั้น ส่วน VRM ใช้ importer ของ UniVRM และ Humanoid Avatar ของตัวเอง ระบบไม่เอาสัดส่วนของ Avatar อ้างอิงไปครอบโมเดลใหม่ และส่ง Animator ที่ใช้งานอยู่ให้ระบบเดิน บิน FishNet และ interaction
+GLB สร้าง Humanoid Avatar จากกระดูกของโมเดลนั้น โดยปรับท่าพัก/A-pose เป็น T-pose สำหรับตั้งต้นและจัดทิศทางก่อน retarget ส่วน VRM ใช้ importer ของ UniVRM และ Humanoid Avatar ของตัวเอง ระบบไม่เอาสัดส่วนของ Avatar อ้างอิงไปครอบโมเดลใหม่ และส่ง Animator ที่ใช้งานอยู่ให้ระบบเดิน บิน FishNet และ interaction
 
 ค่าเริ่มต้นปรับขนาดภาพแบบ uniform ให้สูง 1.7 เมตรเพื่อให้สอดคล้องกับ collider เดิม ไม่ยืดกระดูกเป็นรายชิ้น ถ้าต้องการคงความสูงจริง ให้ปรับนโยบาย collider/เกมร่วมด้วย โมเดล Humanoid ที่ชื่อกระดูกไม่ตรงสามารถสร้าง Avatar Rig Profile เพื่อระบุ mapping ได้ โมเดลที่ไม่มีโครงกระดูก Humanoid ไม่สามารถรับประกันการใช้ animation Humanoid เดิมได้ทุกตัว
 

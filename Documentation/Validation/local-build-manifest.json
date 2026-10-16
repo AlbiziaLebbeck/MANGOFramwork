@@ -1,0 +1,26 @@
+{
+    "buildId": "20261016-160736-2dab27",
+    "editor": "6000.3.26f1",
+    "createdUtc": "2026-10-16T16:12:46.8745076Z",
+    "status": "Succeeded",
+    "error": "",
+    "profile": {
+        "deployment": "validation",
+        "network": {
+            "serverPort": 7788,
+            "serverWss": false,
+            "clientPort": 7788,
+            "clientWss": false,
+            "clientHost": "localhost",
+            "clientPath": "/validation/game",
+            "roomNamespace": "validation",
+            "serverCertificatePath": "",
+            "serverCertificatePasswordVariable": "MANGOS_TLS_PASSWORD"
+        },
+        "development": false
+    },
+    "completedTargets": [
+        "Server",
+        "Client"
+    ]
+}

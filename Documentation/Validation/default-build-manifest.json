@@ -1,0 +1,26 @@
+{
+    "buildId": "20261016-161442-6eaf09",
+    "editor": "6000.3.26f1",
+    "createdUtc": "2026-10-16T16:15:37.3684817Z",
+    "status": "Succeeded",
+    "error": "",
+    "profile": {
+        "deployment": "mangos",
+        "network": {
+            "serverPort": 7770,
+            "serverWss": false,
+            "clientPort": 443,
+            "clientWss": true,
+            "clientHost": "multiplayer-plus.mangosgo.com",
+            "clientPath": "/systemtester",
+            "roomNamespace": "mangos",
+            "serverCertificatePath": "",
+            "serverCertificatePasswordVariable": "MANGOS_TLS_PASSWORD"
+        },
+        "development": false
+    },
+    "completedTargets": [
+        "Server",
+        "Client"
+    ]
+}

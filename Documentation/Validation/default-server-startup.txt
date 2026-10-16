@@ -1,0 +1,3 @@
+Initialize engine version: 6000.3.26f1 (de8167e7440c)
+MANGOS_NETWORK role=server host=multiplayer-plus.mangosgo.com path=/systemtester port=7770 wss=False
+MANGOS_SERVER_STATE Started
