@@ -8,14 +8,18 @@ public static class MangosAvatarValidation
     public static void Run()
     {
         MangosAvatarSetup.Configure();
-        var small = MakeRig(0.7f); var tall = MakeRig(1.4f);
-        Avatar a = null, b = null;
+        var small = MakeRig(0.7f); var tall = MakeRig(1.4f); var relaxed = MakeRig(1f);
+        var relaxedNodes = relaxed.GetComponentsInChildren<Transform>();
+        Array.Find(relaxedNodes, t => t.name == "mixamorig:LeftArm").localRotation = Quaternion.Euler(0, 0, 50);
+        Array.Find(relaxedNodes, t => t.name == "mixamorig:RightArm").localRotation = Quaternion.Euler(0, 0, -50);
+        relaxed.transform.GetChild(0).localRotation = Quaternion.Euler(0, 180, 0);
+        Avatar a = null, b = null, c = null;
         try
         {
-            a = HumanoidRigBuilder.Build(small); b = HumanoidRigBuilder.Build(tall);
+            a = HumanoidRigBuilder.Build(small); b = HumanoidRigBuilder.Build(tall); c = HumanoidRigBuilder.Build(relaxed);
             Require(a.isValid && a.isHuman && b.isValid && b.isHuman && a != b, "Each skeleton owns a valid Avatar");
             var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/_Modules/PlayerController/Animations/CustomThirdPersonController.controller");
-            foreach (var pair in new[] { (small, a), (tall, b) })
+            foreach (var pair in new[] { (small, a), (tall, b), (relaxed, c) })
             {
                 var animator = pair.Item1.AddComponent<Animator>();
                 animator.avatar = pair.Item2;
@@ -24,6 +28,9 @@ public static class MangosAvatarValidation
                 animator.applyRootMotion = false;
                 animator.fireEvents = false;
                 animator.Rebind();
+                animator.SetBool("Grounded", true); animator.Update(0);
+                var hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+                Require(animator.GetBoneTransform(HumanBodyBones.LeftHand).position.x < hips.position.x && animator.GetBoneTransform(HumanBodyBones.RightHand).position.x > hips.position.x, "Idle hands stay on their own side after T/A-pose and facing calibration");
                 var upper = animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
                 var lower = animator.GetBoneTransform(HumanBodyBones.LeftLowerArm);
                 var hand = animator.GetBoneTransform(HumanBodyBones.LeftHand);
@@ -47,13 +54,15 @@ public static class MangosAvatarValidation
             Require(rejected, "Unsupported model rejected with diagnostic");
             ValidateVrm();
             MangosAnimationAudit.Export();
-            Debug.Log("MANGOS_AVATAR_TESTS PASSED: per-model Humanoid, different proportions, 60 animation frames without arm stretching, missing-rig rejection");
+            Debug.Log("MANGOS_AVATAR_TESTS PASSED: per-model Humanoid, different proportions, T/A-pose and facing calibration, 60 animation frames without arm stretching, missing-rig rejection");
         }
         finally
         {
             UnityEngine.Object.DestroyImmediate(small); UnityEngine.Object.DestroyImmediate(tall);
+            UnityEngine.Object.DestroyImmediate(relaxed);
             if (a != null) UnityEngine.Object.DestroyImmediate(a);
             if (b != null) UnityEngine.Object.DestroyImmediate(b);
+            if (c != null) UnityEngine.Object.DestroyImmediate(c);
         }
     }
     private static void Require(bool valid, string message) { if (!valid) throw new Exception("Avatar test failed: " + message); }
@@ -120,7 +129,7 @@ public static class MangosAvatarValidation
         Add("Neck", "Chest", new Vector3(0, .2f, 0)); Add("Head", "Neck", new Vector3(0, .2f, 0));
         foreach (var side in new[] { "Left", "Right" })
         {
-            float sign = side == "Left" ? 1 : -1;
+            float sign = side == "Left" ? -1 : 1;
             Add(side + "Arm", "Chest", new Vector3(sign * .2f, .1f, 0));
             Add(side + "ForeArm", side + "Arm", new Vector3(sign * .3f, 0, 0));
             Add(side + "Hand", side + "ForeArm", new Vector3(sign * .25f, 0, 0));

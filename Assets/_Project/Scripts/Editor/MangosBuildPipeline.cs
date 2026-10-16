@@ -78,6 +78,15 @@ public static class MangosBuildPipeline
             if (job.index >= job.targets.Length) { Finish(job, "Succeeded", ""); return; }
             var name = job.targets[job.index];
             var target = name == "Server" ? BuildTarget.StandaloneLinux64 : BuildTarget.WebGL;
+            if (Application.isBatchMode && EditorUserBuildSettings.activeBuildTarget != target)
+            {
+                // Batchmode cannot reload the active platform's Editor/API modules.
+                // Tools/BuildBoth.ps1 restarts with the requested target and resumes this job.
+                job.phase = "switching"; SaveJob(job);
+                Debug.Log("MANGOS_BUILD_RESTART target=" + target);
+                EditorApplication.Exit(2);
+                return;
+            }
             if (!Application.isBatchMode && EditorUserBuildSettings.activeBuildTarget != target)
             {
                 job.phase = "switching"; SaveJob(job);
@@ -101,6 +110,8 @@ public static class MangosBuildPipeline
         MangosAvatarSetup.Configure();
         profile.Validate();
         if (targets.Length == 0 || targets.Any(t => t != "Server" && t != "Client")) throw new ArgumentException("Choose Server, Client or Both.");
+        if (Application.isBatchMode && targets.Contains("Server") && typeof(UnityEditor.Il2Cpp.SysrootPackage).BaseType?.Name != "Sysroot")
+            throw new InvalidOperationException("Batch Server builds must start Unity with -buildTarget Linux64 -standaloneBuildSubtarget Server so the installed Linux toolchain API is compiled. Build Center switches this automatically in the Editor.");
         foreach (var target in targets)
         {
             var platform = target == "Server" ? BuildTarget.StandaloneLinux64 : BuildTarget.WebGL;
@@ -148,7 +159,7 @@ public static class MangosBuildPipeline
         }
         else
         {
-            foreach (var asset in new[] { "index.html", "voice-app.js", "voice-overlay/app.js", "voice-overlay/config.js", "TemplateData/style.css" })
+            foreach (var asset in new[] { "index.html", "mangos-controller.js", "mangos-controller.css", "voice-app.js", "voice-overlay/app.js", "voice-overlay/config.js", "TemplateData/style.css" })
                 if (!File.Exists(Path.Combine(output, asset))) throw new IOException("WebGL output is missing " + asset);
             var publicVoice = new { requireGameRoom = true, roomId = "", roomNamespace = profile.deployment };
             File.WriteAllText(Path.Combine(output, "mangos-config.js"), "window.MANGOS_BUILD_ID=" + Newtonsoft.Json.JsonConvert.SerializeObject(buildId) + ";\nwindow.VOICE_APP_CONFIG=" + Newtonsoft.Json.JsonConvert.SerializeObject(publicVoice) + ";\n");
@@ -163,15 +174,31 @@ public static class MangosBuildPipeline
             publicProfile.network.serverCertificatePath = "";
             var manifest = new Manifest { buildId = job.id, editor = Application.unityVersion, createdUtc = DateTime.UtcNow.ToString("O"), status = status, error = error,
                 profile = publicProfile, completedTargets = job.targets.Take(job.index).ToArray() };
+            if (status == "Succeeded") manifest.status = "Finalizing";
             File.WriteAllText(Path.Combine(job.output, "build-manifest.json"), JsonUtility.ToJson(manifest, true));
             WriteDeployment(job);
             if (status == "Succeeded")
             {
                 var complete = job.output.Substring(0, job.output.Length - ".staging".Length);
-                Directory.Move(job.output, complete);
+                try { Directory.Move(job.output, complete); }
+                catch (IOException) when (Directory.Exists(job.output) && !Directory.Exists(complete))
+                {
+                    // Windows build helpers can retain a working-directory handle.
+                    // Publish a separate completed directory, then the success marker.
+                    CopyDirectory(job.output, complete);
+                }
                 job.output = complete;
+                manifest.status = "Succeeded";
+                File.WriteAllText(Path.Combine(complete, "build-manifest.json"), JsonUtility.ToJson(manifest, true));
                 File.WriteAllText("Builds/last-successful.json", Newtonsoft.Json.JsonConvert.SerializeObject(new { output = complete, buildId = job.id }));
             }
+        }
+        catch (Exception finalError)
+        {
+            status = "Failed";
+            Debug.LogException(finalError);
+            try { File.WriteAllText(Path.Combine(job.output, "finalization-error.txt"), finalError.ToString()); }
+            catch (Exception writeError) { Debug.LogError(writeError.Message); }
         }
         finally
         {
@@ -192,6 +219,12 @@ public static class MangosBuildPipeline
             EditorApplication.delayCall += Resume;
         }
     }
+    private static void CopyDirectory(string source, string destination)
+    {
+        Directory.CreateDirectory(destination);
+        foreach (var file in Directory.GetFiles(source)) File.Copy(file, Path.Combine(destination, Path.GetFileName(file)));
+        foreach (var folder in Directory.GetDirectories(source)) CopyDirectory(folder, Path.Combine(destination, Path.GetFileName(folder)));
+    }
     private static void WriteDeployment(Job job)
     {
         var folder = Path.Combine(job.output, "Deploy"); Directory.CreateDirectory(folder);
@@ -205,6 +238,13 @@ public static class MangosBuildPipeline
     }
     public static void BuildServerBatch() => BuildBatch("Server");
     public static void BuildClientBatch() => BuildBatch("Client");
+    public static void ResumeBatch() => Resume();
+    public static void BuildBothBatch()
+    {
+        var args = Environment.GetCommandLineArgs();
+        var index = Array.IndexOf(args, "-mangosProfile");
+        Start(MangosBuildProfile.Load(index >= 0 && index + 1 < args.Length ? args[index + 1] : MangosBuildProfile.DefaultPath), "Server", "Client");
+    }
     private static void BuildBatch(string target)
     {
         var args = Environment.GetCommandLineArgs();

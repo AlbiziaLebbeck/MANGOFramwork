@@ -1010,7 +1010,7 @@ export function createVoiceOverlayUi() {
     }
 
     const ownTypes = new Set(entries.filter((e) => e.isLocal).map((e) => e.share.shareType));
-    elements.btnShareScreen.disabled = ownTypes.has("screen");
+    elements.btnShareScreen.disabled = ownTypes.has("screen") || typeof navigator.mediaDevices?.getDisplayMedia !== "function";
     elements.btnShareCamera.disabled = ownTypes.has("camera");
   };
 

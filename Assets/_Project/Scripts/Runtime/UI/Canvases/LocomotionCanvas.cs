@@ -49,6 +49,14 @@ public class LocomotionCanvas : MonoBehaviour
         _manager.OnToggleController(isTouch);
         mobileControllerPanel.SetActive(!isTouch && LocomotionManager.IsMobile);
     }
+    private void LateUpdate()
+    {
+        if (!MangosBrowserBridge.HasBrowserControls) return;
+        containerPC.SetActive(!MangosInputRouter.Touch);
+        switchControllerButton.gameObject.SetActive(!MangosInputRouter.Touch);
+        containerMobile.SetActive(false);
+        mobileControllerPanel.SetActive(false);
+    }
 }
 
 

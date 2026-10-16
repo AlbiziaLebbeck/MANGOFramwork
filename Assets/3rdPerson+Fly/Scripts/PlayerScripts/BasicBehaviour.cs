@@ -101,15 +101,15 @@ public class BasicBehaviour : MonoBehaviour
     void Update()
     {
         // Store the input axes.
-        h = Input.GetAxis("Horizontal");
-        v = Input.GetAxis("Vertical");
+        h = MangosInputRouter.Axis("Horizontal");
+        v = MangosInputRouter.Axis("Vertical");
 
         // Set the input axes on the Animator Controller.
         anim.SetFloat(hFloat, h, 0.1f, Time.deltaTime);
         anim.SetFloat(vFloat, v, 0.1f, Time.deltaTime);
 
         // Toggle sprint by input.
-        sprint = Input.GetButton(sprintButton);
+        sprint = MangosInputRouter.SprintHeld(sprintButton);
 
         // Set the correct camera FOV for sprint mode.
         if (camScript == null) return;

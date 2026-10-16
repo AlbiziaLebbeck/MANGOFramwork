@@ -86,7 +86,12 @@ public class ThirdPersonOrbitCamBasic : MonoBehaviour
 
         // Keep following the player while the cursor is visible. Cursor visibility
         // controls orbit input because WebGL cannot request pointer lock at startup.
-        if (!Cursor.visible)
+        if (MangosInputRouter.Touch && !MangosInputRouter.Blocked)
+        {
+            angleH += MangosInputRouter.Look.x * 0.15f;
+            angleV += MangosInputRouter.Look.y * 0.15f;
+        }
+        else if (!Cursor.visible && !MangosInputRouter.Blocked)
         {
             // Mouse:
             angleH += Mathf.Clamp(Input.GetAxis("Mouse X"), -1, 1) * horizontalAimingSpeed;

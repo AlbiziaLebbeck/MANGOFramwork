@@ -19,9 +19,13 @@ The default topology terminates TLS at the reverse proxy on port 443 and forward
 
 Build Both runs the platforms sequentially and resumes after Editor script reloads. Each job gets a unique `Builds/<deployment>/<build-id>/` directory with Server, Client, deployment examples and a manifest. Incomplete/cancelled jobs retain a `.staging` directory and cannot replace the last successful release. `Builds/last-successful.json` identifies the last complete job. Generated resource configuration and temporary Editor settings are restored when a job finishes or recovers from interruption.
 
+On Windows, a build helper can keep a directory handle open after Build succeeds. If renaming the staging directory fails, the pipeline copies the completed output and publishes the success manifest only after copying finishes. A staging copy may remain; it is not the directory named by `last-successful.json`. A finalization failure is reported as Failed and cannot replace the previous successful release.
+
 Deploy the **entire Server directory**, including `_Data`, `GameAssembly.so` and `UnityPlayer.so`. On Linux run `sh start-server.sh`. Serve the Client directory using HTTPS and the correct JavaScript/WebAssembly MIME types. Configure `Deploy/nginx-game.conf.example` for the actual host, certificates and document root before applying it. Build Center generates this example; it does not deploy it.
 
 Command-line builds are also available. Pass `-buildTarget Linux64 -standaloneBuildSubtarget Server -executeMethod MangosBuildPipeline.BuildServerBatch` or `-buildTarget WebGL -executeMethod MangosBuildPipeline.BuildClientBatch`, together with `-batchmode -nographics -quit -projectPath <project>`. Optional `-mangosProfile <json>` selects another profile. These validation entry points write `Builds/Validation/<target>`.
+
+For automatic command-line **Build Both** on Windows, run `Tools/BuildBoth.ps1` (optionally `-Unity <Unity.exe>` and `-Profile <json>`). It restarts Unity between Linux and WebGL, resumes the same saved job, and writes logs to `Builds/Logs`. Batchmode cannot reload the platform-specific Editor API modules in the same process. The graphical Build Center switches platforms and resumes through normal Editor reloads. Use `-Validation` only for the local test profile (port 7788, WS, localhost); it also runs the input/avatar/settings checks.
 
 ## Browser communication
 
@@ -35,7 +39,7 @@ Source overlay modules are supplied in the template, so the Unity project builds
 
 ## Avatar loading and animation
 
-VRM 0.x/1.0 use pinned UniVRM 0.128.0. The imported model's own Humanoid Avatar and raw skeleton drive its meshes. Ordinary GLB uses glTFast and builds a new Unity Avatar from the loaded transforms/rest pose. Existing reference Avatar assets contribute bone names only; their Avatar objects and skeleton dimensions are not reused on a different model.
+VRM 0.x/1.0 use pinned UniVRM 0.128.0. The imported model's own Humanoid Avatar and raw skeleton drive its meshes. Ordinary GLB uses glTFast, aligns the body's up/right basis, and rotates joints into a T-pose before building its own Unity Avatar. This calibration handles relaxed/A-pose exports without changing bone lengths, skin weights or inverse bind matrices. Existing reference Avatar assets contribute bone names only; their Avatar objects and skeleton dimensions are not reused on a different model.
 
 The current movement/fly Animator Controller is retained, with state/parameters transferred to the new model. FishNet NetworkAnimator, Starter Assets, fly movement and interactions are rebound to the active Animator. Each loaded model owns its imported native assets and disposes them when replaced. Live models are no longer cloned into the old hidden 100-model cache. Thumbnails use the same importer, so VRM rendering takes the same material route as the player model.
 
@@ -44,6 +48,16 @@ AvatarLoader defaults to uniform visual height normalization at 1.7m, preserving
 For an unmapped humanoid GLB, create **MANGOs Framework > Avatar Rig Profile** from the asset creation menu. Map Humanoid roles to node paths and either assign the profile to AvatarLoader or place it under `Resources/AvatarRigProfiles` with a matching URL prefix. Incomplete/ambiguous rigs are rejected with `LastLoadError` and keep the previous/default model. A file without a humanoid rig cannot automatically use humanoid animation.
 
 **MANGOs Framework > Avatar > Export Animation Audit** writes `Library/MangosAnimationAudit.csv`, including clips embedded in imported model assets. The initial audit found 52 Humanoid clips and no Transform position/scale curves. Synthetic rigs with different proportions are tested over 60 animation frames; a synthetic VRM 1.0 is also imported with its own valid Humanoid. Real account avatars, cloth, spring bones, extreme proportions and all interaction poses still need visual checks using the actual model files.
+
+## Adaptive controller
+
+The WebGL template includes `mangos-controller.js` and its stylesheet automatically. Auto mode uses keyboard/mouse for PC and touch for phones/tablets, including iPad's desktop user agent. A touch-enabled PC remains a PC. The Controls selector can override Auto with Touch or Keyboard/mouse; the preference is stored locally. In Auto on a mobile device, a movement key or mouse switches to keyboard/mouse, and touching the screen restores touch controls.
+
+The touch layout changes between portrait and landscape without requiring a reload. A left joystick moves, dragging the right part of the canvas turns the camera, and Run/Jump support simultaneous touches. Fly/Up/Down are shown only for a flyable player. Existing Unity interaction buttons remain tappable; a camera gesture that starts over a Unity UI element is ignored by the camera bridge. Safe-area offsets are included, and the mobile voice bar is compact to leave room for controls.
+
+The same input bridge drives Starter Assets walking and the existing fly controller. Rotating, changing input mode, losing focus, cancelling a pointer, typing in browser chat, or disconnecting clears held controls. While an HTML field has focus, the bridge disables [Unity keyboard capture](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/WebGLInput-captureAllKeyboardInput.html). The touch UI appears only after local player setup. Both screen orientations are allowed; the old forced-landscape blocker is bypassed for adaptive WebGL controls.
+
+Browser automation covers PC, phone, Android tablet, iPad desktop UA, and PC touchscreen; it checks simultaneous joystick/look/jump, rotation while holding the joystick, focus, release, controller overrides, and voice-bar spacing. These emulated browser checks do not replace a physical iOS/Android playtest.
 
 ## Validation boundaries
 
