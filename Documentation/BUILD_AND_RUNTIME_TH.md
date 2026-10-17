@@ -49,17 +49,19 @@ AvatarLoader เริ่มต้นปรับความสูงภาพ�
 
 สำหรับ Humanoid GLB ที่ mapping ไม่ตรง สร้าง **MANGOs Framework > Avatar Rig Profile** จากเมนูสร้าง asset กำหนด Humanoid role เป็น node path แล้วใส่ profile ให้ AvatarLoader หรือวางใต้ `Resources/AvatarRigProfiles` พร้อม URL prefix ที่ตรงกัน Rig ที่ไม่ครบหรือกำกวมจะถูกปฏิเสธพร้อม `LastLoadError` และเก็บโมเดลก่อนหน้า/default ไว้ ไฟล์ที่ไม่มี Humanoid rig ไม่สามารถใช้ Humanoid animation อัตโนมัติได้
 
+รายการ Avatar ของบัญชีและ guest เลือกได้ก่อน thumbnail โหลดเสร็จ ภาพตัวอย่างที่โหลดไม่สำเร็จไม่ปิดปุ่มเลือก เมื่อเปิดรายการจะเลื่อนกลับด้านบนและปรับ panel ให้พอดี safe area พร้อมพัก input เกมและซ่อน touch controls การโหลดโมเดล WebGL จาก MANGOs API origin ที่ตั้งค่าไว้ส่ง Cookie SSO ส่วนโมเดลสาธารณะภายนอกยังใช้ anonymous CORS ฝั่ง API ยังต้องอนุญาต credentialed CORS ของเว็บที่ deploy
+
 **MANGOs Framework > Avatar > Export Animation Audit** เขียน `Library/MangosAnimationAudit.csv` รวมคลิปที่ฝังใน model assets ผลตรวจแรกพบ Humanoid 52 คลิปและไม่มี Transform position/scale curves Synthetic rigs ต่างสัดส่วนถูกเล่น animation 60 เฟรม และ synthetic VRM 1.0 นำเข้าพร้อม Humanoid ของตนเองที่ valid แล้ว Avatar บัญชีจริง cloth, spring bones, สัดส่วนสุดขั้ว และท่า interaction ทั้งหมดยังต้องตรวจภาพด้วยไฟล์จริง
 
 ## Controller อัตโนมัติ
 
-WebGL template รวม `mangos-controller.js` และ stylesheet ให้อัตโนมัติ Auto ใช้ keyboard/mouse สำหรับ PC และ touch สำหรับโทรศัพท์/tablet รวม iPad ที่รายงาน user agent แบบ desktop ส่วน PC จอสัมผัสยังถือเป็น PC ผู้ใช้เลือก Touch หรือ Keyboard/mouse แทน Auto ผ่าน Controls ได้และบันทึก preference ในเครื่อง Auto บน mobile จะเปลี่ยนเป็น keyboard/mouse เมื่อกดปุ่มเดินหรือใช้ mouse แล้วกลับเป็น touch เมื่อแตะหน้าจอ
+ระบบตรวจอุปกรณ์อัตโนมัติและเลือก keyboard/mouse บน PC หรือ touch บนโทรศัพท์/tablet รวม iPad desktop user agent ส่วน PC จอสัมผัสยังใช้ desktop controls เอาเมนู Controls และปุ่มสลับ controller เดิมออก พร้อมล้าง override ที่บันทึกจาก build เก่า บน mobile การกดปุ่มเดินหรือใช้ mouse จะเลือก keyboard/mouse และการแตะหน้าจอจะกลับเป็น touch
 
 Touch layout เปลี่ยนแนวตั้ง/แนวนอนได้โดยไม่ reload Joystick ซ้ายใช้เดิน ลากด้านขวาของ canvas หมุนกล้อง และ Run/Jump รองรับหลายนิ้วพร้อมกัน Fly/Up/Down แสดงเฉพาะผู้เล่นที่บินได้ ปุ่ม interaction ของ Unity ยังแตะได้ หากเริ่มลากบน Unity UI กล้องจะไม่รับ gesture นั้น Layout รวม safe-area offsets และย่อ voice bar บน mobile เพื่อเว้นที่ให้ปุ่มควบคุม
 
 Input bridge เดียวกันขับทั้ง Starter Assets walking และ fly controller เดิม การหมุนจอ เปลี่ยนโหมด หลุด focus ยกเลิก pointer พิมพ์ใน browser chat หรือ disconnect จะล้างปุ่มที่ค้าง เมื่อ HTML field มี focus bridge จะปิด [Unity keyboard capture](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/WebGLInput-captureAllKeyboardInput.html) Touch UI แสดงหลังตั้ง local player แล้ว อนุญาตทั้งสองแนวหน้าจอและข้ามตัวบังคับ landscape เดิมสำหรับ adaptive WebGL controls
 
-Browser automation ครอบคลุม PC, โทรศัพท์, Android tablet, iPad desktop UA และ PC จอสัมผัส ตรวจ joystick/look/jump พร้อมกัน หมุนจอขณะกด joystick, focus, release, controller overrides และระยะห่าง voice bar การจำลองเหล่านี้ไม่แทนการเล่นบน iOS/Android จริง
+Browser automation ครอบคลุม PC, โทรศัพท์, Android tablet, iPad desktop UA และ PC จอสัมผัส ตรวจ joystick/look/jump พร้อมกัน หมุนจอขณะกด joystick, focus, release, automatic input switching และระยะห่าง voice bar การจำลองเหล่านี้ไม่แทนการเล่นบน iOS/Android จริง
 
 ## ขอบเขตการยืนยันผล
 
@@ -79,6 +81,17 @@ Browser automation ครอบคลุม PC, โทรศัพท์, Androi
 node Tools/Validation/check-integration-webgl.cjs 'C:\path\to\Builds\validation\<build-id>'
 ```
 
-สคริปต์ให้บริการ Client ชั่วคราวที่ `http://127.0.0.1:8767/` เข้า guest และถ่าย desktop 1280×800, portrait 390×844 และ landscape 844×390 รวมผล JSON ลง `Builds/Validation/Browser/` ระบุ output directory อื่นเป็น argument ที่สองได้ ใช้ mock voice และจำลอง account API เป็น logged-out จึงไม่ตรวจบริการเสียง/account จริง
+สคริปต์ให้บริการ Client ชั่วคราวที่ `http://127.0.0.1:8767/` เข้า guest และถ่าย desktop 1280×800 รวมผล JSON ลง `Builds/Validation/Browser/` ระบุ output directory อื่นเป็น argument ที่สองได้ ใช้ mock voice และจำลอง account API เป็น logged-out จึงไม่ตรวจบริการเสียง/account จริง
 
-ผลตรวจรวม page identity, เนื้อหาเริ่มต้น, การเชื่อมต่อ FishNet, ชื่อ guest ใน server response, world/controller readiness, การหมุนจอ/แตะ joystick และ runtime exceptions ให้เปิดภาพตรวจชื่อที่มุมขวาบนด้วยก่อนนำไปเป็นหลักฐานในเอกสาร
+ผลตรวจรวม page identity, เนื้อหาเริ่มต้น, การเชื่อมต่อ FishNet, ชื่อ guest ใน server response, world/controller readiness และ runtime exceptions ให้เปิดภาพตรวจชื่อที่มุมขวาบนด้วยก่อนนำไปเป็นหลักฐานในเอกสาร
+
+
+## ตรวจ regression ของบัญชีและ controller
+
+ใช้ `node Tools/Validation/check-controller.cjs` เพื่อตรวจ controller ห้ารูปแบบโดยไม่เปิด Unity และใช้คำสั่งนี้กับคู่ Server/Client validation ที่ตั้ง authentication mode เป็น FirstPartyCookieSso เฉพาะสำเนาทดสอบ:
+
+```powershell
+node Tools/Validation/check-client-regressions.cjs <build-directory> <humanoid-glb-fixture> [evidence-directory]
+```
+
+สคริปต์จำลองบัญชีและ API รวมCasualPop จาก URL จริง โมเดลจำลองที่ส่ง cookie และไฟล์ที่ตอบ 404 ตรวจ guest/account, cookie mode ของการโหลดไฟล์, การเลือกก่อนภาพโหลด, การเปิด/ปิดรายการ, โทรศัพท์/tablet แนวตั้ง/แนวนอน และกล้องหลัง touch → keyboard ต้องกดคลิกขวาค้างจึงหมุนกล้องได้ ผลทดสอบนี้ไม่ยืนยัน cookie หรือโมเดลของบัญชีจริง และไม่เปลี่ยน production auth config

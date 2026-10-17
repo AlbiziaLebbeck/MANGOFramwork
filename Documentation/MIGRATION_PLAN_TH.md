@@ -306,7 +306,7 @@ Unity 6.3 มีรายการ mobile browsers ที่รองรับ �
 - กำหนด heuristic สำหรับ Phone/Tablet และ iPad desktop UA พร้อมบันทึกผลตรวจไว้ใน diagnostics เพื่อทดสอบ ระบบต้องมี fallback ตาม input capability เมื่อระบุประเภทเครื่องได้ไม่แน่ชัด เพราะข้อมูล browser ไม่รับประกันการแยกประเภทอุปกรณ์ได้ทุกเครื่อง
 - คอมที่มี touchscreen ยังต้องใช้ keyboard/mouse ได้ ส่วน Tablet ที่ต่อ keyboard/mouse ต้องเลือก input ที่เหมาะกับการใช้งานปัจจุบัน โดยไม่สูญเสียโหมด touch ที่ผู้ใช้ต้องการ
 - ตรวจแนวตั้ง/แนวนอนของพื้นที่เล่นและรับเหตุการณ์หมุนจอ/resize ระหว่างเล่น แยกการเปลี่ยนแนวจริงออกจาก viewport ที่หดเพราะ soft keyboard เพื่อลดการสลับ Controller ผิดจังหวะ
-- ใช้โหมด `Auto` เป็นค่าเริ่มต้น พร้อมตัวเลือก override อุปกรณ์/input สำหรับกรณีตรวจไม่ตรง; เก็บ override ของผู้ใช้และมีคำสั่งกลับ Auto ได้ ไม่บังคับให้ผู้ใช้เลือกทุกครั้งก่อนเล่น
+- ระบบตรวจอุปกรณ์อัตโนมัติและเลือก keyboard/mouse บน PC หรือ touch บนโทรศัพท์/tablet รวม iPad desktop user agent ส่วน PC จอสัมผัสยังใช้ desktop controls เอาเมนู Controls และปุ่มสลับ controller เดิมออก พร้อมล้าง override ที่บันทึกจาก build เก่า บน mobile การกดปุ่มเดินหรือใช้ mouse จะเลือก keyboard/mouse และการแตะหน้าจอจะกลับเป็น touch (ปรับตามคำขอ 17 ตุลาคม 2026)
 
 ### 8.4 ตารางเลือก Controller และ layout
 
@@ -322,7 +322,7 @@ Unity 6.3 มีรายการ mobile browsers ที่รองรับ �
 
 ปรับ `OrientationManager` และ UI guard เดิมให้รองรับทั้งแนวตั้งและแนวนอนตามตาราง ไม่แสดงหน้าจอบังคับให้หมุนเครื่องเพื่อเข้าถึง Controller ที่ควรใช้งานได้ในอีกแนว
 
-เกณฑ์ผ่าน: PC เลือก keyboard/mouse ได้อัตโนมัติ; Android/iPhone/Tablet/iPad เลือก touch layout ที่ตรงกับอุปกรณ์และแนวหน้าจอทั้งตอนเริ่มและเมื่อหมุนระหว่างเล่น; เดินพร้อมหมุนกล้อง/กดปุ่มได้; UI ไม่ทับ safe area และ voice tray; สลับแอปหรือหมุนจอแล้ว input ไม่ค้าง; soft keyboard ไม่ทำให้จัดประเภทอุปกรณ์ผิด; แชตไม่ทำให้เคลื่อนที่; โหมดบินควบคุมครบ; Tablet ที่ต่อ keyboard/mouse และ PC touchscreen ยังใช้ input ได้เหมาะสม; override/กลับ Auto ทำงาน
+เกณฑ์ผ่าน: PC เลือก keyboard/mouse ได้อัตโนมัติ; Android/iPhone/Tablet/iPad เลือก touch layout ที่ตรงกับอุปกรณ์และแนวหน้าจอทั้งตอนเริ่มและเมื่อหมุนระหว่างเล่น; เดินพร้อมหมุนกล้อง/กดปุ่มได้; UI ไม่ทับ safe area และ voice tray; สลับแอปหรือหมุนจอแล้ว input ไม่ค้าง; soft keyboard ไม่ทำให้จัดประเภทอุปกรณ์ผิด; แชตไม่ทำให้เคลื่อนที่; โหมดบินควบคุมครบ; Tablet ที่ต่อ keyboard/mouse และ PC touchscreen ยังใช้ input ได้เหมาะสม; สลับ input อัตโนมัติโดยไม่มีเมนู Controls
 
 ## 9. ลำดับส่งมอบและระยะประมาณ
 
@@ -353,7 +353,7 @@ Unity 6.3 มีรายการ mobile browsers ที่รองรับ �
 | Voice | สองบัญชี/หลายแท็บ, แยกโลก A/B, denied mic, mute, logout, network change | room roster, media state และทดสอบเสียงจริง |
 | Avatar | ตัวเตี้ย/สูง, สัดส่วนสุดขั้วที่ยังรองรับ, VRM 0/1, GLB mapped/unmapped, load fail | diagnostic report และวิดีโอ motion tests |
 | Multiplayer | เปลี่ยน Avatar, remote animation, late join, disconnect/rejoin | Client หลายตัวเห็น state ตรงกัน |
-| Device/Controller | PC/Phone/Tablet, แนวตั้ง/แนวนอนตอนเริ่มและหมุนระหว่างเล่น, iPad desktop UA, PC touchscreen, Tablet ต่อ keyboard/mouse, Auto/override, เดิน+look+action, บินขึ้น/ลง, chat keyboard, safe area และ background | อุปกรณ์ PC/Android/iPhone/iPad/Tablet จริง พร้อมสถานะตรวจจับและ Controller/layout ที่ถูกเลือก |
+| Device/Controller | PC/Phone/Tablet, แนวตั้ง/แนวนอนตอนเริ่มและหมุนระหว่างเล่น, iPad desktop UA, PC touchscreen, Tablet ต่อ keyboard/mouse, automatic detection, เดิน+look+action, บินขึ้น/ลง, chat keyboard, safe area และ background | อุปกรณ์ PC/Android/iPhone/iPad/Tablet จริง พร้อมสถานะตรวจจับและ Controller/layout ที่ถูกเลือก |
 | Performance | โลก+Avatar+Voice พร้อมกัน, เปลี่ยน Avatar ซ้ำ, การใช้งานต่อเนื่อง | FPS/frame time, memory, load time และ WebRTC stats |
 
 เริ่มวัด performance baseline และเลือกจำนวนผู้เล่น/รุ่นอุปกรณ์เป้าหมายก่อนตั้งตัวเลขตรวจรับ เช่น ตั้งเป้า 30 FPS บนอุปกรณ์ขั้นต่ำที่ตกลงกัน ไม่รับประกัน 60 FPS บนมือถือทุกเครื่องจากการเพิ่ม Joystick อย่างเดียว

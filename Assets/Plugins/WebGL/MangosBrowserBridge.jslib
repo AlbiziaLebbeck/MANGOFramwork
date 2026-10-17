@@ -1,4 +1,10 @@
 mergeInto(LibraryManager.library, {
+  MangosBrowserDiagnostics: function (json) {
+    window.MANGOS_DIAGNOSTICS = JSON.parse(UTF8ToString(json));
+  },
+  MangosBrowserSetUiPanel: function (open) {
+    if (window.MangosController) window.MangosController.setUiPanel(!!open);
+  },
   MangosBrowserDeviceFlags: function () {
     return window.MangosController ? window.MangosController.flags() : 0;
   },

@@ -12,13 +12,7 @@ public static class AvatarModelImporter
 {
     public static async Task<GameObject> Load(string url, CancellationToken token)
     {
-        using var request = UnityWebRequest.Get(url);
-        request.timeout = 45;
-        var pending = request.SendWebRequest();
-        while (!pending.isDone) { token.ThrowIfCancellationRequested(); await Task.Yield(); }
-        if (request.result != UnityWebRequest.Result.Success) throw new InvalidOperationException("Avatar download failed: " + request.error);
-        token.ThrowIfCancellationRequested();
-        var bytes = request.downloadHandler.data;
+        var bytes = await MangosAvatarDownload.Load(url, token);
         bool glb = bytes.Length >= 20 && BitConverter.ToUInt32(bytes, 0) == 0x46546c67;
         bool vrm = new Uri(url).AbsolutePath.EndsWith(".vrm", StringComparison.OrdinalIgnoreCase);
         if (glb)

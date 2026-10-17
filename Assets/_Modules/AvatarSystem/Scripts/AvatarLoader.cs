@@ -20,6 +20,7 @@ public class AvatarLoader : MonoBehaviour
     public GameObject Model => avatarModel;
     public Animator Animator => animator;
     public string LastLoadError { get; private set; }
+    public bool IsLoading { get; private set; }
     private GameObject owner;
     private CancellationTokenSource cancellation;
     private int generation;
@@ -34,6 +35,7 @@ public class AvatarLoader : MonoBehaviour
         cancellation = new CancellationTokenSource();
         var token = cancellation.Token;
         int request = ++generation;
+        IsLoading = true;
         GameObject candidate = null;
         var url = MangosApiClient.ResolveAssetUrl(GLTFLink, AuthConfig.DefaultApiOrigin);
         try
@@ -90,7 +92,7 @@ public class AvatarLoader : MonoBehaviour
             OnLoadFailed?.Invoke();
             // Invalid rigs need a mapping/source fix; retrying the same file cannot repair them.
         }
-        finally { if (candidate != null) Destroy(candidate); }
+        finally { if (request == generation) IsLoading = false; if (candidate != null) Destroy(candidate); }
     }
     private void FitVisual(GameObject model)
     {

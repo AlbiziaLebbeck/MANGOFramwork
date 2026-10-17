@@ -1,0 +1,270 @@
+{
+  "date": "2026-10-17",
+  "unity": "6000.3.26f1",
+  "buildId": "20261017-023307-2194a9",
+  "passed": true,
+  "profile": "isolated 7788/WS; Cookie SSO selected in test copy only",
+  "buildTargets": [
+    "Linux IL2CPP Server",
+    "WebGL"
+  ],
+  "buildErrors": 0,
+  "model": {
+    "url": "https://www.mangosgo.com/avatar/CasualPop.glb",
+    "bytes": 4226540,
+    "sha256": "02a5a167fee5aaee603c090a2b119693ddb3e6458add19d84012a518b324ad7c",
+    "editorHumanoidAnd60AnimationFrames": "passed"
+  },
+  "accountService": "mocked; public default model URL fetched from live asset host; API fixture asset includes credentials",
+  "controllerCases": [
+    "desktop",
+    "iPhone",
+    "Android tablet",
+    "iPad desktop UA",
+    "touchscreen PC"
+  ],
+  "controllerChecks": [
+    "automatic detection; no selector",
+    "clears old saved overrides",
+    "orientation; held input reset",
+    "simultaneous move/look/jump",
+    "typing focus",
+    "first RMB drag after canvas focus",
+    "external keyboard/mouse; touch restores controls",
+    "avatar modal hides controls"
+  ],
+  "compiledCases": [
+    {
+      "name": "guest-desktop",
+      "passed": true,
+      "camera": {
+        "idleYawDelta": 0.073089599609375,
+        "dragYawDelta": 29.877227783203125,
+        "releasedYawDelta": 0.043060302734375
+      },
+      "final": {
+        "touch": false,
+        "inputBlocked": false,
+        "avatarPanelOpen": false,
+        "avatarLoaded": true,
+        "avatarLoading": false,
+        "avatarChoices": 2,
+        "selectableAvatars": 2,
+        "cameraYaw": 330.050537109375,
+        "cameraPitch": 348.899169921875,
+        "avatarError": ""
+      }
+    },
+    {
+      "name": "account-desktop",
+      "passed": true,
+      "accountSelection": true,
+      "camera": {
+        "idleYawDelta": 0.13641357421875,
+        "dragYawDelta": 29.8568115234375,
+        "releasedYawDelta": 0.00042724609375
+      },
+      "credentials": [
+        {
+          "credentials": "include"
+        },
+        {
+          "credentials": "include"
+        },
+        {
+          "credentials": "include"
+        }
+      ],
+      "final": {
+        "touch": false,
+        "inputBlocked": false,
+        "avatarPanelOpen": false,
+        "avatarLoaded": true,
+        "avatarLoading": false,
+        "avatarChoices": 4,
+        "selectableAvatars": 4,
+        "cameraYaw": 330.26171875,
+        "cameraPitch": 348.9248962402344,
+        "avatarError": ""
+      }
+    },
+    {
+      "name": "account-phone",
+      "passed": true,
+      "touchYawDelta": 9.017730712890625,
+      "cameraAfterTouch": {
+        "idleYawDelta": 0.06292724609375,
+        "dragYawDelta": 29.865936279296875,
+        "releasedYawDelta": 0.0157470703125
+      },
+      "credentials": [
+        {
+          "credentials": "include"
+        },
+        {
+          "credentials": "include"
+        }
+      ],
+      "final": {
+        "touch": true,
+        "inputBlocked": false,
+        "avatarPanelOpen": false,
+        "avatarLoaded": true,
+        "avatarLoading": false,
+        "avatarChoices": 4,
+        "selectableAvatars": 4,
+        "cameraYaw": 321.0595703125,
+        "cameraPitch": 345.9785461425781,
+        "avatarError": ""
+      }
+    },
+    {
+      "name": "account-tablet",
+      "passed": true,
+      "touchYawDelta": 9.0037841796875,
+      "cameraAfterTouch": {
+        "idleYawDelta": 0.063629150390625,
+        "dragYawDelta": 29.868194580078125,
+        "releasedYawDelta": 0.023040771484375
+      },
+      "credentials": [
+        {
+          "credentials": "include"
+        },
+        {
+          "credentials": "include"
+        }
+      ],
+      "final": {
+        "touch": true,
+        "inputBlocked": false,
+        "avatarPanelOpen": false,
+        "avatarLoaded": true,
+        "avatarLoading": false,
+        "avatarChoices": 4,
+        "selectableAvatars": 4,
+        "cameraYaw": 321.05755615234375,
+        "cameraPitch": 345.97393798828125,
+        "avatarError": ""
+      }
+    }
+  ],
+  "expectedHttpFailures": [
+    "guest API returns fixture 401",
+    "unavailable avatar thumbnail returns fixture 404; choice remains selectable"
+  ],
+  "screenshots": [
+    "account-desktop-avatars.png",
+    "account-phone-avatars.png",
+    "account-tablet-landscape.png"
+  ],
+  "limitations": [
+    "production account session/cookie not supplied",
+    "mobile devices emulated in Edge/Chromium; physical iOS/Android not tested",
+    "live voice/TURN and production deployment unchanged"
+  ],
+  "sources": [
+    {
+      "path": "Assets/3rdPerson+Fly/Scripts/LevelScripts/ThirdPersonOrbitCamBasic.cs",
+      "sha256": "c6de666d8789697df2287f25b142b872f126e769d6443613295cc937b55a401c"
+    },
+    {
+      "path": "Assets/_Modules/Authentication/MangosApiClient.cs",
+      "sha256": "96e39fa5cceeab137fef709983db8826d6a04d07a5d54d8dc2b5f5c164b6eac8"
+    },
+    {
+      "path": "Assets/_Modules/AvatarSystem/AvatarIcon.cs",
+      "sha256": "b8471077850baa846bbe4ea91dbff4cec132324542c8dcc656ce28b267bc5a55"
+    },
+    {
+      "path": "Assets/_Modules/AvatarSystem/AvatarSystem.cs",
+      "sha256": "624ff475449c7375e8ca85ad5d2d89465f71bfd7bb5c82168c096dac6bb69568"
+    },
+    {
+      "path": "Assets/_Modules/AvatarSystem/Scripts/AvatarLoader.cs",
+      "sha256": "7396159a0de8c6b170071a2c8411e99d7a75532751828087691d6512b4cef35e"
+    },
+    {
+      "path": "Assets/_Modules/AvatarSystem/Scripts/AvatarModelImporter.cs",
+      "sha256": "fad1acc7578d271fb0d2bab6341f4913dfd3909bc9fb5fff0d95b1f03868b619"
+    },
+    {
+      "path": "Assets/_Modules/AvatarSystem/Scripts/MangosAvatarDownload.cs",
+      "sha256": "2294c3cacfd080696830b4dca6ff02231350cc8039e4ce7c3ecb21c67f945316"
+    },
+    {
+      "path": "Assets/_Modules/AvatarSystem/Scripts/MangosAvatarDownload.cs.meta",
+      "sha256": "ca40c65e2695a6f2decbf02d4ea418917b042f14caa4403e8efa5a8137c10dc4"
+    },
+    {
+      "path": "Assets/_Modules/PlayerController/Scripts/Runtime/PlayerMovementHandler.cs",
+      "sha256": "12627f7b1695264f2a06886f501d631501fef504ca02c07c5306c95d49535527"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Editor/MangosInputValidation.cs",
+      "sha256": "713bf70394aa6d78ee12df1a8d79f4f82ea4e1a06f5e51dc7fdb2dd6eb700fbd"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Runtime/MangosBrowserBridge.cs",
+      "sha256": "7d46f6d3ff1ad7d729ce09f012131c2c2533a35239f6d27969cd0d12f8e1e579"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Runtime/MangosInputRouter.cs",
+      "sha256": "7ca2aa0010fe147e208a6d1547c915eeb73a73dfde586248c63613ca3cd44aa8"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Runtime/UI/Canvases/LocomotionCanvas.cs",
+      "sha256": "498ee901b5219d7eb24455c304c178c02b30c0dc314e5556c83bd752e6d17248"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Runtime/UI/Effects/UIPopIn.cs",
+      "sha256": "70e011fc5b28d2a8db5a6141190d04b94a24e121585a46c72990608f68b34c0d"
+    },
+    {
+      "path": "Assets/Plugins/PlayerMovement/StarterAssets 1.15/InputSystem/StarterAssetsInputs.cs",
+      "sha256": "a3c5c67c55dd29121b3a1ffaee9ec930c3db14f8990609dfac0c209e699a3a01"
+    },
+    {
+      "path": "Assets/Plugins/PlayerMovement/StarterAssets 1.15/ThirdPersonController/Scripts/ThirdPersonController.cs",
+      "sha256": "e7906bd25c85b775eb772e88326bfc4a30aa252f90c3ee2afa000b09029dcb77"
+    },
+    {
+      "path": "Assets/Plugins/WebGL/MangosAvatarDownload.jslib",
+      "sha256": "9f651cd9c4507fb61193934f8b8aa08005b7234c104783bf566e2a492cd1e8a8"
+    },
+    {
+      "path": "Assets/Plugins/WebGL/MangosAvatarDownload.jslib.meta",
+      "sha256": "4c3c7c6b1a48c527aefd3025351c11274df24e7ce6bbdc6f1f896dc68f3d924e"
+    },
+    {
+      "path": "Assets/Plugins/WebGL/MangosBrowserBridge.jslib",
+      "sha256": "5d5ec6e4a86a43b51969bf37b4a082a9127c515aeab205fc5a95ae8696e624f7"
+    },
+    {
+      "path": "Assets/WebGLTemplates/MANGOsPWA/mangos-controller.css",
+      "sha256": "8bf9e9fdcace5c8a80e5921ab05fa14af3f3e49d8e3ba38e8c8ff49e8a5175dc"
+    },
+    {
+      "path": "Assets/WebGLTemplates/MANGOsPWA/mangos-controller.js",
+      "sha256": "3e5753a577c84a4a90d6724c808fd8de2e3af48a029f7377fb2d53ae5b2864d1"
+    }
+  ],
+  "logs": [
+    {
+      "file": "20261017-023240-0-Linux64.log",
+      "sha256": "fdcecce598cb47449d0a35e0fc2e186897bcd485d4bca73c0a52ab3f5df15da7",
+      "scriptUpdaterErrors": 0,
+      "csharpErrors": 0
+    },
+    {
+      "file": "20261017-023240-1-WebGL.log",
+      "sha256": "95fc10460343b759f88fde1a5df0191d7ca856940825a6151be10170f2910240",
+      "scriptUpdaterErrors": 0,
+      "csharpErrors": 0
+    }
+  ],
+  "page": {
+    "url": "http://127.0.0.1:8767/",
+    "identityCheck": "MANGOs title, start overlay, FishNet connection and world readiness passed"
+  }
+}

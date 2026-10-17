@@ -73,20 +73,8 @@ const server = http.createServer((req, res) => {
     result.controllerState = await page.evaluate(() => MangosController.getState());
     assert(result.voiceState.ready, 'Unity did not supply its joined world to the overlay');
     await page.screenshot({ path: path.join(evidence, 'integration-world-desktop.png'), timeout: 15000 });
-    await page.evaluate(() => MangosController.setMode('touch'));
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.waitForTimeout(500);
-    assert(await page.locator('#mangos-stick').isVisible(), 'Touch movement control is hidden');
-    const rect = await page.locator('#mangos-stick').boundingBox();
-    const cdp = await context.newCDPSession(page);
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: rect.x + rect.width * 0.65, y: rect.y + rect.height * 0.3, id: 1 }] });
-    await page.waitForTimeout(600);
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    await page.screenshot({ path: path.join(evidence, 'integration-world-portrait.png'), timeout: 15000 });
-    await page.setViewportSize({ width: 844, height: 390 });
-    await page.waitForTimeout(500);
-    await page.screenshot({ path: path.join(evidence, 'integration-world-landscape.png'), timeout: 15000 });
-    result.controllerAfterRotation = await page.evaluate(() => MangosController.getState());
+    // Account, real mobile contexts, rotation and touch -> keyboard camera
+    // regressions are covered by check-client-regressions.cjs.
     assert(![...errors, ...logs].some(line => /RuntimeError|TypeError|ReferenceError|NullReferenceException|EntryPointNotFoundException|DllNotFoundException/.test(line)), 'Runtime exception in compiled WebGL');
     result.passed = true;
   } catch (error) {

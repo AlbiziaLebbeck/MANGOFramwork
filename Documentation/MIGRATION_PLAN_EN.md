@@ -278,7 +278,7 @@ On “any avatar”: support can broaden substantially for correctly rigged/skin
 - Correct joystick radius/sprint and screen-to-Canvas conversion across resolutions.
 - Inspect camera logic that compares only the current delta magnitude to its previous value; equal consecutive deltas must not be skipped.
 - Replace `Input.mousePosition`-only UI raycasts with the correct touch/pointer. A tap on voice UI must not become movement.
-- Detect devices using touch/pointer capabilities as well as UA, with overrides for desktop-UA iPad and keyboard-connected tablets.
+- Detect devices using touch/pointer capabilities as well as UA, including desktop-UA iPad and automatic input switching on keyboard-connected tablets.
 - Refresh Safe Area beyond Awake: resize, rotation, and browser toolbar changes. DOM overlay and Unity need consistent safe bounds.
 
 ### 8.2 Proposed controls
@@ -306,7 +306,7 @@ Maintain shared `DeviceFamily` (Desktop/Phone/Tablet/Unknown), `Orientation` (Po
 - Define and record diagnostics for phone/tablet and desktop-UA iPad heuristics. Fall back to input capability when classification is uncertain; browser information cannot reliably identify every device.
 - Keep keyboard/mouse usable on touchscreen PCs. Connected tablet keyboards/mice should select appropriate current input while retaining the user's desired touch option.
 - Detect play-area portrait/landscape and rotation/resize during play, distinguishing real rotation from soft-keyboard viewport shrinkage.
-- Default to `Auto`, allow device/input override, remember it, and offer return to Auto without asking every player before play.
+- Device detection automatically selects keyboard/mouse on PC and touch on phones/tablets, including iPad's desktop user agent. Touchscreen PCs retain desktop controls. The Controls selector and legacy controller toggle are removed; saved overrides from older builds are cleared. On mobile, movement keys or a mouse select keyboard/mouse, and touching the screen restores touch controls. (Updated per 17 October 2026 request)
 
 ### 8.4 Controller and layout selection
 
@@ -322,7 +322,7 @@ Switch controls/layout automatically on rotation while preserving character, wal
 
 Adapt `OrientationManager` and old UI guards to allow both orientations. Do not force rotation where the selected controller should already support play.
 
-Acceptance: automatic desktop keyboard/mouse; correct touch layout at startup and after rotation on Android/iPhone/tablet/iPad; simultaneous movement/look/actions; no safe-area/voice-tray overlap; no stuck input after app switches/rotation; soft keyboard does not misclassify devices; chat does not move the player; complete flying controls; usable connected keyboards/mice and touchscreen PCs; working override/return to Auto.
+Acceptance: automatic desktop keyboard/mouse; correct touch layout at startup and after rotation on Android/iPhone/tablet/iPad; simultaneous movement/look/actions; no safe-area/voice-tray overlap; no stuck input after app switches/rotation; soft keyboard does not misclassify devices; chat does not move the player; complete flying controls; usable connected keyboards/mice and touchscreen PCs; working automatic switching without a Controls selector.
 
 ## 9. Delivery sequence and estimates
 
@@ -353,7 +353,7 @@ The avatar prototype gate precedes full loader replacement. If it fails, decide 
 | Voice | Two accounts/multiple tabs, A/B worlds, denied mic, mute, logout, network changes | Roster, media state, actual audio tests |
 | Avatar | Short/tall, supported extreme proportions, VRM 0/1, mapped/unmapped GLB, load failure | Diagnostics and motion-test video |
 | Multiplayer | Avatar changes, remote animation, late join, disconnect/rejoin | Consistent state across Clients |
-| Device/controller | PC/phone/tablet, both orientations at startup/rotation, desktop-UA iPad, touchscreen PC, connected tablet keyboard/mouse, Auto/overrides, move+look+action, flying vertical input, chat keyboard, safe area/background | Physical PC/Android/iPhone/iPad/tablet, recorded detection/controller/layout |
+| Device/controller | PC/phone/tablet, both orientations at startup/rotation, desktop-UA iPad, touchscreen PC, connected tablet keyboard/mouse, automatic detections, move+look+action, flying vertical input, chat keyboard, safe area/background | Physical PC/Android/iPhone/iPad/tablet, recorded detection/controller/layout |
 | Performance | World/avatar/voice together, repeated avatar changes, long sessions | FPS/frame time, memory, load time, WebRTC stats |
 
 Measure baseline performance and select player-count/device targets before defining numerical acceptance, such as 30 FPS on agreed minimum hardware. Adding a joystick does not guarantee 60 FPS on every phone.

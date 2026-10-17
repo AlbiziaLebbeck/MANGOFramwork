@@ -34,6 +34,8 @@ Account API, voice/media backend, and TURN remain external services configured b
 
 ## Avatars and animation
 
+Account and guest avatar choices become selectable before optional thumbnails finish. Preview failure does not disable a valid choice. The catalog scroll position resets when opened, and the panel fits the safe area. Opening it pauses game input and hides touch controls. WebGL model requests to the configured MANGOs API origin include Cookie SSO credentials; public external models retain anonymous CORS. The API must still permit credentialed CORS for the deployed page.
+
 GLB creates a Humanoid Avatar from the model's own skeleton, calibrates relaxed/A-pose exports into a T-pose, and aligns its orientation before retargeting. VRM uses UniVRM and its own Humanoid Avatar. The system does not apply a reference Avatar's proportions to a different model. Walking, flying, FishNet, and interactions receive the active Animator.
 
 The default uniformly normalizes visual height to 1.7 metres to match the existing collider policy; it does not stretch individual bones. Keeping natural heights requires a matching collider/gameplay policy. For Humanoid models with different bone names, create an Avatar Rig Profile to specify the mapping. Models without Humanoid skeletons cannot be guaranteed to use every existing Humanoid animation.
@@ -42,9 +44,11 @@ Export `.anim` and embedded model-clip information through **MANGOs Framework > 
 
 ## Controller
 
-Auto selects keyboard/mouse on PC and touch on phones/tablets, and adapts the layout to orientation. It recognizes iPad's Mac-style user agent and does not force touchscreen PCs into touch mode. Players can choose Touch or Keyboard/mouse manually. In Auto on mobile, movement keys or mouse input switch to keyboard/mouse; touching the screen restores touch.
+Device detection automatically selects keyboard/mouse on PC and touch on phones/tablets, including iPad's desktop user agent. Touchscreen PCs retain desktop controls. The Controls selector and legacy controller toggle are removed; saved overrides from older builds are cleared. On mobile, movement keys or a mouse select keyboard/mouse, and touching the screen restores touch controls.
 
 Touch controls provide a left movement joystick, right-side camera drag, Run, and Jump. Fly/Up/Down appear only for flyable characters. Unity interaction buttons remain tappable. Rotation, mode changes, lost focus, and disconnect clear held input; typing into an HTML field suspends game input.
+
+On PC, hold right mouse and drag to turn the camera. Rebuild Client after updating, deploy its entire directory (HTML/JS and matching Unity files), and allow caches/service workers to update to the new build.
 
 ## Before production deployment
 

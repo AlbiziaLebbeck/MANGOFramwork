@@ -106,6 +106,8 @@ Account API, voice/media backend, Socket.IO, and ICE/TURN services remain extern
 
 ## Avatars and animation
 
+Account and guest avatar choices become selectable before optional thumbnails finish. Preview failure does not disable a valid choice. The catalog scroll position resets when opened, and the panel fits the safe area. Opening it pauses game input and hides touch controls. WebGL model requests to the configured MANGOs API origin include Cookie SSO credentials; public external models retain anonymous CORS. The API must still permit credentialed CORS for the deployed page.
+
 Ordinary GLB avatars use glTFast and build a Humanoid Avatar from their own skeleton. The loader calibrates relaxed/A-pose exports into a T-pose and aligns the body basis before retargeting. VRM uses UniVRM and the model's own Humanoid Avatar/raw skeleton. Movement, flying, FishNet animation synchronization, and interactions are rebound to the active Animator.
 
 Visual height is normalized uniformly to **1.7 m** by default to match the existing collider policy. Bone lengths, skin weights, and inverse bind matrices are not stretched to match a reference character.
@@ -118,15 +120,15 @@ Use **MANGOs Framework > Avatar > Export Animation Audit** to write `Library/Man
 
 ## Adaptive controls
 
-**Auto** selects keyboard/mouse on PC and touch controls on phones/tablets, including iPad's desktop user agent. A touchscreen PC remains in desktop mode. Players can override Auto with **Touch** or **Keyboard / mouse**.
+Device detection automatically selects keyboard/mouse on PC and touch on phones/tablets, including iPad's desktop user agent. Touchscreen PCs retain desktop controls. The Controls selector and legacy controller toggle are removed; saved overrides from older builds are cleared. On mobile, movement keys or a mouse select keyboard/mouse, and touching the screen restores touch controls.
 
 Touch controls include a left movement joystick, right-side camera drag, Run, and Jump. Fly/Up/Down appear for flyable players. Layouts adapt to portrait/landscape and safe areas. Rotation, input-mode changes, focus loss, pointer cancellation, typing in an HTML field, and disconnect clear held input.
 
-In Auto mode on mobile, a movement key or mouse switches to keyboard/mouse; touching the screen restores touch controls.
+On desktop, hold the right mouse button and drag to turn the camera. Returning from touch to keyboard/mouse does not enable free mouse look.
 
 ## Validation and known limits
 
-Linux IL2CPP and WebGL builds have succeeded. A compiled WebGL client connected to a Linux Server in WSL, entered BaseWorld as a guest, and loaded a public GLB avatar. Browser tests cover five device configurations, simultaneous touch input, orientation changes, and controller overrides. Avatar checks include different sizes, T/A-pose calibration, a real GLB regression, and a synthetic VRM 1.0 import.
+Linux IL2CPP and WebGL builds have succeeded. A compiled WebGL client connected to a Linux Server in WSL, entered BaseWorld as a guest, and loaded a public GLB avatar. Browser tests cover five device configurations, simultaneous touch input, orientation changes, and automatic input switching. Avatar checks include different sizes, T/A-pose calibration, a real GLB regression, and a synthetic VRM 1.0 import.
 
 Physical iOS/Android playtests, live microphone/account/TURN verification, and broader real-world VRM/avatar pose checks are still required. The graphical Editor buttons have not been clicked in an automated UI test; the build pipeline has been exercised through its batch runner.
 
@@ -142,7 +144,7 @@ This profile uses port **7788**, WS, and localhost, so it is separate from the d
 
 The screenshots use the guest name **PoppyValidation**. See the [build guide](Documentation/BUILD_AND_RUNTIME.md#repeat-the-webgl-screenshot-check) to repeat the capture.
 
-![WebGL validation: PoppyValidation with a loaded GLB avatar](Documentation/Validation/integration-world-desktop.png)
+![Account fixture: CasualPop and selectable avatars with automatic controls](Documentation/Validation/account-desktop-avatars.png)
 
 ## Documentation and migration history
 

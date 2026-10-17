@@ -106,6 +106,8 @@ Account API, voice/media backend, Socket.IO และ ICE/TURN ยังเป�
 
 ## Avatar และ animation
 
+รายการ Avatar ของบัญชีและ guest เลือกได้ก่อน thumbnail โหลดเสร็จ ภาพตัวอย่างที่โหลดไม่สำเร็จไม่ปิดปุ่มเลือก เมื่อเปิดรายการจะเลื่อนกลับด้านบนและปรับ panel ให้พอดี safe area พร้อมพัก input เกมและซ่อน touch controls การโหลดโมเดล WebGL จาก MANGOs API origin ที่ตั้งค่าไว้ส่ง Cookie SSO ส่วนโมเดลสาธารณะภายนอกยังใช้ anonymous CORS ฝั่ง API ยังต้องอนุญาต credentialed CORS ของเว็บที่ deploy
+
 GLB ทั่วไปใช้ glTFast และสร้าง Humanoid Avatar จาก skeleton ของตนเอง Loader ปรับท่าพัก/A-pose เป็น T-pose และจัดแกนร่างกายก่อน retarget ส่วน VRM ใช้ UniVRM กับ Humanoid Avatar/raw skeleton ของโมเดลนั้น ระบบเดิน บิน FishNet animation และ interaction ผูกกับ Animator ปัจจุบัน
 
 ค่าเริ่มต้นปรับความสูงภาพแบบ uniform เป็น **1.7 เมตร** ตาม collider เดิม ไม่ยืดความยาวกระดูก skin weights หรือ inverse bind matrices ให้ตรงตัวอ้างอิง
@@ -118,15 +120,15 @@ Humanoid GLB ที่ mapping ไม่ตรง สร้าง **Avatar Rig P
 
 ## Controller อัตโนมัติ
 
-**Auto** เลือก keyboard/mouse บน PC และ touch บนโทรศัพท์/tablet รวม iPad desktop user agent ส่วน PC จอสัมผัสยังใช้ desktop mode ผู้เล่นเปลี่ยนเป็น **Touch** หรือ **Keyboard / mouse** เองได้
+ระบบตรวจอุปกรณ์อัตโนมัติและเลือก keyboard/mouse บน PC หรือ touch บนโทรศัพท์/tablet รวม iPad desktop user agent ส่วน PC จอสัมผัสยังใช้ desktop controls เอาเมนู Controls และปุ่มสลับ controller เดิมออก พร้อมล้าง override ที่บันทึกจาก build เก่า บน mobile การกดปุ่มเดินหรือใช้ mouse จะเลือก keyboard/mouse และการแตะหน้าจอจะกลับเป็น touch
 
 Touch มี joystick ซ้าย ลากกล้องด้านขวา Run และ Jump ส่วน Fly/Up/Down แสดงเฉพาะตัวละครที่บินได้ Layout ปรับตามแนวหน้าจอและ safe area การหมุนจอ เปลี่ยน input mode หลุด focus ยกเลิก pointer พิมพ์ใน HTML field และ disconnect ล้าง input ค้าง
 
-Auto บน mobile เปลี่ยนเป็น keyboard/mouse เมื่อกดปุ่มเดินหรือใช้ mouse และกลับเป็น touch เมื่อแตะหน้าจอ
+บน desktop หมุนกล้องด้วยการกดคลิกขวาค้างแล้วลากเท่านั้น เมื่อสลับจาก touch กลับเป็น keyboard/mouse การขยับ mouse เฉย ๆ จะไม่หมุนกล้อง
 
 ## ผลตรวจและข้อจำกัด
 
-Build Linux IL2CPP และ WebGL สำเร็จ Client ที่ Build จริงเชื่อม Linux Server ใน WSL เข้า BaseWorld ด้วย guest และโหลด GLB สาธารณะได้ Browser tests ครอบคลุมห้า device configurations, input หลายนิ้ว การหมุนจอและ controller overrides ตรวจ Avatar หลายขนาด T/A-pose, GLB จริง และ synthetic VRM 1.0 แล้ว
+Build Linux IL2CPP และ WebGL สำเร็จ Client ที่ Build จริงเชื่อม Linux Server ใน WSL เข้า BaseWorld ด้วย guest และโหลด GLB สาธารณะได้ Browser tests ครอบคลุมห้า device configurations, input หลายนิ้ว การหมุนจอและ automatic input switching ตรวจ Avatar หลายขนาด T/A-pose, GLB จริง และ synthetic VRM 1.0 แล้ว
 
 ยังต้องเล่นบน iOS/Android จริง ตรวจ microphone/account/TURN สด และ VRM/ท่า Avatar จริงเพิ่มเติม ปุ่ม Editor แบบ GUI ยังไม่ได้คลิกใน automated UI test ส่วน build pipeline ผ่าน batch runner แล้ว
 
@@ -140,7 +142,7 @@ Build Linux IL2CPP และ WebGL สำเร็จ Client ที่ Build จ
 
 Profile นี้ใช้ **7788**, WS และ localhost แยกจาก deployment profile เริ่มต้น ภาพประกอบใช้ชื่อ guest **PoppyValidation** ดูวิธีถ่ายซ้ำใน [คู่มือ Build/runtime](Documentation/BUILD_AND_RUNTIME_TH.md)
 
-![ผลตรวจ WebGL: PoppyValidation กับ GLB ที่โหลดจริง](Documentation/Validation/integration-world-desktop.png)
+![บัญชีจำลอง: CasualPop และรายการ Avatar พร้อม controller อัตโนมัติ](Documentation/Validation/account-desktop-avatars.png)
 
 ## เอกสารและประวัติ migration
 

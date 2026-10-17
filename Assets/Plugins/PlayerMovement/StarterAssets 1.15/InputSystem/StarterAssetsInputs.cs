@@ -28,10 +28,16 @@ namespace StarterAssets
 
 		public void OnLook(InputValue value)
 		{
+			#if UNITY_WEBGL && !UNITY_EDITOR
+			// Browser camera input is handled by the right-button/touch controller.
+			LookInput(Vector2.zero);
+#else
 			if(cursorInputForLook)
 			{
 				LookInput(value.Get<Vector2>());
 			}
+			else LookInput(Vector2.zero);
+#endif
 		}
 
 		public void OnJump(InputValue value)

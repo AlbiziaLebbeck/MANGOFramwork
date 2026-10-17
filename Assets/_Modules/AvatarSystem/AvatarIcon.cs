@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using TMPro;
+using System;
+using System.IO;
 
 namespace MANGOsFramework.Experiment
 {
@@ -15,6 +18,8 @@ namespace MANGOsFramework.Experiment
 
         public string GLTFLink => gltfLink;
         public Texture AvatarTexture => avatarImage != null ? avatarImage.texture : null;
+        public bool IsSelectable => buttonRef != null && buttonRef.interactable;
+        private bool thumbnailRequested;
 
         public void OnSelect(BaseEventData eventData)
         {
@@ -48,15 +53,28 @@ namespace MANGOsFramework.Experiment
 
             if (buttonRef != null)
             {
-                buttonRef.interactable = false;
+                buttonRef.interactable = !string.IsNullOrWhiteSpace(gltfLink);
             }
 
-            if (thumbnailService == null)
-            {
-                return;
-            }
+            var labelObject = new GameObject("AvatarName", typeof(RectTransform));
+            labelObject.transform.SetParent(transform, false);
+            var rect = (RectTransform)labelObject.transform;
+            rect.anchorMin = new Vector2(0, 0); rect.anchorMax = new Vector2(1, 0);
+            rect.pivot = new Vector2(0.5f, 0); rect.sizeDelta = new Vector2(-8, 28);
+            var label = labelObject.AddComponent<TextMeshProUGUI>();
+            label.text = Uri.TryCreate(gltfLink, UriKind.Absolute, out var uri)
+                ? Uri.UnescapeDataString(Path.GetFileNameWithoutExtension(uri.AbsolutePath)) : "Avatar";
+            label.fontSize = 14; label.alignment = TextAlignmentOptions.Center;
+            label.color = new Color(0.12f, 0.18f, 0.25f); label.raycastTarget = false;
+            label.overflowMode = TextOverflowModes.Ellipsis;
+            EnsureThumbnail(thumbnailService);
+        }
 
-            thumbnailService.RequestThumbnail(gltfLink, HandleThumbnailReady);
+        public void EnsureThumbnail(AvatarThumbnailService service)
+        {
+            if (thumbnailRequested || service == null || string.IsNullOrWhiteSpace(gltfLink)) return;
+            thumbnailRequested = true;
+            service.RequestThumbnail(gltfLink, HandleThumbnailReady);
         }
 
         private void HandleThumbnailReady(Texture2D texture)
@@ -74,7 +92,7 @@ namespace MANGOsFramework.Experiment
 
             if (buttonRef != null)
             {
-                buttonRef.interactable = texture != null;
+                buttonRef.interactable = !string.IsNullOrWhiteSpace(gltfLink);
             }
 
             if (texture != null &&

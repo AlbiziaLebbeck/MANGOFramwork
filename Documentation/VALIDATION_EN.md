@@ -18,7 +18,7 @@ The delivered default-profile build, `Builds/mangos/20261016-161442-6eaf09`, suc
 | Build settings | Checked default 7770/WS and 443/WSS, independent overrides, persistence, rejection of invalid paths/ports, and Server WSS certificate requirements. |
 | Transport | Fixed case-insensitive `Sec-WebSocket-Key` header reading and checked the handshake with an actual WebGL connection. |
 | Voice overlay | Mock tests passed for waiting for a room, join, mute, room changes retaining mute, leave, rapid room changes, changes during join, and dispose. The actual Client supplied Unity's world id to the overlay. |
-| Controller | Edge/Chromium emulation passed for PC, iPhone, Android tablet, iPad desktop UA, and touchscreen PC. Checks covered simultaneous joystick/look/jump, rotation while holding input, focus/blur, keyboard Auto mode, manual overrides, and cleanup after leaving. |
+| Controller | Edge/Chromium emulation passed for PC, iPhone, Android tablet, iPad desktop UA, and touchscreen PC. Checks covered simultaneous joystick/look/jump, rotation while holding input, focus/blur, keyboard Auto mode, automatic input switching, and cleanup after leaving. |
 | Unity input | Checked movement/camera axes, one-shot jump/fly actions, sprint/vertical movement, and clearing input after orientation changes or text entry. |
 | Humanoid | Built a separate Avatar per model. Tested two sizes, A-pose, reversed orientation, and 60 animation frames. Bones were animated and arm lengths remained constant; a model without a rig was rejected. |
 | Real GLB example | MANGOs `RajPattern_Blue.glb`: identified and fixed crossed arms caused by treating the resting pose as a T-pose. Checked left/right hand positions after retargeting in Editor and standing/walking visuals in WebGL after HTTP 200 GLB loading. |
@@ -66,3 +66,20 @@ Validation: Unity 6000.3.26f1 Editor compilation passed, followed by Linux IL2CP
 The test used an isolated project copy so the user's open Editor and existing project-setting edits were preserved. The default deployment profile remains 7770/WS and 443/WSS; these repeated builds use the local 7788/WS validation profile. This correction verifies compilation/builds and physics state, not a new live-voice or physical-mobile playtest. [Machine-readable evidence](Validation/unity6-api-updater-fix.json) records the build id, log hashes, and source hashes.
 
 After updating an already-open Editor, use **Assets > Refresh** and allow compilation to finish. Clear old Console entries to inspect the new run; old entries from before the source update do not disappear automatically. A new project opening uses the corrected sources. Other deprecation/package/shader warnings may still appear; any new error needs investigation.
+
+
+## Account avatars and automatic controller correction — 17 October 2026
+
+Avatar selection previously waited for every model thumbnail; a slow/failed account model could keep the entire menu hidden. Choices are now available immediately, thumbnail work is limited to visible entries, failed previews keep a filename label, and opening the catalog resets its scroll position. The panel fits the screen safe area, pauses game input and hides touch controls while open. MANGOs API-origin binary model requests now use Cookie SSO credentials, while public external assets retain anonymous CORS.
+
+The Controls selector and legacy toggle are removed. Old local overrides are cleared; desktop, phone, tablet, iPad desktop UA, orientation changes, and connected keyboard/mouse input select controls automatically. Desktop look comes from held-right-button browser pointer events. Canvas focus no longer cancels the first drag. Starter Assets yields camera target rotation to the browser controller, preventing its LateUpdate from overwriting touch/attached-mouse look.
+
+The user-provided [CasualPop.glb](https://www.mangosgo.com/avatar/CasualPop.glb) passes the Editor Humanoid/60-frame animation check. Browser regressions use that public URL as the mock account's default and the same downloaded model as an API asset fixture. The account identity/API are mocked; these checks do not prove the user's production cookie or session. The source model is not bundled in Git.
+
+Repeat with `Tools/Validation/check-controller.cjs` and `Tools/Validation/check-client-regressions.cjs`; see [Build and runtime](BUILD_AND_RUNTIME.md#account-and-controller-regressions). Machine-readable results and current screenshots are in [Validation/client-regressions.json](Validation/client-regressions.json). The failed intermediate QA runs are retained in the local workspace and are not release evidence. The test project uses a separate local 7788/WS profile and Cookie SSO override; the user's existing scene, auth asset and deployment settings remain untouched.
+
+Final verification: build `20261017-023307-2194a9` succeeded for both targets with zero build/C#/ScriptUpdater errors. All four compiled cases passed: guest desktop, account desktop (including actual selection/Submit), account phone and account tablet. Touch camera rotation, automatic orientation changes, keyboard/mouse switching and RMB-only look passed on the mobile contexts. HTTP 401 for the guest and 404 for the unavailable thumbnail are intentional fixtures.
+
+![Mock account avatar catalog](Validation/account-desktop-avatars.png)
+
+![Mock account on phone; touch controls hidden while choosing avatars](Validation/account-phone-avatars.png)

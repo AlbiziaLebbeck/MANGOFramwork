@@ -34,6 +34,8 @@ Account API, voice/media backend และ TURN ยังเป็นบริ�
 
 ## Avatar และ animation
 
+รายการ Avatar ของบัญชีและ guest เลือกได้ก่อน thumbnail โหลดเสร็จ ภาพตัวอย่างที่โหลดไม่สำเร็จไม่ปิดปุ่มเลือก เมื่อเปิดรายการจะเลื่อนกลับด้านบนและปรับ panel ให้พอดี safe area พร้อมพัก input เกมและซ่อน touch controls การโหลดโมเดล WebGL จาก MANGOs API origin ที่ตั้งค่าไว้ส่ง Cookie SSO ส่วนโมเดลสาธารณะภายนอกยังใช้ anonymous CORS ฝั่ง API ยังต้องอนุญาต credentialed CORS ของเว็บที่ deploy
+
 GLB สร้าง Humanoid Avatar จากกระดูกของโมเดลนั้น โดยปรับท่าพัก/A-pose เป็น T-pose สำหรับตั้งต้นและจัดทิศทางก่อน retarget ส่วน VRM ใช้ importer ของ UniVRM และ Humanoid Avatar ของตัวเอง ระบบไม่เอาสัดส่วนของ Avatar อ้างอิงไปครอบโมเดลใหม่ และส่ง Animator ที่ใช้งานอยู่ให้ระบบเดิน บิน FishNet และ interaction
 
 ค่าเริ่มต้นปรับขนาดภาพแบบ uniform ให้สูง 1.7 เมตรเพื่อให้สอดคล้องกับ collider เดิม ไม่ยืดกระดูกเป็นรายชิ้น ถ้าต้องการคงความสูงจริง ให้ปรับนโยบาย collider/เกมร่วมด้วย โมเดล Humanoid ที่ชื่อกระดูกไม่ตรงสามารถสร้าง Avatar Rig Profile เพื่อระบุ mapping ได้ โมเดลที่ไม่มีโครงกระดูก Humanoid ไม่สามารถรับประกันการใช้ animation Humanoid เดิมได้ทุกตัว
@@ -42,9 +44,11 @@ GLB สร้าง Humanoid Avatar จากกระดูกของโม�
 
 ## Controller
 
-Auto เลือก keyboard/mouse บน PC และ touch บนโทรศัพท์/tablet พร้อมเปลี่ยน layout ตามแนวหน้าจอ รองรับ iPad ที่รายงาน user agent แบบ Mac และไม่บังคับ PC จอสัมผัสให้ใช้ touch สามารถเลือก Touch หรือ Keyboard/mouse เองได้ เมื่อใช้ Auto บน mobile การกดปุ่มเดินจาก keyboard/ใช้ mouse จะเปลี่ยนเป็น keyboard/mouse และการสัมผัสหน้าจอจะกลับมาใช้ touch
+ระบบตรวจอุปกรณ์อัตโนมัติและเลือก keyboard/mouse บน PC หรือ touch บนโทรศัพท์/tablet รวม iPad desktop user agent ส่วน PC จอสัมผัสยังใช้ desktop controls เอาเมนู Controls และปุ่มสลับ controller เดิมออก พร้อมล้าง override ที่บันทึกจาก build เก่า บน mobile การกดปุ่มเดินหรือใช้ mouse จะเลือก keyboard/mouse และการแตะหน้าจอจะกลับเป็น touch
 
 Touch ใช้ joystick ซ้าย เดิน, ลากด้านขวา หมุนกล้อง, Run และ Jump ส่วน Fly/ขึ้น/ลงจะแสดงเฉพาะตัวละครที่บินได้ ปุ่ม interaction ของ Unity ยังแตะได้ ระบบล้าง input ที่ค้างเมื่อหมุนจอ เปลี่ยนโหมด หลุด focus หรือ disconnect และพัก input ระหว่างพิมพ์ในช่อง HTML
+
+บน PC ต้องกดคลิกขวาค้างแล้วลากจึงหมุนกล้อง หลังอัปเดตต้อง Build Client ใหม่และนำ Client ทั้งโฟลเดอร์ขึ้นเว็บ รวม HTML/JS และไฟล์ Unity ที่ตรงชุดกัน ให้ cache/service worker อัปเดตเป็น build ใหม่ด้วย
 
 ## ก่อนนำขึ้นระบบจริง
 

@@ -1,6 +1,8 @@
 using System;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.UI;
+using MANGOsFramework.Experiment;
 
 public static class MangosInputValidation
 {
@@ -29,16 +31,37 @@ public static class MangosInputValidation
             bridge.OnInput("{\"x\":1,\"jump\":true}");
             bridge.OnDeviceChanged("13");
             Require(MangosInputRouter.Portrait && MangosInputRouter.Move == Vector2.zero && !MangosInputRouter.JumpDown("Jump"), "Rotation must clear held controls");
-            Debug.Log("MANGOS_INPUT_TESTS PASSED: walking/fly input routing, single-press actions, focus and orientation reset");
+            MangosBrowserBridge.SetUiPanel(true);
+            bridge.OnInput("{\"x\":1,\"jump\":true}");
+            Require(MangosInputRouter.Blocked && MangosInputRouter.Move == Vector2.zero && !MangosInputRouter.JumpDown("Jump"), "Avatar modal must block and clear player input");
+            MangosBrowserBridge.SetUiPanel(false);
+            Require(!MangosInputRouter.Blocked && MangosInputRouter.Move == Vector2.zero, "Closing modal must not restore stale held input");
+            ValidateSelectableAvatar();
+            Debug.Log("MANGOS_INPUT_TESTS PASSED: walking/fly input routing, single-press actions, focus, orientation and avatar modal reset");
         }
         finally
         {
+            MangosBrowserBridge.SetUiPanel(false);
             MangosInputRouter.Reset();
             typeof(MangosInputRouter).GetField("BrowserBlocked", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, false);
             typeof(MangosInputRouter).GetField("NativeBlocked", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, false);
             typeof(MangosInputRouter).GetProperty("DeviceFlags").SetValue(null, 0);
             UnityEngine.Object.DestroyImmediate(bridgeObject); UnityEngine.Object.DestroyImmediate(player);
         }
+    }
+    private static void ValidateSelectableAvatar()
+    {
+        var item = new GameObject("AvatarValidationItem", typeof(RectTransform), typeof(Button));
+        try
+        {
+            var icon = item.AddComponent<AvatarIcon>();
+            typeof(AvatarIcon).GetField("buttonRef", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(icon, item.GetComponent<Button>());
+            icon.SetIconData("https://api.mangosgo.com/api/v1/avatars/test.glb", null);
+            Require(icon.IsSelectable, "Avatar selection must be available before its thumbnail");
+            typeof(AvatarIcon).GetMethod("HandleThumbnailReady", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(icon, new object[] { null });
+            Require(icon.IsSelectable, "A failed preview must not disable avatar selection");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(item); }
     }
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); }
 }

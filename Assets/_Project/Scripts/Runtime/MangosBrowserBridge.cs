@@ -24,6 +24,13 @@ public sealed class MangosBrowserBridge : MonoBehaviour
     private PlayerMovementHandler movement;
     private int appliedFlags = -1, jumpVersion, lookToken;
     private bool appliedBlocked, allowLook;
+    [Serializable] private sealed class Diagnostics
+    {
+        public bool touch, inputBlocked, avatarPanelOpen, avatarLoaded, avatarLoading;
+        public int avatarChoices, selectableAvatars;
+        public float cameraYaw, cameraPitch;
+        public string avatarError;
+    }
     public static bool HasBrowserControls {
         get {
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -37,6 +44,8 @@ public sealed class MangosBrowserBridge : MonoBehaviour
     [DllImport("__Internal")] private static extern void MangosBrowserSetSession(string json);
     [DllImport("__Internal")] private static extern int MangosBrowserDeviceFlags();
     [DllImport("__Internal")] private static extern void MangosBrowserSetPlayer(int ready, int canFly);
+    [DllImport("__Internal")] private static extern void MangosBrowserSetUiPanel(int open);
+    [DllImport("__Internal")] private static extern void MangosBrowserDiagnostics(string json);
 #endif
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Initialize()
@@ -80,6 +89,14 @@ public sealed class MangosBrowserBridge : MonoBehaviour
         SetRoom("");
         if (Instance != null) Instance.ResetPlayer();
     }
+    public static void SetUiPanel(bool open)
+    {
+        MangosInputRouter.UiBlocked = open;
+        MangosInputRouter.Reset();
+#if UNITY_WEBGL && !UNITY_EDITOR
+        MangosBrowserSetUiPanel(open ? 1 : 0);
+#endif
+    }
     private void PlayerReady()
     {
         localPlayer = UserReferencePersistent.Instance != null ? UserReferencePersistent.Instance.PlayerGameObject : null;
@@ -93,6 +110,7 @@ public sealed class MangosBrowserBridge : MonoBehaviour
     private void ResetPlayer()
     {
         MangosInputRouter.NativeBlocked = false;
+        SetUiPanel(false);
         MangosInputRouter.Reset(); ClearInputs();
         localPlayer = null; inputs = null; movement = null;
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -113,8 +131,11 @@ public sealed class MangosBrowserBridge : MonoBehaviour
             ClearInputs();
             appliedFlags = MangosInputRouter.DeviceFlags; appliedBlocked = MangosInputRouter.Blocked;
             movement?.SetBrowserInputMode(MangosInputRouter.Touch, MangosInputRouter.Blocked);
-            if (inputs != null) { inputs.cursorLocked = false; inputs.cursorInputForLook = !MangosInputRouter.Touch && !MangosInputRouter.Blocked; }
-            if (MangosInputRouter.Touch) Cursor.lockState = CursorLockMode.None;
+            // The walking camera handles right-button drag. Starter Assets must
+            // never also rotate from ungated mouse deltas after an input switch.
+            if (inputs != null) { inputs.cursorLocked = false; inputs.cursorInputForLook = false; }
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
         if (!MangosInputRouter.Touch || inputs == null) return;
         inputs.MoveInput(MangosInputRouter.Blocked ? Vector2.zero : MangosInputRouter.Move);
@@ -141,10 +162,10 @@ public sealed class MangosBrowserBridge : MonoBehaviour
     }
     [Preserve] public void OnInput(string json)
     {
-        if (!MangosInputRouter.Touch || MangosInputRouter.Blocked || localPlayer == null) return;
+        if (MangosInputRouter.Blocked || localPlayer == null) return;
         var state = JsonUtility.FromJson<BrowserInput>(json);
         if (state == null) return;
-        MangosInputRouter.Move = Vector2.ClampMagnitude(new Vector2(state.x, state.y), 1);
+        if (MangosInputRouter.Touch) MangosInputRouter.Move = Vector2.ClampMagnitude(new Vector2(state.x, state.y), 1);
         if (state.lookToken != lookToken)
         {
             lookToken = state.lookToken; allowLook = true;
@@ -156,12 +177,33 @@ public sealed class MangosBrowserBridge : MonoBehaviour
             }
         }
         if (allowLook) MangosInputRouter.PendingLook += Vector2.ClampMagnitude(new Vector2(state.lx, state.ly), 180);
+        if (!MangosInputRouter.Touch) return; // Desktop movement remains with Unity; only RMB look is bridged.
         if (state.jump && !MangosInputRouter.Jump) MangosInputRouter.JumpVersion++;
         if (state.fly && !MangosInputRouter.Fly) MangosInputRouter.FlyVersion++;
         MangosInputRouter.Jump = state.jump; MangosInputRouter.Fly = state.fly;
         MangosInputRouter.Sprint = state.sprint; MangosInputRouter.Vertical = Mathf.Clamp(state.vertical, -1, 1);
     }
     private void OnApplicationFocus(bool focused) { if (!focused) { MangosInputRouter.Reset(); ClearInputs(); } }
+    [Preserve]
+    public void OnRequestDiagnostics(string ignored)
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        var avatars = MANGOsFramework.Experiment.AvatarSystem.Instance;
+        var loader = localPlayer != null ? localPlayer.GetComponentInChildren<AvatarLoader>(true) : null;
+        var camera = Camera.main;
+        MangosBrowserDiagnostics(JsonUtility.ToJson(new Diagnostics {
+            touch = MangosInputRouter.Touch, inputBlocked = MangosInputRouter.Blocked,
+            avatarPanelOpen = avatars != null && avatars.IsPanelOpen,
+            avatarChoices = avatars != null ? avatars.ChoiceCount : 0,
+            selectableAvatars = avatars != null ? avatars.SelectableCount : 0,
+            avatarLoaded = loader != null && loader.Model != null,
+            avatarLoading = loader != null && loader.IsLoading,
+            avatarError = loader != null ? loader.LastLoadError : null,
+            cameraYaw = camera != null ? camera.transform.eulerAngles.y : 0,
+            cameraPitch = camera != null ? camera.transform.eulerAngles.x : 0
+        }));
+#endif
+    }
     [Preserve]
     public void OnVoiceState(string json)
     {

@@ -7,8 +7,8 @@ public static class MangosInputRouter
     public static bool Touch => (DeviceFlags & 8) != 0;
     public static bool Mobile => (DeviceFlags & 3) != 0;
     public static bool Portrait => (DeviceFlags & 4) != 0;
-    internal static bool BrowserBlocked, NativeBlocked;
-    public static bool Blocked => BrowserBlocked || NativeBlocked;
+    internal static bool BrowserBlocked, NativeBlocked, UiBlocked;
+    public static bool Blocked => BrowserBlocked || NativeBlocked || UiBlocked;
     public static Vector2 Move { get; internal set; }
     public static Vector2 Look { get; private set; }
     internal static Vector2 PendingLook;

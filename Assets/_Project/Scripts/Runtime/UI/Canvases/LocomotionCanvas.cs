@@ -52,8 +52,8 @@ public class LocomotionCanvas : MonoBehaviour
     private void LateUpdate()
     {
         if (!MangosBrowserBridge.HasBrowserControls) return;
-        containerPC.SetActive(!MangosInputRouter.Touch);
-        switchControllerButton.gameObject.SetActive(!MangosInputRouter.Touch);
+        containerPC.SetActive(false);
+        switchControllerButton.gameObject.SetActive(false);
         containerMobile.SetActive(false);
         mobileControllerPanel.SetActive(false);
     }

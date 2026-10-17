@@ -1,4 +1,4 @@
-﻿ using UnityEngine;
+ using UnityEngine;
 #if ENABLE_INPUT_SYSTEM 
 using UnityEngine.InputSystem;
 #endif
@@ -193,8 +193,12 @@ namespace StarterAssets
             }
         }
 
+        // A browser controller can own the target while Starter Assets still moves the player.
+        public bool ExternalCameraControl { get; set; }
+
         private void CameraRotation()
         {
+            if (ExternalCameraControl) return;
 
             // if there is an input and camera position is not fixed
             if (_input.look.sqrMagnitude >= _threshold && !LockCameraPosition)

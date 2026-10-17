@@ -36,6 +36,11 @@ namespace MANGOsFramework.Experiment
         private bool isPanelOpen = false;
         [SerializeField] private Animator localPlayerAnim;
         private AvatarThumbnailService thumbnailService;
+        private ScrollRect avatarScroll;
+        private int layoutWidth, layoutHeight;
+        public bool IsPanelOpen => isPanelOpen;
+        public int ChoiceCount => avatarButtons.Count;
+        public int SelectableCount => avatarButtons.FindAll(icon => icon != null && icon.IsSelectable).Count;
 
         protected override void Awake()
         {
@@ -46,11 +51,14 @@ namespace MANGOsFramework.Experiment
             {
                 thumbnailService = gameObject.AddComponent<AvatarThumbnailService>();
             }
+            avatarScroll = AvatarSelectPanel != null ? AvatarSelectPanel.GetComponentInChildren<ScrollRect>(true) : null;
+            if (avatarScroll != null) avatarScroll.onValueChanged.AddListener(_ => RequestVisibleThumbnails());
 
             if (avatarSubmitButton != null)
             {
                 avatarSubmitButton.onClick.AddListener(() =>
                 {
+                    if (string.IsNullOrWhiteSpace(currentSelectAvatar)) return;
                     OnClick_SubmitAvatar(currentSelectAvatar);
                     avatarSubmitButton.interactable = false;
                     elapse = 0;
@@ -168,6 +176,10 @@ namespace MANGOsFramework.Experiment
 
         private IEnumerator Init()
         {
+            // Account libraries can contain slow or unavailable models. The menu
+            // must be usable before their optional preview images are generated.
+            isLoaded = true;
+            if (avatarWindowButton != null) avatarWindowButton.gameObject.SetActive(true);
             yield return StartCoroutine(LoadAvatarSelection());
 
             string activeAvatarUrl = NormalizeAvatarUrl(UserReferencePersistent.Instance.GLTF);
@@ -175,6 +187,7 @@ namespace MANGOsFramework.Experiment
 
             if (matchIcon != null)
             {
+                matchIcon.EnsureThumbnail(thumbnailService);
                 if (matchIcon.TryGetComponent(out AvatarIcon icon))
                 {
                     UserReferencePersistent.Instance.SetAvatarImage(icon.AvatarTexture);
@@ -197,6 +210,7 @@ namespace MANGOsFramework.Experiment
 
         private void Update()
         {
+            if (isPanelOpen && (layoutWidth != Screen.width || layoutHeight != Screen.height)) FitPanelToScreen();
             if (inCooldown)
             {
                 elapse += Time.deltaTime;
@@ -260,16 +274,14 @@ namespace MANGOsFramework.Experiment
 
                 var newButton = Instantiate(AvatarButtonPrefab, avatarButtonHolder);
                 var icon = newButton.GetComponent<AvatarIcon>();
-                icon.SetIconData(url, thumbnailService);
+                icon.SetIconData(url, null);
                 avatarButtons.Add(icon);
 
                 yield return null;
             }
 
-            if (thumbnailService != null)
-            {
-                yield return thumbnailService.WaitForIdle();
-            }
+            ResetSelectionScroll();
+            if (isPanelOpen) RequestVisibleThumbnails();
 
             onComplete?.Invoke();
         }
@@ -308,6 +320,7 @@ namespace MANGOsFramework.Experiment
             }
 
             //OnToggleAvatarWindow();
+            OnClick_Cancel();
         }
 
         public void OnToggleAvatarWindow()
@@ -319,6 +332,7 @@ namespace MANGOsFramework.Experiment
             if(isPanelOpen)
             {
                 isPanelOpen = false;
+                MangosBrowserBridge.SetUiPanel(false);
 
                 if (popInEffect != null)
                 {
@@ -334,6 +348,9 @@ namespace MANGOsFramework.Experiment
             else
             {
                 isPanelOpen = true;
+                MangosBrowserBridge.SetUiPanel(true);
+                FitPanelToScreen();
+                ResetSelectionScroll();
 
                 if (popInEffect != null)
                 {
@@ -345,6 +362,7 @@ namespace MANGOsFramework.Experiment
                 }
 
                 cancelButton.interactable = true;
+                StartCoroutine(LoadVisiblePreviews());
             }
         }
 
@@ -372,6 +390,56 @@ namespace MANGOsFramework.Experiment
             }
 
             isPanelOpen = false;
+            MangosBrowserBridge.SetUiPanel(false);
+        }
+
+        private void ResetSelectionScroll()
+        {
+            Canvas.ForceUpdateCanvases();
+            if (avatarScroll != null) { avatarScroll.StopMovement(); avatarScroll.verticalNormalizedPosition = 1f; }
+            if (avatarButtonHolder is RectTransform content) content.anchoredPosition = Vector2.zero;
+        }
+
+        private IEnumerator LoadVisiblePreviews()
+        {
+            yield return null;
+            Canvas.ForceUpdateCanvases();
+            RequestVisibleThumbnails();
+        }
+
+        private void RequestVisibleThumbnails()
+        {
+            if (!isPanelOpen || thumbnailService == null) return;
+            var viewport = avatarScroll != null ? avatarScroll.viewport : AvatarSelectPanel.transform as RectTransform;
+            int requested = 0;
+            foreach (var icon in avatarButtons)
+            {
+                if (icon == null) continue;
+                if (viewport != null)
+                {
+                    var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(viewport, icon.transform);
+                    if (bounds.max.y < viewport.rect.yMin || bounds.min.y > viewport.rect.yMax) continue;
+                }
+                icon.EnsureThumbnail(thumbnailService);
+                if (++requested >= 12) break;
+            }
+        }
+
+        private void FitPanelToScreen()
+        {
+            layoutWidth = Screen.width; layoutHeight = Screen.height;
+            var panel = AvatarSelectPanel.transform as RectTransform;
+            var canvas = AvatarSelectPanel.GetComponentInParent<Canvas>();
+            if (panel == null || canvas == null) return;
+            float factor = Mathf.Max(0.001f, canvas.rootCanvas.scaleFactor);
+            var safe = Screen.safeArea;
+            float availableWidth = Mathf.Max(1, safe.width - 32);
+            float availableHeight = Mathf.Max(1, safe.height - 160);
+            float scale = Mathf.Min(1, availableWidth / (panel.rect.width * factor), availableHeight / (panel.rect.height * factor));
+            var pop = AvatarSelectPanel.GetComponent<UIPopIn>();
+            if (pop != null) pop.OpenScale = Vector3.one * scale;
+            panel.anchoredPosition = new Vector2((safe.xMin + 16) / factor, -(Screen.height - safe.yMax + 96) / factor);
+            if (isPanelOpen && panel.localScale.sqrMagnitude > 0.01f) panel.localScale = Vector3.one * scale;
         }
     }
 }

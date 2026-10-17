@@ -151,13 +151,14 @@ public class PlayerMovementHandler : MonoBehaviour
     {
         blocked |= MangosInputRouter.Blocked;
         isMobile = touch;
+        thirdPersonController.ExternalCameraControl = true;
         primaryTouchDelta = Vector2.zero; mouseScrollY = 0; isChangeView = IsPinchZoom = false;
         startClick = false; clickToMoveTarget = transform.position;
         playerActions.asset.Disable();
         playerInput.actions.Disable();
         starterAssetsInputs.analogMovement = touch;
         if (blocked) return;
-        ApplyLocomotionSetting(touch ? false : LocomotionManager.IsTouch);
+        ApplyLocomotionSetting(false);
         if (touch) playerInput.actions.Disable(); // Browser joystick writes StarterAssetsInputs directly.
         else playerActions.KeyboardMouse.Enable();
     }
@@ -286,6 +287,7 @@ public class PlayerMovementHandler : MonoBehaviour
             playerActions.KeyboardMouse.DoubleLeftPressed.canceled += _ => { doubleClicked = false; };
 
             playerActions.KeyboardMouse.MouseAxis.performed += _rotation => primaryTouchDelta = _rotation.ReadValue<Vector2>();
+            playerActions.KeyboardMouse.MouseAxis.canceled += _ => primaryTouchDelta = Vector2.zero;
             playerActions.KeyboardMouse.MouseScrollY.performed += _scrollAmount => mouseScrollY = _scrollAmount.ReadValue<float>();
             playerActions.KeyboardMouse.Crouch.performed += _ => ToggleCrouch();
         }
@@ -599,8 +601,10 @@ public class PlayerMovementHandler : MonoBehaviour
 
     private void HandleCameraRotate()
     {
-        if (MangosBrowserBridge.HasBrowserControls && MangosInputRouter.Touch)
+        if (MangosBrowserBridge.HasBrowserControls)
         {
+            if (MangosInputRouter.Blocked) return;
+            if (!MangosInputRouter.Touch) cinemachineTargetYaw += 45 * starterAssetsInputs.move.x * Time.deltaTime;
             cinemachineTargetYaw += MangosInputRouter.Look.x * 0.15f;
             cinemachineTargetPitch = Mathf.Clamp(cinemachineTargetPitch - MangosInputRouter.Look.y * 0.15f, pitchMin, pitchMax);
             cinemachineCameraTargetMain.rotation = Quaternion.Euler(cinemachineTargetPitch, cinemachineTargetYaw, 0);
@@ -611,7 +615,7 @@ public class PlayerMovementHandler : MonoBehaviour
 
         var canTouchRotate = isMobile ? useTouchControls : true;
 
-        if (primaryTouchDelta.sqrMagnitude != previousTouchDelta && canTouchRotate)
+        if (canTouchRotate)
         {
             previousTouchDelta = primaryTouchDelta.sqrMagnitude;
 

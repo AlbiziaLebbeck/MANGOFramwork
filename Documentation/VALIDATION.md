@@ -18,7 +18,7 @@
 | ค่า Build | ตรวจค่าเริ่มต้น 7770/WS และ 443/WSS, การแก้ค่าแยกฝั่ง, การบันทึกค่า, การปฏิเสธ path/port ที่ไม่ถูกต้อง และเงื่อนไข certificate ของ Server WSS |
 | Transport | แก้และตรวจการอ่าน Sec-WebSocket-Key โดยไม่ขึ้นกับตัวพิมพ์เล็ก/ใหญ่ ตรวจ handshake และการเชื่อมจาก WebGL จริง |
 | Voice overlay | ทดสอบด้วย mock: รอห้อง, join, mute, เปลี่ยนห้องโดยคง mute, leave, เปลี่ยนห้องติดกัน, เปลี่ยนห้องระหว่าง join และ dispose ผ่าน ตรวจ Unity ส่ง world id เข้า overlay ใน Client จริงแล้ว |
-| Controller | ทดสอบ Edge/Chromium จำลอง PC, iPhone, Android tablet, iPad desktop UA และ PC จอสัมผัส ผ่าน ตรวจ joystick+look+jump พร้อมกัน, หมุนจอขณะกด, focus/blur, keyboard auto mode, manual override และ cleanup เมื่อออกจากเกม |
+| Controller | ทดสอบ Edge/Chromium จำลอง PC, iPhone, Android tablet, iPad desktop UA และ PC จอสัมผัส ผ่าน ตรวจ joystick+look+jump พร้อมกัน, หมุนจอขณะกด, focus/blur, keyboard auto mode, automatic input switching และ cleanup เมื่อออกจากเกม |
 | Input ฝั่ง Unity | ตรวจการส่งแกนเดินและกล้องไป controller, ปุ่มกระโดด/บินหนึ่งครั้งต่อการกด, sprint/ขึ้นลง และการล้าง input เมื่อเปลี่ยนแนวหรือพิมพ์ข้อความ |
 | Humanoid | สร้าง Avatar แยกตามโมเดล ทดสอบสองขนาด, A-pose และทิศทางกลับด้าน เล่น animation 60 เฟรม ตรวจว่ากระดูกถูก animation ขยับจริงและความยาวแขนไม่เปลี่ยน พร้อมปฏิเสธโมเดลไม่มี rig |
 | GLB ตัวอย่างจริง | `RajPattern_Blue.glb` จาก MANGOs: พบและแก้กรณีแขนไขว้จากการใช้ท่าพักเป็น T-pose ตรวจตำแหน่งมือซ้าย/ขวาหลัง retarget ใน Editor และตรวจภาพยืน/เดินจาก WebGL หลังโหลด GLB สำเร็จ HTTP 200 |
@@ -66,3 +66,20 @@ Headless browser มีคำเตือน shader ภายในบางต�
 ทดสอบในสำเนาแยกเพื่อรักษา Editor ที่ผู้ใช้เปิดและ project settings ที่แก้ไว้ Profile deployment เริ่มต้นยังเป็น 7770/WS และ 443/WSS ส่วน Build รอบนี้ใช้ local validation 7788/WS การแก้นี้ตรวจ compile/build และ physics state ไม่ใช่การทดสอบเสียงสดหรือมือถือจริงรอบใหม่ ดู build id, log hashes และ source hashes ใน [หลักฐานแบบ JSON](Validation/unity6-api-updater-fix.json)
 
 หลังอัปเดตขณะที่ Editor เปิดอยู่ ให้กด **Assets > Refresh** แล้วรอคอมไพล์เสร็จ จากนั้นล้างรายการ Console เดิมเพื่อดูผลรอบใหม่ รายการจากก่อนแก้ source ไม่หายเอง การเปิดโปรเจกต์ครั้งใหม่จะใช้ source ที่แก้แล้ว ยังอาจมี deprecation/package/shader warnings อื่น ต้องตรวจต่อหากมี error ใหม่
+
+
+## แก้ Avatar บัญชีและ controller อัตโนมัติ — 17 ตุลาคม 2026
+
+เดิมการเปิดเมนู Avatar ต้องรอ thumbnail ทุกโมเดล จึงอาจซ่อนเมนูทั้งชุดเมื่อโมเดลของบัญชีโหลดช้าหรือล้มเหลว ตอนนี้รายการเลือกใช้ได้ทันที สร้าง thumbnail เฉพาะรายการที่มองเห็น ถ้าภาพเสียยังเลือกได้และแสดงชื่อไฟล์ เมื่อเปิดรายการจะเลื่อนกลับด้านบน ปรับ panel ให้พอดี safe area พัก input เกมและซ่อน touch controls ชั่วคราว การโหลด binary จาก MANGOs API origin ส่ง Cookie SSO ส่วนโมเดลสาธารณะภายนอกใช้ anonymous CORS ตามเดิม
+
+เอาเมนู Controls และปุ่มสลับเดิมออก ล้าง override เก่า แล้วเลือก controller อัตโนมัติสำหรับ desktop โทรศัพท์ tablet iPad desktop UA แนวหน้าจอ และ keyboard/mouse ที่ต่อเพิ่ม Desktop หมุนกล้องจาก browser pointer event ระหว่างกดคลิกขวาค้าง การได้ focus ของ canvas ไม่ยกเลิก drag แรกอีกต่อไป และ Starter Assets หยุดเขียนมุมกล้องทับ browser controller ใน LateUpdate ทำให้ touch และ mouse ที่ต่อกับ mobile ควบคุมกล้องได้
+
+[CasualPop.glb ที่ผู้ใช้ส่ง](https://www.mangosgo.com/avatar/CasualPop.glb) ผ่านการตรวจ Humanoid และ animation 60 เฟรมใน Editor ชุดทดสอบ browser ใช้ URL สาธารณะนี้เป็น default ของบัญชีจำลอง และใช้ไฟล์ที่ดาวน์โหลดเดียวกันเป็น fixture ของ API ตัวบัญชีและ API เป็น mock จึงไม่ยืนยัน cookie/session production ของผู้ใช้ ไม่ได้รวมไฟล์โมเดลเข้า Git
+
+รันทดสอบซ้ำด้วย `Tools/Validation/check-controller.cjs` และ `Tools/Validation/check-client-regressions.cjs` ดู [คู่มือ Build/runtime](BUILD_AND_RUNTIME_TH.md) ผลตรวจแบบอ่านด้วยโปรแกรมและภาพล่าสุดอยู่ใน [Validation/client-regressions.json](Validation/client-regressions.json) ผล QA รอบกลางที่ไม่ผ่านเก็บใน workspace และไม่นับเป็นหลักฐาน release สำเนาทดสอบใช้ 7788/WS และ override Cookie SSO แยกจากโปรเจกต์จริง โดยคง scene, auth asset และค่าการ deploy ที่ผู้ใช้แก้ไว้
+
+ผลตรวจสุดท้าย: Build `20261017-023307-2194a9` ผ่านทั้งสอง target โดยไม่มี build/C#/ScriptUpdater error ผ่านครบสี่กรณี: guest desktop, บัญชี desktop (รวมคลิกเลือก/Submit จริง), บัญชีบนโทรศัพท์ และบัญชีบน tablet การลากกล้อง touch หมุนจอ สลับ keyboard/mouse และกล้องที่ต้องกดคลิกขวาค้างผ่านบน mobile contexts ส่วน HTTP 401 ของ guest และ 404 ของ thumbnail เสียเป็น fixture ที่ตั้งใจสร้าง
+
+![รายการ Avatar ของบัญชีจำลอง](Validation/account-desktop-avatars.png)
+
+![บัญชีจำลองบนโทรศัพท์ ซ่อน touch controls ขณะเลือกรายการ](Validation/account-phone-avatars.png)
