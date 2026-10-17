@@ -4,7 +4,7 @@
 
 Multiplayer Unity framework for a **WebGL client** and **Linux Dedicated Server**, built with **Unity 6.3 LTS — 6000.3.26f1** and **Universal Render Pipeline (URP)**.
 
-This version is maintained on the **`MANGOsFramework_U6`** branch.
+This version is maintained on the **`MANGOsFramework_U6`** branch. Avatar and Controller behavior has been restored from **`MANGOFramework_Cookie`** at the user's request.
 
 [Getting started](Documentation/HANDOFF_EN.md) · **[คู่มือใช้งานภาษาไทย](Documentation/HANDOFF_TH.md)** · [Build and runtime guide](Documentation/BUILD_AND_RUNTIME.md) · [Validation results and limitations](Documentation/VALIDATION_EN.md)
 
@@ -13,9 +13,9 @@ This version is maintained on the **`MANGOsFramework_U6`** branch.
 - FishNet multiplayer with Bayou/SimpleWeb WebSocket transport for WebGL and Tugboat for native networking.
 - **Build Center** for Server, Client, or Both, with independent network profiles and automatic platform selection.
 - Browser voice overlay from `html-voice-tester`, included automatically in the WebGL template and linked to the current game world.
-- Runtime GLB and VRM avatar loading with each model's own Humanoid rig, GLB T-pose calibration, and animation/controller rebinding.
-- Adaptive keyboard/mouse and touch controls for PC, phones, and tablets, including portrait/landscape changes during play.
-- Unity 6 TextMeshPro shaders and an animation-audit export tool.
+- Original Cookie Avatar loader, reference rigs, model cache and selection UI.
+- Original Unity walking, click-to-move, touch and fly controllers with their controller-switch UI.
+- Unity 6 TextMeshPro shaders.
 
 ## Requirements and setup
 
@@ -38,13 +38,13 @@ Package versions and Git revisions are recorded in [Packages/manifest.json](Pack
 | Input System | 1.20.0 | Player input |
 | Cinemachine | 2.10.7 | Cameras |
 | glTFast | 6.4.0, pinned Git revision | Runtime GLB/glTF loading |
-| UniVRM / UniGLTF | 0.128.0, pinned Git tag | VRM loading |
+| UniVRM / UniGLTF | 0.128.0, pinned Git tag | Installed package; restored runtime uses Cookie glTFast path |
 | Linux SDK and Windows-to-Linux toolchain | 1.1.0 packages | Linux IL2CPP builds from Windows |
 | FishNet + Bayou / Tugboat | Vendored source | Multiplayer transport and synchronization |
 
 ## Build Server and Client
 
-Open **MANGOs Framework > Build Center**, change **Client Path**, and select **Build Server**, **Build Client**, or **Build Both**. The build process selects the platforms, packages the browser overlay/controller, and restores temporary project settings when it finishes.
+Open **MANGOs Framework > Build Center**, change **Client Path**, and select **Build Server**, **Build Client**, or **Build Both**. The build process selects the platforms, packages the browser voice overlay, and restores temporary project settings when it finishes.
 
 Server and Client network settings remain independently editable:
 
@@ -106,45 +106,32 @@ Account API, voice/media backend, Socket.IO, and ICE/TURN services remain extern
 
 ## Avatars and animation
 
-Account and guest avatar choices become selectable before optional thumbnails finish. Preview failure does not disable a valid choice. The catalog scroll position resets when opened, and the panel fits the safe area. Opening it pauses game input and hides touch controls. WebGL model requests to the configured MANGOs API origin include Cookie SSO credentials; public external models retain anonymous CORS. The API must still permit credentialed CORS for the deployed page.
+The Avatar system is restored from `MANGOFramework_Cookie`: glTFast loads the model, the original loader selects a reference Humanoid Avatar from `Resources/AvatarLoader` by its node structure, and the existing player-root Animator/controller is reused. The original model cache, thumbnail generation, selection window and five-second selection cooldown are restored, together with network, sitting and interaction bindings.
 
-Ordinary GLB avatars use glTFast and build a Humanoid Avatar from their own skeleton. The loader calibrates relaxed/A-pose exports into a T-pose and aligns the body basis before retargeting. VRM uses UniVRM and the model's own Humanoid Avatar/raw skeleton. Movement, flying, FishNet animation synchronization, and interactions are rebound to the active Animator.
+Compatibility is the same as the Cookie system and depends on matching one of its supported reference rigs. The experimental per-model Humanoid builder, Rig Profiles, VRM-specific importer, automatic height normalization and animation-audit menu have been removed. The original VRM/reference-rig path remains; it is not a guarantee for arbitrary GLB/VRM skeletons.
 
-Visual height is normalized uniformly to **1.7 m** by default to match the existing collider policy. Bone lengths, skin weights, and inverse bind matrices are not stretched to match a reference character.
 
-For an unmapped Humanoid GLB, create an **Avatar Rig Profile** through **Assets > Create > MANGOs Framework > Avatar Rig Profile**. Assign it to AvatarLoader or place it under `Resources/AvatarRigProfiles` with a matching URL prefix. Invalid rigs retain the previous/default model and report `LastLoadError`.
+## Cookie controls
 
-Support depends on a valid Humanoid skeleton and skinning; arbitrary non-Humanoid GLB models cannot automatically use the existing Humanoid animations. Changing natural avatar heights also requires a consistent gameplay/collider policy.
+On touch browsers, the HTML voice bar sits at the bottom centre to leave the original joystick clear.
 
-Use **MANGOs Framework > Avatar > Export Animation Audit** to write `Library/MangosAnimationAudit.csv`.
+The original Unity controller is restored: Starter Assets, `PlayerMovementHandler`, `LocomotionManager`, Unity mobile controls, the controller-switch button, walking/click-to-move and fly movement. Device detection uses the original `CheckMobile`/`IsMobile` browser bridge. Cursor/pointer-lock behavior and the orientation guard are restored from Cookie, including its configured landscape requirement.
 
-## Adaptive controls
+The HTML controller, automatic input-mode switching and its custom camera/input router have been removed. Input and Avatar code now follow the Cookie implementation; the remaining browser bridge only integrates the separate HTML voice system.
 
-Device detection automatically selects keyboard/mouse on PC and touch on phones/tablets, including iPad's desktop user agent. Touchscreen PCs retain desktop controls. The Controls selector and legacy controller toggle are removed; saved overrides from older builds are cleared. On mobile, movement keys or a mouse select keyboard/mouse, and touching the screen restores touch controls.
-
-Touch controls include a left movement joystick, right-side camera drag, Run, and Jump. Fly/Up/Down appear for flyable players. Layouts adapt to portrait/landscape and safe areas. Rotation, input-mode changes, focus loss, pointer cancellation, typing in an HTML field, and disconnect clear held input.
-
-On desktop, hold the right mouse button and drag to turn the camera. Returning from touch to keyboard/mouse does not enable free mouse look.
 
 ## Validation and known limits
 
-Linux IL2CPP and WebGL builds have succeeded. A compiled WebGL client connected to a Linux Server in WSL, entered BaseWorld as a guest, and loaded a public GLB avatar. Browser tests cover five device configurations, simultaneous touch input, orientation changes, and automatic input switching. Avatar checks include different sizes, T/A-pose calibration, a real GLB regression, and a synthetic VRM 1.0 import.
-
-Physical iOS/Android playtests, live microphone/account/TURN verification, and broader real-world VRM/avatar pose checks are still required. The graphical Editor buttons have not been clicked in an automated UI test; the build pipeline has been exercised through its batch runner.
-
-The legacy Rigidbody API calls that triggered Unity 6 API Updater errors have been migrated to `linearVelocity`. The build runner now rejects ScriptUpdater failures, and the build pipeline rejects BuildReports with errors. The [validation report](Documentation/VALIDATION_EN.md) records the fix, repeated builds, remaining warnings, and test limits.
-
-To run local Editor checks and build the localhost validation profile on Windows:
+Open with Unity **6000.3.26f1**. The Cookie movement code only changes `Rigidbody.velocity` to Unity 6's `linearVelocity`; the earlier FishNet/physics and TMP compatibility fixes are retained. Source parity is checked against the local Cookie project, and the local build runner verifies reference Avatar resources, Animator/controller links, input maps, physics and build settings.
 
 ```powershell
 .\Tools\BuildBoth.ps1 -Validation
 ```
 
-This profile uses port **7788**, WS, and localhost, so it is separate from the default deployment profile.
+The validation profile uses localhost, port **7788**, WS. Build with your production profile before deployment. Deploy the entire newly generated Client directory, including HTML/JS and its matching Unity files. The PWA cache generation is updated for this rollback.
 
-The screenshots use the guest name **PoppyValidation**. See the [build guide](Documentation/BUILD_AND_RUNTIME.md#repeat-the-webgl-screenshot-check) to repeat the capture.
+Previous adaptive-controller/own-rig screenshots and results in the documentation are historical and do not describe the restored runtime. See [Validation](Documentation/VALIDATION_EN.md) for the current rollback checks and limitations. Live account cookies, voice/TURN and physical phones/tablets require deployment testing.
 
-![Account fixture: CasualPop and selectable avatars with automatic controls](Documentation/Validation/account-desktop-avatars.png)
 
 ## Documentation and migration history
 

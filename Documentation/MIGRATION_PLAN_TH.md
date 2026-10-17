@@ -1,5 +1,9 @@
 # แผนปรับปรุง MANGOs Framework: Unity 6.3, Browser Voice, Build, Avatar และ Mobile
 
+> Current Avatar/Controller behavior has been restored from `MANGOFramework_Cookie` at the user's request. Earlier own-rig/adaptive-controller plans and evidence are historical; see the current README and handoff.
+
+> ปัจจุบันคืน Avatar/Controller จาก `MANGOFramework_Cookie` ตามคำขอของผู้ใช้ แผนและผลตรวจ own-rig/adaptive controller เดิมเป็นประวัติ ให้ยึด README และคู่มือใช้งานปัจจุบัน
+
 [ภาษาไทย](MIGRATION_PLAN_TH.md) | [English](MIGRATION_PLAN_EN.md) | [เอกสารทั้งหมด / All documentation](README.md)
 
 > เอกสารนี้เก็บแผนก่อนเริ่มลงมือไว้เป็นประวัติ ผลดำเนินงานล่าสุดและข้อจำกัดให้อ่าน [คู่มือใช้งาน](HANDOFF_TH.md) และ [ผลตรวจ](VALIDATION.md)

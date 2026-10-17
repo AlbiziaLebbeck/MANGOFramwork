@@ -39,29 +39,21 @@ The account/voice/media services remain external. Their existing default URLs ar
 
 Source overlay modules are supplied in the template, so the Unity project builds independently of the sibling voice-tester directory. Keep the template copy synchronized when updating the original overlay source.
 
-## Avatar loading and animation
+## Avatars and animation
 
-VRM 0.x/1.0 use pinned UniVRM 0.128.0. The imported model's own Humanoid Avatar and raw skeleton drive its meshes. Ordinary GLB uses glTFast, aligns the body's up/right basis, and rotates joints into a T-pose before building its own Unity Avatar. This calibration handles relaxed/A-pose exports without changing bone lengths, skin weights or inverse bind matrices. Existing reference Avatar assets contribute bone names only; their Avatar objects and skeleton dimensions are not reused on a different model.
+The Avatar system is restored from `MANGOFramework_Cookie`: glTFast loads the model, the original loader selects a reference Humanoid Avatar from `Resources/AvatarLoader` by its node structure, and the existing player-root Animator/controller is reused. The original model cache, thumbnail generation, selection window and five-second selection cooldown are restored, together with network, sitting and interaction bindings.
 
-The current movement/fly Animator Controller is retained, with state/parameters transferred to the new model. FishNet NetworkAnimator, Starter Assets, fly movement and interactions are rebound to the active Animator. Each loaded model owns its imported native assets and disposes them when replaced. Live models are no longer cloned into the old hidden 100-model cache. Thumbnails use the same importer, so VRM rendering takes the same material route as the player model.
+Compatibility is the same as the Cookie system and depends on matching one of its supported reference rigs. The experimental per-model Humanoid builder, Rig Profiles, VRM-specific importer, automatic height normalization and animation-audit menu have been removed. The original VRM/reference-rig path remains; it is not a guarantee for arbitrary GLB/VRM skeletons.
 
-AvatarLoader defaults to uniform visual height normalization at 1.7m, preserving body proportions and the game's existing authoritative collider policy. Change `normalizeHeight`/`targetHeight` on the player/preview prefab if another visual policy is needed; retaining arbitrary natural heights also requires a consistent gameplay/collision policy. Camera/nameplate offsets follow the resulting visual height. Bone lengths, skin weights and inverse bind matrices are not stretched to match a reference rig.
 
-For an unmapped humanoid GLB, create **MANGOs Framework > Avatar Rig Profile** from the asset creation menu. Map Humanoid roles to node paths and either assign the profile to AvatarLoader or place it under `Resources/AvatarRigProfiles` with a matching URL prefix. Incomplete/ambiguous rigs are rejected with `LastLoadError` and keep the previous/default model. A file without a humanoid rig cannot automatically use humanoid animation.
+## Cookie controls
 
-Account and guest avatar choices become selectable before optional thumbnails finish. Preview failure does not disable a valid choice. The catalog scroll position resets when opened, and the panel fits the safe area. Opening it pauses game input and hides touch controls. WebGL model requests to the configured MANGOs API origin include Cookie SSO credentials; public external models retain anonymous CORS. The API must still permit credentialed CORS for the deployed page.
+On touch browsers, the HTML voice bar sits at the bottom centre to leave the original joystick clear.
 
-**MANGOs Framework > Avatar > Export Animation Audit** writes `Library/MangosAnimationAudit.csv`, including clips embedded in imported model assets. The initial audit found 52 Humanoid clips and no Transform position/scale curves. Synthetic rigs with different proportions are tested over 60 animation frames; a synthetic VRM 1.0 is also imported with its own valid Humanoid. Real account avatars, cloth, spring bones, extreme proportions and all interaction poses still need visual checks using the actual model files.
+The original Unity controller is restored: Starter Assets, `PlayerMovementHandler`, `LocomotionManager`, Unity mobile controls, the controller-switch button, walking/click-to-move and fly movement. Device detection uses the original `CheckMobile`/`IsMobile` browser bridge. Cursor/pointer-lock behavior and the orientation guard are restored from Cookie, including its configured landscape requirement.
 
-## Adaptive controller
+The HTML controller, automatic input-mode switching and its custom camera/input router have been removed. Input and Avatar code now follow the Cookie implementation; the remaining browser bridge only integrates the separate HTML voice system.
 
-Device detection automatically selects keyboard/mouse on PC and touch on phones/tablets, including iPad's desktop user agent. Touchscreen PCs retain desktop controls. The Controls selector and legacy controller toggle are removed; saved overrides from older builds are cleared. On mobile, movement keys or a mouse select keyboard/mouse, and touching the screen restores touch controls.
-
-The touch layout changes between portrait and landscape without requiring a reload. A left joystick moves, dragging the right part of the canvas turns the camera, and Run/Jump support simultaneous touches. Fly/Up/Down are shown only for a flyable player. Existing Unity interaction buttons remain tappable; a camera gesture that starts over a Unity UI element is ignored by the camera bridge. Safe-area offsets are included, and the mobile voice bar is compact to leave room for controls.
-
-The same input bridge drives Starter Assets walking and the existing fly controller. Rotating, changing input mode, losing focus, cancelling a pointer, typing in browser chat, or disconnecting clears held controls. While an HTML field has focus, the bridge disables [Unity keyboard capture](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/WebGLInput-captureAllKeyboardInput.html). The touch UI appears only after local player setup. Both screen orientations are allowed; the old forced-landscape blocker is bypassed for adaptive WebGL controls.
-
-Browser automation covers PC, phone, Android tablet, iPad desktop UA, and PC touchscreen; it checks simultaneous joystick/look/jump, rotation while holding the joystick, focus, release, automatic input switching, and voice-bar spacing. These emulated browser checks do not replace a physical iOS/Android playtest.
 
 ## Validation boundaries
 
@@ -83,15 +75,11 @@ node Tools/Validation/check-integration-webgl.cjs 'C:\path\to\Builds\validation\
 
 The script temporarily serves Client at `http://127.0.0.1:8767/`, joins as a guest, and captures a desktop 1280×800 screenshot plus JSON in `Builds/Validation/Browser/`. An optional second argument selects another evidence directory. Voice is mocked and the account API is simulated as logged out; this does not verify real voice/account services.
 
-Checks cover page identity, initial content, FishNet connection, Server confirmation of the guest name, world/controller readiness, controller readiness and runtime exceptions. Visually inspect the upper-right nameplate before promoting images into documentation evidence.
+Checks cover page identity, initial content, FishNet connection, Server confirmation of the guest name, world/avatar readiness, legacy world/avatar readiness and runtime exceptions. Visually inspect the upper-right nameplate before promoting images into documentation evidence.
 
 
-## Account and controller regressions
+## Restored Cookie validation
 
-Run `node Tools/Validation/check-controller.cjs` for five controller configurations without Unity. Run the following against a matching local validation Server/Client pair with FirstPartyCookieSso selected in the isolated test copy:
+`Tools/BuildBoth.ps1 -Validation` runs `MangosCookieRestoreValidation.Run`, physics/TMP checks and profile checks before building Server/WebGL. Cookie validation verifies the reference Avatar assets, controller resource, keyboard/touch action maps and the network player's root Animator binding. The prior own-rig/input-router tests and HTML-controller harnesses have been removed with those implementations.
 
-```powershell
-node Tools/Validation/check-client-regressions.cjs <build-directory> <humanoid-glb-fixture> [evidence-directory]
-```
-
-The script mocks account/API responses with the real public CasualPop model, one credentialed fixture model, and one HTTP 404 model. It checks guest/account catalogs, credentialed model requests, selection before previews, panel open/close, phone/tablet portrait/landscape, and the camera after touch → keyboard. Desktop camera rotation requires holding the right mouse button. These fixtures do not verify a real account cookie or the user's actual avatar, and do not change the production auth configuration.
+The portable integration script now checks the legacy runtime: guest login, avatar load, room readiness and the absence of the HTML controller. Original controller buttons are rendered by Unity. Account session and media services remain external.

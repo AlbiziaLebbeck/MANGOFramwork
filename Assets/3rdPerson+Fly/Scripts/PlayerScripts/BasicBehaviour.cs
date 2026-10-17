@@ -40,7 +40,6 @@ public class BasicBehaviour : MonoBehaviour
 
     // Get the player's animator controller.
     public Animator GetAnim => anim;
-    public void SetAnimator(Animator value) => anim = value;
 
     // Get current default behaviour.
     public int GetDefaultBehaviour => defaultBehaviour;
@@ -101,15 +100,15 @@ public class BasicBehaviour : MonoBehaviour
     void Update()
     {
         // Store the input axes.
-        h = MangosInputRouter.Axis("Horizontal");
-        v = MangosInputRouter.Axis("Vertical");
+        h = Input.GetAxis("Horizontal");
+        v = Input.GetAxis("Vertical");
 
         // Set the input axes on the Animator Controller.
         anim.SetFloat(hFloat, h, 0.1f, Time.deltaTime);
         anim.SetFloat(vFloat, v, 0.1f, Time.deltaTime);
 
         // Toggle sprint by input.
-        sprint = MangosInputRouter.SprintHeld(sprintButton);
+        sprint = Input.GetButton(sprintButton);
 
         // Set the correct camera FOV for sprint mode.
         if (camScript == null) return;

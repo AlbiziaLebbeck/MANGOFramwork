@@ -1,5 +1,9 @@
 # MANGOs Framework documentation / เอกสาร MANGOs Framework
 
+> Current Avatar/Controller behavior has been restored from `MANGOFramework_Cookie` at the user's request. Earlier own-rig/adaptive-controller plans and evidence are historical; see the current README and handoff.
+
+> ปัจจุบันคืน Avatar/Controller จาก `MANGOFramework_Cookie` ตามคำขอของผู้ใช้ แผนและผลตรวจ own-rig/adaptive controller เดิมเป็นประวัติ ให้ยึด README และคู่มือใช้งานปัจจุบัน
+
 Choose a language for each guide. Both versions describe the same release and validation limits.
 
 เลือกภาษาของคู่มือแต่ละรายการ ทั้งสองภาษาครอบคลุมรุ่นที่ส่งมอบและข้อจำกัดการทดสอบเดียวกัน

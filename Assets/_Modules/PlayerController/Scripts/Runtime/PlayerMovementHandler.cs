@@ -14,7 +14,6 @@ public class PlayerMovementHandler : MonoBehaviour
     private int interactableLayer;
     private int uILayer;
     private Animator animator;
-    public void SetAnimator(Animator value) => animator = value;
     private ThirdPersonController thirdPersonController;
     private CharacterController characterController;
     private PlayerActions playerActions;
@@ -127,12 +126,6 @@ public class PlayerMovementHandler : MonoBehaviour
 
     public void EnableInputActions(bool enable)
     {
-        MangosInputRouter.NativeBlocked = !enable;
-        if (MangosBrowserBridge.HasBrowserControls)
-        {
-            SetBrowserInputMode(MangosInputRouter.Touch, !enable || MangosInputRouter.Blocked);
-            return;
-        }
         var mapString = isMobile ? "Touch" : "KeyboardMouse";
 
         if (enable)
@@ -142,31 +135,16 @@ public class PlayerMovementHandler : MonoBehaviour
         }
         else
         {
-            playerActions.asset.FindActionMap(mapString).Disable();
+            playerActions.asset.FindAction(mapString).Disable();
             playerInput.actions.Disable();
         }
-    }
-
-    public void SetBrowserInputMode(bool touch, bool blocked)
-    {
-        blocked |= MangosInputRouter.Blocked;
-        isMobile = touch;
-        thirdPersonController.ExternalCameraControl = true;
-        primaryTouchDelta = Vector2.zero; mouseScrollY = 0; isChangeView = IsPinchZoom = false;
-        startClick = false; clickToMoveTarget = transform.position;
-        playerActions.asset.Disable();
-        playerInput.actions.Disable();
-        starterAssetsInputs.analogMovement = touch;
-        if (blocked) return;
-        ApplyLocomotionSetting(false);
-        if (touch) playerInput.actions.Disable(); // Browser joystick writes StarterAssetsInputs directly.
-        else playerActions.KeyboardMouse.Enable();
     }
 
     private void OnEnable()
     {
         LocomotionManager.OnToggleControllerEvent += LocomotionManager_OnToggleControllerEvent;
 
+        if (isMobile)
         {
             LocomotionManager.VirtualMoveInputEvent += LocomotionManager_VirtualMoveInputEvent;
             LocomotionManager.VirtualLookInputEvent += LocomotionManager_VirtualLookInputEvent;
@@ -180,6 +158,7 @@ public class PlayerMovementHandler : MonoBehaviour
     {
         LocomotionManager.OnToggleControllerEvent -= LocomotionManager_OnToggleControllerEvent;
 
+        if (isMobile)
         {
             LocomotionManager.VirtualMoveInputEvent -= LocomotionManager_VirtualMoveInputEvent;
             LocomotionManager.VirtualLookInputEvent -= LocomotionManager_VirtualLookInputEvent;
@@ -213,8 +192,7 @@ public class PlayerMovementHandler : MonoBehaviour
 
     private void LocomotionManager_OnToggleControllerEvent(bool isTouch)
     {
-        if (MangosBrowserBridge.HasBrowserControls) SetBrowserInputMode(MangosInputRouter.Touch, MangosInputRouter.Blocked);
-        else ApplyLocomotionSetting(isTouch);
+        ApplyLocomotionSetting(isTouch);
     }
 
     private void ApplyLocomotionSetting(bool isTouch)
@@ -262,7 +240,6 @@ public class PlayerMovementHandler : MonoBehaviour
         Grounded = thirdPersonController.Grounded;
 
         ApplyLocomotionSetting(LocomotionManager.IsTouch);
-        if (MangosBrowserBridge.HasBrowserControls) SetBrowserInputMode(MangosInputRouter.Touch, MangosInputRouter.Blocked);
     }
 
     private bool IsDrag = false;
@@ -272,6 +249,7 @@ public class PlayerMovementHandler : MonoBehaviour
     /// </summary>
     private void AssignInputs()
     {
+        if (!isMobile)
         {
             playerActions.KeyboardMouse.LeftMousePressed.canceled += _ =>
             {
@@ -287,10 +265,10 @@ public class PlayerMovementHandler : MonoBehaviour
             playerActions.KeyboardMouse.DoubleLeftPressed.canceled += _ => { doubleClicked = false; };
 
             playerActions.KeyboardMouse.MouseAxis.performed += _rotation => primaryTouchDelta = _rotation.ReadValue<Vector2>();
-            playerActions.KeyboardMouse.MouseAxis.canceled += _ => primaryTouchDelta = Vector2.zero;
             playerActions.KeyboardMouse.MouseScrollY.performed += _scrollAmount => mouseScrollY = _scrollAmount.ReadValue<float>();
             playerActions.KeyboardMouse.Crouch.performed += _ => ToggleCrouch();
         }
+        else
         {
             playerActions.Touch.PrimaryTouchContact.canceled += _ => { if (primaryTouchDelta == Vector2.zero || !IsDrag) ClickToMove(); };
             playerActions.Touch.PrimaryTouchContact.performed += _ => IsDrag = false;
@@ -601,21 +579,11 @@ public class PlayerMovementHandler : MonoBehaviour
 
     private void HandleCameraRotate()
     {
-        if (MangosBrowserBridge.HasBrowserControls)
-        {
-            if (MangosInputRouter.Blocked) return;
-            if (!MangosInputRouter.Touch) cinemachineTargetYaw += 45 * starterAssetsInputs.move.x * Time.deltaTime;
-            cinemachineTargetYaw += MangosInputRouter.Look.x * 0.15f;
-            cinemachineTargetPitch = Mathf.Clamp(cinemachineTargetPitch - MangosInputRouter.Look.y * 0.15f, pitchMin, pitchMax);
-            cinemachineCameraTargetMain.rotation = Quaternion.Euler(cinemachineTargetPitch, cinemachineTargetYaw, 0);
-            return;
-        }
-        if (MangosInputRouter.Blocked) return;
         cinemachineTargetYaw += 45 * starterAssetsInputs.move.x * Time.deltaTime;
 
         var canTouchRotate = isMobile ? useTouchControls : true;
 
-        if (canTouchRotate)
+        if (primaryTouchDelta.sqrMagnitude != previousTouchDelta && canTouchRotate)
         {
             previousTouchDelta = primaryTouchDelta.sqrMagnitude;
 

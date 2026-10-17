@@ -1,5 +1,9 @@
 # ผลตรวจการปรับ MANGOs Framework
 
+> Runtime ปัจจุบันคืน Avatar และ Controller จาก `MANGOFramework_Cookie` ตามคำขอของผู้ใช้ ผล adaptive controller/own-rig ด้านล่างเก็บเป็นประวัติและถูกแทนที่แล้ว รอบ rollback ตรวจด้วย `MangosCookieRestoreValidation.Run` และ build Unity 6 Server/WebGL ใหม่ การรองรับ rig และพฤติกรรม controller/orientation ใช้ตาม Cookie ข้ออ้างเดิมเรื่อง mobile/VRM/input อัตโนมัติไม่ใช่พฤติกรรมของ source ปัจจุบัน
+
+ผลตรวจ rollback ผ่านบน Unity 6000.3.26f1: งาน Server/WebGL สุดท้าย `20261017-035242-ee29e9` ไม่มี C#/API Updater error ตรวจ resource Avatar/controller, input maps, prefab และเทียบ source กับ Cookie แล้ว เข้า guest และบัญชีจำลองที่ใช้ CasualPop GLB สาธารณะจริงใน Edge ได้ ทดสอบเลือก Avatar อื่นแล้ว Submit และปุ่มสลับ controller ของ Unity แล้ว ตรวจจอโทรศัพท์ 844×390 กับ 390×844 และคืน landscape guard เดิม แถบเสียง HTML อยู่กึ่งกลางบนจอสัมผัสเพื่อเว้น joystick เดิม Browser plugin ไม่พร้อมใช้งาน จึงใช้ Playwright/Edge ยังไม่ได้ตรวจ cookie บัญชี production เสียง/TURN สด อุปกรณ์จริง หรือเปลี่ยน deployment
+
 [ภาษาไทย](VALIDATION.md) | [English](VALIDATION_EN.md) | [เอกสารทั้งหมด / All documentation](README.md)
 
 วันที่: 16 ตุลาคม 2026 — Unity 6000.3.26f1

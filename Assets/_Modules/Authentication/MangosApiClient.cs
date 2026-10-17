@@ -29,7 +29,6 @@ namespace MANGOsFramework.Experiment
             new Dictionary<string, BrowserPendingRequest>();
 
         private AuthConfig config;
-        public static string ActiveAssetOrigin { get; private set; } = AuthConfig.DefaultApiOrigin;
         private AuthToAccessResponse oauthTokens;
         private DateTimeOffset oauthAccessTokenExpiresAt;
         private DateTimeOffset oauthRefreshTokenExpiresAt;
@@ -64,7 +63,6 @@ namespace MANGOsFramework.Experiment
         public void Configure(AuthConfig authConfig)
         {
             config = authConfig;
-            ActiveAssetOrigin = authConfig != null ? authConfig.ApiOrigin : AuthConfig.DefaultApiOrigin;
             ResolvedMode = ResolveAuthenticationMode(authConfig != null ? authConfig.Mode : AuthenticationMode.Auto);
         }
 

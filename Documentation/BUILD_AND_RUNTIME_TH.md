@@ -39,29 +39,21 @@ Overlay รอให้เข้าห้องเกมก่อน room key �
 
 Template เก็บ source ของ Overlay ไว้ ทำให้ Unity project Build ได้โดยไม่พึ่งโฟลเดอร์ voice-tester ข้างกัน เมื่อแก้ source Overlay ต้นฉบับให้ปรับสำเนาใน template ให้ตรงกันด้วย
 
-## การโหลด Avatar และ animation
+## Avatar และ animation
 
-VRM 0.x/1.0 ใช้ UniVRM ที่ตรึงไว้รุ่น 0.128.0 โดย Humanoid Avatar และ raw skeleton ของโมเดลที่นำเข้าขับ mesh ของตัวเอง GLB ทั่วไปใช้ glTFast จัดแกนขึ้น/ขวาของร่างกาย และหมุนข้อต่อเป็น T-pose ก่อนสร้าง Unity Avatar ของโมเดลนั้น การ calibrate รองรับท่าพัก/A-pose โดยไม่เปลี่ยนความยาวกระดูก skin weights หรือ inverse bind matrices Avatar อ้างอิงเดิมใช้เป็นแหล่งชื่อกระดูกเท่านั้น ไม่ใช้ Avatar object หรือขนาด skeleton ของมันครอบโมเดลอื่น
+คืนระบบ Avatar จาก `MANGOFramework_Cookie` แล้ว: glTFast โหลดโมเดล ตัว loader เลือก Humanoid Avatar อ้างอิงจาก `Resources/AvatarLoader` ตามโครงสร้าง node และใช้ Animator/controller เดิมบน root ของผู้เล่น คืน cache โมเดล การสร้าง thumbnail หน้าต่างเลือก Avatar และ cooldown ห้าวินาที รวมถึงจุดเชื่อม network การนั่งและ interaction เดิม
 
-ระบบเก็บ movement/fly Animator Controller เดิม และย้าย state/parameters ไปโมเดลใหม่ FishNet NetworkAnimator, Starter Assets, การบิน และ interaction ผูกกับ Animator ที่ใช้งานจริง แต่ละโมเดลเป็นเจ้าของ native assets ที่นำเข้าและ dispose เมื่อถูกแทนที่ ไม่ clone live model เข้า cache ซ่อน 100 ตัวแบบเดิม Thumbnail ใช้ importer เดียวกัน ทำให้ VRM ใช้เส้นทางวัสดุเหมือนโมเดลผู้เล่น
+การรองรับเหมือนระบบ Cookie และขึ้นกับ rig อ้างอิงที่ระบบเดิมรู้จัก ถอดระบบสร้าง Humanoid รายโมเดล, Rig Profiles, importer เฉพาะ VRM, การปรับความสูงอัตโนมัติ และเมนู audit animation ที่เพิ่มใหม่ออกแล้ว เส้นทาง VRM/reference rig แบบเดิมยังอยู่ แต่ไม่ได้รับประกัน GLB/VRM ทุก skeleton
 
-AvatarLoader เริ่มต้นปรับความสูงภาพแบบ uniform เป็น 1.7 เมตร คงสัดส่วนร่างกายและนโยบาย collider ที่มีอำนาจตัดสินฝั่งเกมเดิม หากต้องการนโยบายภาพอื่น แก้ `normalizeHeight`/`targetHeight` บน player/preview prefab การเก็บความสูงจริงที่หลากหลายต้องมีนโยบาย gameplay/collision ที่สอดคล้องกัน Camera/nameplate offsets ปรับตามความสูงภาพที่ได้ ไม่ยืดความยาวกระดูก skin weights หรือ inverse bind matrices ให้ตรง reference rig
 
-สำหรับ Humanoid GLB ที่ mapping ไม่ตรง สร้าง **MANGOs Framework > Avatar Rig Profile** จากเมนูสร้าง asset กำหนด Humanoid role เป็น node path แล้วใส่ profile ให้ AvatarLoader หรือวางใต้ `Resources/AvatarRigProfiles` พร้อม URL prefix ที่ตรงกัน Rig ที่ไม่ครบหรือกำกวมจะถูกปฏิเสธพร้อม `LastLoadError` และเก็บโมเดลก่อนหน้า/default ไว้ ไฟล์ที่ไม่มี Humanoid rig ไม่สามารถใช้ Humanoid animation อัตโนมัติได้
+## Controller จาก Cookie
 
-รายการ Avatar ของบัญชีและ guest เลือกได้ก่อน thumbnail โหลดเสร็จ ภาพตัวอย่างที่โหลดไม่สำเร็จไม่ปิดปุ่มเลือก เมื่อเปิดรายการจะเลื่อนกลับด้านบนและปรับ panel ให้พอดี safe area พร้อมพัก input เกมและซ่อน touch controls การโหลดโมเดล WebGL จาก MANGOs API origin ที่ตั้งค่าไว้ส่ง Cookie SSO ส่วนโมเดลสาธารณะภายนอกยังใช้ anonymous CORS ฝั่ง API ยังต้องอนุญาต credentialed CORS ของเว็บที่ deploy
+บน browser จอสัมผัส แถบเสียง HTML อยู่กึ่งกลางด้านล่างเพื่อเว้นพื้นที่ joystick เดิม
 
-**MANGOs Framework > Avatar > Export Animation Audit** เขียน `Library/MangosAnimationAudit.csv` รวมคลิปที่ฝังใน model assets ผลตรวจแรกพบ Humanoid 52 คลิปและไม่มี Transform position/scale curves Synthetic rigs ต่างสัดส่วนถูกเล่น animation 60 เฟรม และ synthetic VRM 1.0 นำเข้าพร้อม Humanoid ของตนเองที่ valid แล้ว Avatar บัญชีจริง cloth, spring bones, สัดส่วนสุดขั้ว และท่า interaction ทั้งหมดยังต้องตรวจภาพด้วยไฟล์จริง
+คืน controller ของ Unity แบบเดิม: Starter Assets, `PlayerMovementHandler`, `LocomotionManager`, mobile controls ของ Unity, ปุ่มสลับ controller, การเดิน/click-to-move และการบิน การตรวจอุปกรณ์ใช้ `CheckMobile`/`IsMobile` เดิม คืนพฤติกรรม cursor/pointer lock และ orientation guard ของ Cookie รวมข้อกำหนด landscape ตามที่ตั้งไว้ใน prefab
 
-## Controller อัตโนมัติ
+ถอด HTML controller, การสลับ input อัตโนมัติ และ camera/input router ที่เพิ่มใหม่ออกแล้ว โค้ด Avatar และ input ใช้การทำงานของ Cookie ส่วน browser bridge ที่เหลือใช้เชื่อมระบบ HTML voice แยกต่างหาก
 
-ระบบตรวจอุปกรณ์อัตโนมัติและเลือก keyboard/mouse บน PC หรือ touch บนโทรศัพท์/tablet รวม iPad desktop user agent ส่วน PC จอสัมผัสยังใช้ desktop controls เอาเมนู Controls และปุ่มสลับ controller เดิมออก พร้อมล้าง override ที่บันทึกจาก build เก่า บน mobile การกดปุ่มเดินหรือใช้ mouse จะเลือก keyboard/mouse และการแตะหน้าจอจะกลับเป็น touch
-
-Touch layout เปลี่ยนแนวตั้ง/แนวนอนได้โดยไม่ reload Joystick ซ้ายใช้เดิน ลากด้านขวาของ canvas หมุนกล้อง และ Run/Jump รองรับหลายนิ้วพร้อมกัน Fly/Up/Down แสดงเฉพาะผู้เล่นที่บินได้ ปุ่ม interaction ของ Unity ยังแตะได้ หากเริ่มลากบน Unity UI กล้องจะไม่รับ gesture นั้น Layout รวม safe-area offsets และย่อ voice bar บน mobile เพื่อเว้นที่ให้ปุ่มควบคุม
-
-Input bridge เดียวกันขับทั้ง Starter Assets walking และ fly controller เดิม การหมุนจอ เปลี่ยนโหมด หลุด focus ยกเลิก pointer พิมพ์ใน browser chat หรือ disconnect จะล้างปุ่มที่ค้าง เมื่อ HTML field มี focus bridge จะปิด [Unity keyboard capture](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/WebGLInput-captureAllKeyboardInput.html) Touch UI แสดงหลังตั้ง local player แล้ว อนุญาตทั้งสองแนวหน้าจอและข้ามตัวบังคับ landscape เดิมสำหรับ adaptive WebGL controls
-
-Browser automation ครอบคลุม PC, โทรศัพท์, Android tablet, iPad desktop UA และ PC จอสัมผัส ตรวจ joystick/look/jump พร้อมกัน หมุนจอขณะกด joystick, focus, release, automatic input switching และระยะห่าง voice bar การจำลองเหล่านี้ไม่แทนการเล่นบน iOS/Android จริง
 
 ## ขอบเขตการยืนยันผล
 
@@ -83,15 +75,11 @@ node Tools/Validation/check-integration-webgl.cjs 'C:\path\to\Builds\validation\
 
 สคริปต์ให้บริการ Client ชั่วคราวที่ `http://127.0.0.1:8767/` เข้า guest และถ่าย desktop 1280×800 รวมผล JSON ลง `Builds/Validation/Browser/` ระบุ output directory อื่นเป็น argument ที่สองได้ ใช้ mock voice และจำลอง account API เป็น logged-out จึงไม่ตรวจบริการเสียง/account จริง
 
-ผลตรวจรวม page identity, เนื้อหาเริ่มต้น, การเชื่อมต่อ FishNet, ชื่อ guest ใน server response, world/controller readiness และ runtime exceptions ให้เปิดภาพตรวจชื่อที่มุมขวาบนด้วยก่อนนำไปเป็นหลักฐานในเอกสาร
+ผลตรวจรวม page identity, เนื้อหาเริ่มต้น, การเชื่อมต่อ FishNet, ชื่อ guest ใน server response, world/avatar readiness และ runtime exceptions ให้เปิดภาพตรวจชื่อที่มุมขวาบนด้วยก่อนนำไปเป็นหลักฐานในเอกสาร
 
 
-## ตรวจ regression ของบัญชีและ controller
+## ตรวจระบบ Cookie ที่คืนมา
 
-ใช้ `node Tools/Validation/check-controller.cjs` เพื่อตรวจ controller ห้ารูปแบบโดยไม่เปิด Unity และใช้คำสั่งนี้กับคู่ Server/Client validation ที่ตั้ง authentication mode เป็น FirstPartyCookieSso เฉพาะสำเนาทดสอบ:
+`Tools/BuildBoth.ps1 -Validation` รัน `MangosCookieRestoreValidation.Run` พร้อม physics/TMP และ profile checks ก่อน build Server/WebGL โดยตรวจ Avatar อ้างอิง controller resource, keyboard/touch action maps และการอ้าง Animator บน root ของ network player ถอด tests ของ own-rig/input router และ harness ของ HTML controller ไปพร้อมระบบใหม่แล้ว
 
-```powershell
-node Tools/Validation/check-client-regressions.cjs <build-directory> <humanoid-glb-fixture> [evidence-directory]
-```
-
-สคริปต์จำลองบัญชีและ API รวมCasualPop จาก URL จริง โมเดลจำลองที่ส่ง cookie และไฟล์ที่ตอบ 404 ตรวจ guest/account, cookie mode ของการโหลดไฟล์, การเลือกก่อนภาพโหลด, การเปิด/ปิดรายการ, โทรศัพท์/tablet แนวตั้ง/แนวนอน และกล้องหลัง touch → keyboard ต้องกดคลิกขวาค้างจึงหมุนกล้องได้ ผลทดสอบนี้ไม่ยืนยัน cookie หรือโมเดลของบัญชีจริง และไม่เปลี่ยน production auth config
+สคริปต์ integration แบบ portable ตรวจ runtime เดิม: เข้า guest โหลด Avatar ความพร้อมของห้อง และการไม่มี HTML controller ปุ่ม controller เดิมเรนเดอร์โดย Unity ส่วนบริการบัญชีและเสียงยังเป็นบริการภายนอก

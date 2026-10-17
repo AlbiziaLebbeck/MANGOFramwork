@@ -84,14 +84,9 @@ public class ThirdPersonOrbitCamBasic : MonoBehaviour
     {
         if (player == null) return;
 
-        // Browser look deltas come from touch drag or a held right mouse button.
-        // Following/collision continue even when no look gesture is active.
-        if (MangosBrowserBridge.HasBrowserControls && !MangosInputRouter.Blocked)
-        {
-            angleH += MangosInputRouter.Look.x * 0.15f;
-            angleV += MangosInputRouter.Look.y * 0.15f;
-        }
-        else if (!MangosInputRouter.Blocked && !MangosBrowserBridge.HasBrowserControls && !Cursor.visible)
+        // Keep following the player while the cursor is visible. Cursor visibility
+        // controls orbit input because WebGL cannot request pointer lock at startup.
+        if (!Cursor.visible)
         {
             // Mouse:
             angleH += Mathf.Clamp(Input.GetAxis("Mouse X"), -1, 1) * horizontalAimingSpeed;

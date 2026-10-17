@@ -34,21 +34,21 @@ Account API, voice/media backend และ TURN ยังเป็นบริ�
 
 ## Avatar และ animation
 
-รายการ Avatar ของบัญชีและ guest เลือกได้ก่อน thumbnail โหลดเสร็จ ภาพตัวอย่างที่โหลดไม่สำเร็จไม่ปิดปุ่มเลือก เมื่อเปิดรายการจะเลื่อนกลับด้านบนและปรับ panel ให้พอดี safe area พร้อมพัก input เกมและซ่อน touch controls การโหลดโมเดล WebGL จาก MANGOs API origin ที่ตั้งค่าไว้ส่ง Cookie SSO ส่วนโมเดลสาธารณะภายนอกยังใช้ anonymous CORS ฝั่ง API ยังต้องอนุญาต credentialed CORS ของเว็บที่ deploy
+คืนระบบ Avatar จาก `MANGOFramework_Cookie` แล้ว: glTFast โหลดโมเดล ตัว loader เลือก Humanoid Avatar อ้างอิงจาก `Resources/AvatarLoader` ตามโครงสร้าง node และใช้ Animator/controller เดิมบน root ของผู้เล่น คืน cache โมเดล การสร้าง thumbnail หน้าต่างเลือก Avatar และ cooldown ห้าวินาที รวมถึงจุดเชื่อม network การนั่งและ interaction เดิม
 
-GLB สร้าง Humanoid Avatar จากกระดูกของโมเดลนั้น โดยปรับท่าพัก/A-pose เป็น T-pose สำหรับตั้งต้นและจัดทิศทางก่อน retarget ส่วน VRM ใช้ importer ของ UniVRM และ Humanoid Avatar ของตัวเอง ระบบไม่เอาสัดส่วนของ Avatar อ้างอิงไปครอบโมเดลใหม่ และส่ง Animator ที่ใช้งานอยู่ให้ระบบเดิน บิน FishNet และ interaction
+การรองรับเหมือนระบบ Cookie และขึ้นกับ rig อ้างอิงที่ระบบเดิมรู้จัก ถอดระบบสร้าง Humanoid รายโมเดล, Rig Profiles, importer เฉพาะ VRM, การปรับความสูงอัตโนมัติ และเมนู audit animation ที่เพิ่มใหม่ออกแล้ว เส้นทาง VRM/reference rig แบบเดิมยังอยู่ แต่ไม่ได้รับประกัน GLB/VRM ทุก skeleton
 
-ค่าเริ่มต้นปรับขนาดภาพแบบ uniform ให้สูง 1.7 เมตรเพื่อให้สอดคล้องกับ collider เดิม ไม่ยืดกระดูกเป็นรายชิ้น ถ้าต้องการคงความสูงจริง ให้ปรับนโยบาย collider/เกมร่วมด้วย โมเดล Humanoid ที่ชื่อกระดูกไม่ตรงสามารถสร้าง Avatar Rig Profile เพื่อระบุ mapping ได้ โมเดลที่ไม่มีโครงกระดูก Humanoid ไม่สามารถรับประกันการใช้ animation Humanoid เดิมได้ทุกตัว
 
-ส่งออกข้อมูล `.anim` และคลิปในโมเดลได้ที่ **MANGOs Framework > Avatar > Export Animation Audit** รายงานอยู่ที่ `Library/MangosAnimationAudit.csv`
+## Controller จาก Cookie
 
-## Controller
+บน browser จอสัมผัส แถบเสียง HTML อยู่กึ่งกลางด้านล่างเพื่อเว้นพื้นที่ joystick เดิม
 
-ระบบตรวจอุปกรณ์อัตโนมัติและเลือก keyboard/mouse บน PC หรือ touch บนโทรศัพท์/tablet รวม iPad desktop user agent ส่วน PC จอสัมผัสยังใช้ desktop controls เอาเมนู Controls และปุ่มสลับ controller เดิมออก พร้อมล้าง override ที่บันทึกจาก build เก่า บน mobile การกดปุ่มเดินหรือใช้ mouse จะเลือก keyboard/mouse และการแตะหน้าจอจะกลับเป็น touch
+คืน controller ของ Unity แบบเดิม: Starter Assets, `PlayerMovementHandler`, `LocomotionManager`, mobile controls ของ Unity, ปุ่มสลับ controller, การเดิน/click-to-move และการบิน การตรวจอุปกรณ์ใช้ `CheckMobile`/`IsMobile` เดิม คืนพฤติกรรม cursor/pointer lock และ orientation guard ของ Cookie รวมข้อกำหนด landscape ตามที่ตั้งไว้ใน prefab
 
-Touch ใช้ joystick ซ้าย เดิน, ลากด้านขวา หมุนกล้อง, Run และ Jump ส่วน Fly/ขึ้น/ลงจะแสดงเฉพาะตัวละครที่บินได้ ปุ่ม interaction ของ Unity ยังแตะได้ ระบบล้าง input ที่ค้างเมื่อหมุนจอ เปลี่ยนโหมด หลุด focus หรือ disconnect และพัก input ระหว่างพิมพ์ในช่อง HTML
+ถอด HTML controller, การสลับ input อัตโนมัติ และ camera/input router ที่เพิ่มใหม่ออกแล้ว โค้ด Avatar และ input ใช้การทำงานของ Cookie ส่วน browser bridge ที่เหลือใช้เชื่อมระบบ HTML voice แยกต่างหาก
 
-บน PC ต้องกดคลิกขวาค้างแล้วลากจึงหมุนกล้อง หลังอัปเดตต้อง Build Client ใหม่และนำ Client ทั้งโฟลเดอร์ขึ้นเว็บ รวม HTML/JS และไฟล์ Unity ที่ตรงชุดกัน ให้ cache/service worker อัปเดตเป็น build ใหม่ด้วย
+
+หลังอัปเดตให้ build และ deploy Client ใหม่ทั้งโฟลเดอร์ รุ่น cache ของ PWA เปลี่ยนแล้ว
 
 ## ก่อนนำขึ้นระบบจริง
 

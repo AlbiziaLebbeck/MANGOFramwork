@@ -107,7 +107,6 @@ public static class MangosBuildPipeline
     }
     public static void Preflight(MangosBuildProfile profile, string[] targets)
     {
-        MangosAvatarSetup.Configure();
         profile.Validate();
         if (targets.Length == 0 || targets.Any(t => t != "Server" && t != "Client")) throw new ArgumentException("Choose Server, Client or Both.");
         if (Application.isBatchMode && targets.Contains("Server") && typeof(UnityEditor.Il2Cpp.SysrootPackage).BaseType?.Name != "Sysroot")
@@ -160,7 +159,7 @@ public static class MangosBuildPipeline
         }
         else
         {
-            foreach (var asset in new[] { "index.html", "mangos-controller.js", "mangos-controller.css", "voice-app.js", "voice-overlay/app.js", "voice-overlay/config.js", "TemplateData/style.css" })
+            foreach (var asset in new[] { "index.html", "voice-app.js", "voice-overlay/app.js", "voice-overlay/config.js", "TemplateData/style.css" })
                 if (!File.Exists(Path.Combine(output, asset))) throw new IOException("WebGL output is missing " + asset);
             var publicVoice = new { requireGameRoom = true, roomId = "", roomNamespace = profile.deployment };
             File.WriteAllText(Path.Combine(output, "mangos-config.js"), "window.MANGOS_BUILD_ID=" + Newtonsoft.Json.JsonConvert.SerializeObject(buildId) + ";\nwindow.VOICE_APP_CONFIG=" + Newtonsoft.Json.JsonConvert.SerializeObject(publicVoice) + ";\n");

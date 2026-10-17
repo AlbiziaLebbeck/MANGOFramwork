@@ -101,9 +101,7 @@ public class NetworkedPlayerComponent : NetworkBehaviour
     {
         if(_model == avatarLoader.Model && _url == GLTFLink.Value)
         {
-            // AvatarLoader already rebinds and transfers the current state/parameters.
-            // A second Rebind here would reset that state after an avatar switch.
-            avatarLoader.Animator.Update(0);
+            StartCoroutine(RestartAnimator(avatarLoader.Animator));
         }
     }
 
@@ -150,7 +148,7 @@ public class NetworkedPlayerComponent : NetworkBehaviour
 
         if (IsOwner) UserReferencePersistent.Instance.SetGLTFLink(next);
 
-        if(AvatarSystem.Instance != null && AvatarSystem.Instance.IsAvatarCached(next))
+        if(AvatarSystem.Instance.IsAvatarCached(next))
         {
             avatarLoader.LoadAvatarFromCache();
         }

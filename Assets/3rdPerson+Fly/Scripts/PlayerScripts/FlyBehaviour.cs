@@ -26,7 +26,7 @@ public class FlyBehaviour : GenericBehaviour
 	void Update()
 	{
 		// Toggle fly by input, only if there is no overriding state or temporary transitions.
-		if (MangosInputRouter.FlyDown(flyButton) && !behaviourManager.IsOverriding()
+		if (Input.GetButtonDown(flyButton) && !behaviourManager.IsOverriding()
 			&& !behaviourManager.GetTempLockStatus(behaviourManager.GetDefaultBehaviour))
 		{
 			fly = !fly;
@@ -83,7 +83,6 @@ public class FlyBehaviour : GenericBehaviour
 	{
 		// Add a force player's rigidbody according to the fly direction.
 		Vector3 direction = Rotating(horizontal, vertical);
-		direction = Vector3.ClampMagnitude(direction + Vector3.up * MangosInputRouter.FlyVertical, 1f);
 		behaviourManager.GetRigidBody.AddForce(direction * (flySpeed * 100 * (behaviourManager.IsSprinting() ? sprintFactor : 1)), ForceMode.Acceleration);
 	}
 

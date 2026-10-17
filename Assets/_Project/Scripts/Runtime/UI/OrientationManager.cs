@@ -19,11 +19,6 @@ public class OrientationManager : MonoBehaviour
 
     private void CheckOrientation()
     {
-        if (MangosBrowserBridge.HasBrowserControls)
-        {
-            if (portraitOverlay != null) portraitOverlay.SetActive(false);
-            return;
-        }
         bool isMobile = CheckMobile.CheckIsMobile();
 
         bool isCurrentlyPortrait = Screen.height > Screen.width;

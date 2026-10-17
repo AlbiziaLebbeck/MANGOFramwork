@@ -16,10 +16,8 @@ public class LocomotionManager : Singleton<LocomotionManager>
 
     protected override void Awake()
     {
-        base.Awake();
         IsMobile = CheckMobile.CheckIsMobile();
     }
-    private void Update() => IsMobile = CheckMobile.CheckIsMobile();
 
     public void OnVirtualMoveInput(Vector2 virtualMoveDirection, float magnitude)
     {

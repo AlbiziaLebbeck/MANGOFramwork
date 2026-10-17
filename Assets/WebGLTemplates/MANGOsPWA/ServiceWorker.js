@@ -5,9 +5,10 @@ const previousCacheNames = [
     legacyCacheName + "-static-v2",
     legacyCacheName + "-static-v3",
     legacyCacheName + "-static-v4",
-    legacyCacheName + "-static-v5"
+    legacyCacheName + "-static-v5",
+    legacyCacheName + "-static-v6"
 ];
-const cacheName = legacyCacheName + "-static-v6";
+const cacheName = legacyCacheName + "-static-v7";
 const contentToCache = [
     "TemplateData/style.css"
 ];

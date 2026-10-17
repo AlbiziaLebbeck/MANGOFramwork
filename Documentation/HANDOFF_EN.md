@@ -34,21 +34,21 @@ Account API, voice/media backend, and TURN remain external services configured b
 
 ## Avatars and animation
 
-Account and guest avatar choices become selectable before optional thumbnails finish. Preview failure does not disable a valid choice. The catalog scroll position resets when opened, and the panel fits the safe area. Opening it pauses game input and hides touch controls. WebGL model requests to the configured MANGOs API origin include Cookie SSO credentials; public external models retain anonymous CORS. The API must still permit credentialed CORS for the deployed page.
+The Avatar system is restored from `MANGOFramework_Cookie`: glTFast loads the model, the original loader selects a reference Humanoid Avatar from `Resources/AvatarLoader` by its node structure, and the existing player-root Animator/controller is reused. The original model cache, thumbnail generation, selection window and five-second selection cooldown are restored, together with network, sitting and interaction bindings.
 
-GLB creates a Humanoid Avatar from the model's own skeleton, calibrates relaxed/A-pose exports into a T-pose, and aligns its orientation before retargeting. VRM uses UniVRM and its own Humanoid Avatar. The system does not apply a reference Avatar's proportions to a different model. Walking, flying, FishNet, and interactions receive the active Animator.
+Compatibility is the same as the Cookie system and depends on matching one of its supported reference rigs. The experimental per-model Humanoid builder, Rig Profiles, VRM-specific importer, automatic height normalization and animation-audit menu have been removed. The original VRM/reference-rig path remains; it is not a guarantee for arbitrary GLB/VRM skeletons.
 
-The default uniformly normalizes visual height to 1.7 metres to match the existing collider policy; it does not stretch individual bones. Keeping natural heights requires a matching collider/gameplay policy. For Humanoid models with different bone names, create an Avatar Rig Profile to specify the mapping. Models without Humanoid skeletons cannot be guaranteed to use every existing Humanoid animation.
 
-Export `.anim` and embedded model-clip information through **MANGOs Framework > Avatar > Export Animation Audit**. The report is written to `Library/MangosAnimationAudit.csv`.
+## Cookie controls
 
-## Controller
+On touch browsers, the HTML voice bar sits at the bottom centre to leave the original joystick clear.
 
-Device detection automatically selects keyboard/mouse on PC and touch on phones/tablets, including iPad's desktop user agent. Touchscreen PCs retain desktop controls. The Controls selector and legacy controller toggle are removed; saved overrides from older builds are cleared. On mobile, movement keys or a mouse select keyboard/mouse, and touching the screen restores touch controls.
+The original Unity controller is restored: Starter Assets, `PlayerMovementHandler`, `LocomotionManager`, Unity mobile controls, the controller-switch button, walking/click-to-move and fly movement. Device detection uses the original `CheckMobile`/`IsMobile` browser bridge. Cursor/pointer-lock behavior and the orientation guard are restored from Cookie, including its configured landscape requirement.
 
-Touch controls provide a left movement joystick, right-side camera drag, Run, and Jump. Fly/Up/Down appear only for flyable characters. Unity interaction buttons remain tappable. Rotation, mode changes, lost focus, and disconnect clear held input; typing into an HTML field suspends game input.
+The HTML controller, automatic input-mode switching and its custom camera/input router have been removed. Input and Avatar code now follow the Cookie implementation; the remaining browser bridge only integrates the separate HTML voice system.
 
-On PC, hold right mouse and drag to turn the camera. Rebuild Client after updating, deploy its entire directory (HTML/JS and matching Unity files), and allow caches/service workers to update to the new build.
+
+Rebuild and deploy the complete Client after updating; its PWA cache version has changed.
 
 ## Before production deployment
 

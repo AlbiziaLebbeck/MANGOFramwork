@@ -10,9 +10,9 @@ public static class CheckMobile
     public static bool CheckIsMobile()
     {
 #if !UNITY_EDITOR && UNITY_WEBGL
-            return MangosInputRouter.Mobile;
+            return IsMobile();
 #else
-        return UnityEngine.Application.isMobilePlatform;
+        return false;
 #endif
     }
 }

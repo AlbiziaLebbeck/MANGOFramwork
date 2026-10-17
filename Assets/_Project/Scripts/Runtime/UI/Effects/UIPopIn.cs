@@ -4,7 +4,6 @@ using UnityEngine;
 public class UIPopIn : MonoBehaviour
 {
     public float scaleSpeed = 8f;
-    public Vector3 OpenScale { get; set; } = Vector3.one;
 
     private RectTransform rectTransform;
     private Coroutine scaleRoutine;
@@ -34,7 +33,7 @@ public class UIPopIn : MonoBehaviour
         if (scaleRoutine != null)
             StopCoroutine(scaleRoutine);
 
-        scaleRoutine = StartCoroutine(ScaleTo(OpenScale));
+        scaleRoutine = StartCoroutine(ScaleTo(Vector3.one));
     }
 
     public void ClosePanel()
@@ -57,10 +56,10 @@ public class UIPopIn : MonoBehaviour
         while (t < 1f)
         {
             t += Time.deltaTime * scaleSpeed;
-            rectTransform.localScale = Vector3.Lerp(start, target == Vector3.zero ? target : OpenScale, t);
+            rectTransform.localScale = Vector3.Lerp(start, target, t);
             yield return null;
         }
 
-        rectTransform.localScale = target == Vector3.zero ? target : OpenScale;
+        rectTransform.localScale = target;
     }
 }

@@ -4,7 +4,7 @@
 
 Framework เกมหลายผู้เล่นสำหรับ **WebGL Client** และ **Linux Dedicated Server** ใช้ **Unity 6.3 LTS — 6000.3.26f1** และ **Universal Render Pipeline (URP)**
 
-รุ่นปัจจุบันอยู่บน branch **`MANGOsFramework_U6`**
+รุ่นปัจจุบันอยู่บน branch **`MANGOsFramework_U6`** โดยคืนระบบ Avatar และ Controller จาก **`MANGOFramework_Cookie`** ตามคำขอของผู้ใช้แล้ว
 
 **[คู่มือใช้งาน](Documentation/HANDOFF_TH.md)** · [การ Build และ runtime](Documentation/BUILD_AND_RUNTIME_TH.md) · [ผลตรวจและข้อจำกัด](Documentation/VALIDATION.md)
 
@@ -13,9 +13,9 @@ Framework เกมหลายผู้เล่นสำหรับ **WebGL C
 - FishNet multiplayer พร้อม Bayou/SimpleWeb WebSocket สำหรับ WebGL และ Tugboat สำหรับ native networking
 - **Build Center** สร้าง Server, Client หรือทั้งคู่ แยก network profile และเลือก platform ให้อัตโนมัติ
 - Browser voice overlay จาก `html-voice-tester` รวมใน WebGL template และผูกกับ world ปัจจุบัน
-- โหลด GLB/VRM ขณะเล่นโดยใช้ Humanoid rig ของแต่ละโมเดล พร้อม calibrate T-pose ของ GLB และผูก animation/controller ใหม่
-- เลือก keyboard/mouse หรือ touch สำหรับ PC โทรศัพท์/tablet และปรับเมื่อหมุนแนวตั้ง/แนวนอนระหว่างเล่น
-- TextMeshPro shaders สำหรับ Unity 6 และเครื่องมือส่งออกรายงาน animation
+- ระบบ Avatar ของ Cookie พร้อม reference rigs, cache และ UI เลือกเดิม
+- Controller ของ Unity แบบ Cookie สำหรับเดิน click-to-move, touch และบิน พร้อมปุ่มสลับเดิม
+- TextMeshPro shaders สำหรับ Unity 6
 
 ## สิ่งที่ต้องติดตั้งและการเริ่มต้น
 
@@ -38,13 +38,13 @@ Framework เกมหลายผู้เล่นสำหรับ **WebGL C
 | Input System | 1.20.0 | Input ผู้เล่น |
 | Cinemachine | 2.10.7 | กล้อง |
 | glTFast | 6.4.0 ตรึง Git revision | โหลด GLB/glTF ขณะเล่น |
-| UniVRM / UniGLTF | 0.128.0 ตรึง Git tag | โหลด VRM |
+| UniVRM / UniGLTF | 0.128.0 ตรึง Git tag | package ที่ติดตั้งอยู่; runtime ที่คืนมาใช้ glTFast แบบ Cookie |
 | Linux SDK และ Windows-to-Linux toolchain | packages 1.1.0 | Build Linux IL2CPP จาก Windows |
 | FishNet + Bayou / Tugboat | Source ในโปรเจกต์ | Multiplayer transport และ synchronization |
 
 ## Build Server และ Client
 
-เปิด **MANGOs Framework > Build Center** แก้ **Client Path** แล้วเลือก **Build Server**, **Build Client** หรือ **Build Both** ระบบเลือก platform รวม browser overlay/controller และคืนค่า project settings ชั่วคราวเมื่อเสร็จ
+เปิด **MANGOs Framework > Build Center** แก้ **Client Path** แล้วเลือก **Build Server**, **Build Client** หรือ **Build Both** ระบบเลือก platform รวม browser voice overlay และคืนค่า project settings ชั่วคราวเมื่อเสร็จ
 
 ค่าของ Server และ Client แก้ได้แยกกัน:
 
@@ -106,43 +106,32 @@ Account API, voice/media backend, Socket.IO และ ICE/TURN ยังเป�
 
 ## Avatar และ animation
 
-รายการ Avatar ของบัญชีและ guest เลือกได้ก่อน thumbnail โหลดเสร็จ ภาพตัวอย่างที่โหลดไม่สำเร็จไม่ปิดปุ่มเลือก เมื่อเปิดรายการจะเลื่อนกลับด้านบนและปรับ panel ให้พอดี safe area พร้อมพัก input เกมและซ่อน touch controls การโหลดโมเดล WebGL จาก MANGOs API origin ที่ตั้งค่าไว้ส่ง Cookie SSO ส่วนโมเดลสาธารณะภายนอกยังใช้ anonymous CORS ฝั่ง API ยังต้องอนุญาต credentialed CORS ของเว็บที่ deploy
+คืนระบบ Avatar จาก `MANGOFramework_Cookie` แล้ว: glTFast โหลดโมเดล ตัว loader เลือก Humanoid Avatar อ้างอิงจาก `Resources/AvatarLoader` ตามโครงสร้าง node และใช้ Animator/controller เดิมบน root ของผู้เล่น คืน cache โมเดล การสร้าง thumbnail หน้าต่างเลือก Avatar และ cooldown ห้าวินาที รวมถึงจุดเชื่อม network การนั่งและ interaction เดิม
 
-GLB ทั่วไปใช้ glTFast และสร้าง Humanoid Avatar จาก skeleton ของตนเอง Loader ปรับท่าพัก/A-pose เป็น T-pose และจัดแกนร่างกายก่อน retarget ส่วน VRM ใช้ UniVRM กับ Humanoid Avatar/raw skeleton ของโมเดลนั้น ระบบเดิน บิน FishNet animation และ interaction ผูกกับ Animator ปัจจุบัน
+การรองรับเหมือนระบบ Cookie และขึ้นกับ rig อ้างอิงที่ระบบเดิมรู้จัก ถอดระบบสร้าง Humanoid รายโมเดล, Rig Profiles, importer เฉพาะ VRM, การปรับความสูงอัตโนมัติ และเมนู audit animation ที่เพิ่มใหม่ออกแล้ว เส้นทาง VRM/reference rig แบบเดิมยังอยู่ แต่ไม่ได้รับประกัน GLB/VRM ทุก skeleton
 
-ค่าเริ่มต้นปรับความสูงภาพแบบ uniform เป็น **1.7 เมตร** ตาม collider เดิม ไม่ยืดความยาวกระดูก skin weights หรือ inverse bind matrices ให้ตรงตัวอ้างอิง
 
-Humanoid GLB ที่ mapping ไม่ตรง สร้าง **Avatar Rig Profile** ผ่าน **Assets > Create > MANGOs Framework > Avatar Rig Profile** ใส่ให้ AvatarLoader หรือวางใต้ `Resources/AvatarRigProfiles` พร้อม URL prefix ที่ตรงกัน Rig ที่ไม่ผ่านจะคงโมเดลก่อนหน้า/default และรายงาน `LastLoadError`
+## Controller จาก Cookie
 
-การรองรับขึ้นกับ Humanoid skeleton และ skinning ที่ถูกต้อง ไม่สามารถใช้ Humanoid animations เดิมกับ GLB ทุกชนิดได้อัตโนมัติ การคงความสูงจริงต้องมีนโยบาย gameplay/collider ที่สอดคล้องกัน
+บน browser จอสัมผัส แถบเสียง HTML อยู่กึ่งกลางด้านล่างเพื่อเว้นพื้นที่ joystick เดิม
 
-ส่งออก `Library/MangosAnimationAudit.csv` ผ่าน **MANGOs Framework > Avatar > Export Animation Audit**
+คืน controller ของ Unity แบบเดิม: Starter Assets, `PlayerMovementHandler`, `LocomotionManager`, mobile controls ของ Unity, ปุ่มสลับ controller, การเดิน/click-to-move และการบิน การตรวจอุปกรณ์ใช้ `CheckMobile`/`IsMobile` เดิม คืนพฤติกรรม cursor/pointer lock และ orientation guard ของ Cookie รวมข้อกำหนด landscape ตามที่ตั้งไว้ใน prefab
 
-## Controller อัตโนมัติ
+ถอด HTML controller, การสลับ input อัตโนมัติ และ camera/input router ที่เพิ่มใหม่ออกแล้ว โค้ด Avatar และ input ใช้การทำงานของ Cookie ส่วน browser bridge ที่เหลือใช้เชื่อมระบบ HTML voice แยกต่างหาก
 
-ระบบตรวจอุปกรณ์อัตโนมัติและเลือก keyboard/mouse บน PC หรือ touch บนโทรศัพท์/tablet รวม iPad desktop user agent ส่วน PC จอสัมผัสยังใช้ desktop controls เอาเมนู Controls และปุ่มสลับ controller เดิมออก พร้อมล้าง override ที่บันทึกจาก build เก่า บน mobile การกดปุ่มเดินหรือใช้ mouse จะเลือก keyboard/mouse และการแตะหน้าจอจะกลับเป็น touch
-
-Touch มี joystick ซ้าย ลากกล้องด้านขวา Run และ Jump ส่วน Fly/Up/Down แสดงเฉพาะตัวละครที่บินได้ Layout ปรับตามแนวหน้าจอและ safe area การหมุนจอ เปลี่ยน input mode หลุด focus ยกเลิก pointer พิมพ์ใน HTML field และ disconnect ล้าง input ค้าง
-
-บน desktop หมุนกล้องด้วยการกดคลิกขวาค้างแล้วลากเท่านั้น เมื่อสลับจาก touch กลับเป็น keyboard/mouse การขยับ mouse เฉย ๆ จะไม่หมุนกล้อง
 
 ## ผลตรวจและข้อจำกัด
 
-Build Linux IL2CPP และ WebGL สำเร็จ Client ที่ Build จริงเชื่อม Linux Server ใน WSL เข้า BaseWorld ด้วย guest และโหลด GLB สาธารณะได้ Browser tests ครอบคลุมห้า device configurations, input หลายนิ้ว การหมุนจอและ automatic input switching ตรวจ Avatar หลายขนาด T/A-pose, GLB จริง และ synthetic VRM 1.0 แล้ว
-
-ยังต้องเล่นบน iOS/Android จริง ตรวจ microphone/account/TURN สด และ VRM/ท่า Avatar จริงเพิ่มเติม ปุ่ม Editor แบบ GUI ยังไม่ได้คลิกใน automated UI test ส่วน build pipeline ผ่าน batch runner แล้ว
-
-แก้จุดเรียก Rigidbody API เดิมที่กระตุ้น Unity 6 API Updater error โดยย้ายไปใช้ `linearVelocity` แล้ว ตัวสั่ง Build ปฏิเสธ ScriptUpdater ที่ล้มเหลว และ pipeline ปฏิเสธ BuildReport ที่มี error ดู [รายงานผลตรวจ](Documentation/VALIDATION.md) สำหรับผล Build ซ้ำ คำเตือนที่เหลือ และขอบเขตการทดสอบ
-
-รัน Editor checks และ Build profile ทดสอบในเครื่องบน Windows:
+เปิดด้วย Unity **6000.3.26f1** โค้ดการเคลื่อนที่ของ Cookie ปรับเฉพาะ `Rigidbody.velocity` เป็น `linearVelocity` ของ Unity 6 และคงชุดแก้ compatibility ของ FishNet/physics และ TMP ไว้ ตรวจเทียบ source กับโปรเจกต์ Cookie ในเครื่อง ตัว build runner ตรวจ resource Avatar, การเชื่อม Animator/controller, input maps, physics และค่าการ build
 
 ```powershell
 .\Tools\BuildBoth.ps1 -Validation
 ```
 
-Profile นี้ใช้ **7788**, WS และ localhost แยกจาก deployment profile เริ่มต้น ภาพประกอบใช้ชื่อ guest **PoppyValidation** ดูวิธีถ่ายซ้ำใน [คู่มือ Build/runtime](Documentation/BUILD_AND_RUNTIME_TH.md)
+Validation profile ใช้ localhost พอร์ต **7788**, WS ให้ build ด้วย production profile ก่อน deploy และนำ Client ใหม่ขึ้นทั้งโฟลเดอร์ รวม HTML/JS กับไฟล์ Unity ที่ตรงชุดกัน รุ่น cache ของ PWA เปลี่ยนสำหรับการคืนระบบครั้งนี้แล้ว
 
-![บัญชีจำลอง: CasualPop และรายการ Avatar พร้อม controller อัตโนมัติ](Documentation/Validation/account-desktop-avatars.png)
+ภาพและผลตรวจ adaptive controller/rig รายโมเดลเดิมในเอกสารเป็นประวัติ ไม่ใช่ runtime ที่คืนมา ดู [ผลตรวจ](Documentation/VALIDATION.md) สำหรับผล rollback ปัจจุบันและข้อจำกัด ส่วน cookie บัญชีจริง เสียง/TURN และโทรศัพท์/tablet จริงต้องตรวจใน deployment
+
 
 ## เอกสารและประวัติ migration
 

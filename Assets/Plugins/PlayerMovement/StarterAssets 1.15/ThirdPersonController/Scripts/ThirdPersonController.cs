@@ -102,7 +102,6 @@ namespace StarterAssets
         private PlayerInput _playerInput;
 #endif
         private Animator _animator;
-        public Animator AnimatorOverride { get; set; }
         private CharacterController _controller;
         private StarterAssetsInputs _input;
         private GameObject _mainCamera;
@@ -137,8 +136,7 @@ namespace StarterAssets
         {
             _cinemachineTargetYaw = CinemachineCameraTarget.transform.rotation.eulerAngles.y;
             
-            _animator = AnimatorOverride != null ? AnimatorOverride : GetComponent<Animator>();
-            _hasAnimator = _animator != null;
+            _hasAnimator = TryGetComponent(out _animator);
             _controller = GetComponent<CharacterController>();
             _input = GetComponent<StarterAssetsInputs>();
 #if ENABLE_INPUT_SYSTEM 
@@ -156,8 +154,7 @@ namespace StarterAssets
 
         private void Update()
         {
-            _animator = AnimatorOverride != null ? AnimatorOverride : GetComponent<Animator>();
-            _hasAnimator = _animator != null;
+            _hasAnimator = TryGetComponent(out _animator);
 
             JumpAndGravity();
             GroundedCheck();
@@ -193,12 +190,8 @@ namespace StarterAssets
             }
         }
 
-        // A browser controller can own the target while Starter Assets still moves the player.
-        public bool ExternalCameraControl { get; set; }
-
         private void CameraRotation()
         {
-            if (ExternalCameraControl) return;
 
             // if there is an input and camera position is not fixed
             if (_input.look.sqrMagnitude >= _threshold && !LockCameraPosition)

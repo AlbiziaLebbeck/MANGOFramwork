@@ -66,15 +66,16 @@ const server = http.createServer((req, res) => {
     await page.waitForTimeout(1500);
     await page.screenshot({ path: path.join(evidence, 'integration-launcher.png'), timeout: 15000 });
     await page.evaluate(name => unityInstance.SendMessage('Launcher', 'AuthCanvas_OnLoginAsGuest', name), guestName);
-    await page.waitForFunction(() => MangosController.getState().ready, null, { timeout: 45000 });
+    await page.waitForFunction(() => window.MangosVoiceOverlay && MangosVoiceOverlay.getState().ready, null, { timeout: 45000 });
     await page.waitForTimeout(10000);
     assert(logs.some(line => line.includes(`Your name is ${guestName},`)), 'Server did not confirm the requested guest name');
     result.voiceState = await page.evaluate(() => MangosVoiceOverlay.getState());
-    result.controllerState = await page.evaluate(() => MangosController.getState());
+    result.controller = "Cookie Unity controller";
+    assert.equal(await page.locator("#mangos-controls").count(), 0, "Removed HTML controller was loaded");
+    assert(logs.some(line => line.includes("Loading glTF successfully.")), "Cookie AvatarLoader did not load the model");
     assert(result.voiceState.ready, 'Unity did not supply its joined world to the overlay');
     await page.screenshot({ path: path.join(evidence, 'integration-world-desktop.png'), timeout: 15000 });
-    // Account, real mobile contexts, rotation and touch -> keyboard camera
-    // regressions are covered by check-client-regressions.cjs.
+    // Controller and Avatar follow the restored Cookie Unity implementation.
     assert(![...errors, ...logs].some(line => /RuntimeError|TypeError|ReferenceError|NullReferenceException|EntryPointNotFoundException|DllNotFoundException/.test(line)), 'Runtime exception in compiled WebGL');
     result.passed = true;
   } catch (error) {

@@ -1,5 +1,9 @@
 # MANGOs Framework validation results
 
+> Current runtime: Avatar and Controller have been restored from `MANGOFramework_Cookie` at the user's request. The adaptive-controller/own-rig results below are historical and have been superseded. The rollback is checked with `MangosCookieRestoreValidation.Run` and a new Unity 6 Server/WebGL build. Cookie rig compatibility and controller/orientation behavior apply; earlier mobile/VRM/automatic-input claims no longer apply to the current source.
+
+Current rollback checks passed on Unity 6000.3.26f1: final Server/WebGL job `20261017-035242-ee29e9`, no C#/API Updater errors, reference Avatar/controller/input-map/prefab checks, and source comparison against Cookie. Guest and a mocked account using the real public CasualPop GLB loaded in Edge; selecting another Avatar and Submit and the Unity controller-toggle button were exercised. Phone layout was checked at 844×390 and 390×844; the original landscape guard is restored. The HTML voice bar is centred on touch browsers to clear the old joystick. Browser plugin was not available, so Playwright/Edge was used. Production account cookies, live voice/TURN, physical devices and the deployment itself were not tested or changed.
+
 [English](VALIDATION_EN.md) | [ภาษาไทย](VALIDATION.md) | [All documentation / เอกสารทั้งหมด](README.md)
 
 Date: 16 October 2026 — Unity 6000.3.26f1
