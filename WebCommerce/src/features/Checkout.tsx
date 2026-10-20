@@ -265,7 +265,7 @@ export function CheckoutScreen() {
             <QrCode size={22} />
             {quote ? t('สร้าง QR เพื่อชำระเงิน') : t('ตรวจสอบยอดชำระ')}
           </button>
-          {!config?.paymentsReady ? <p className="danger">{t('ระบบชำระเงินยังไม่พร้อม')}</p> : null}
+          {!config?.paymentsReady ? <p className="danger">{config?.environment === 'Uat' ? t('กำลังเตรียมทดสอบรับชำระร่วมกับ TTB') : t('ระบบชำระเงินยังไม่พร้อม')}</p> : null}
           {commerce.pendingCheckout() ? (
             <button
               type="button"

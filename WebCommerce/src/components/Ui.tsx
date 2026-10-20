@@ -59,7 +59,7 @@ export function MockNotice() {
   return config && config.environment !== 'Production' ? (
     <div className="message warning">
       <AlertCircle size={19} />
-      {config.mockSimulation ? t('โหมดทดสอบ · ไม่มีการรับเงินจริง') : t('UAT · ระบบทดสอบธนาคาร')}
+      <span>{config.mockSimulation ? t('โหมดทดสอบ · ไม่มีการรับเงินจริง') : t('UAT · ให้ TTB สแกนในวงทดสอบธนาคารเท่านั้น')}</span>
     </div>
   ) : null;
 }

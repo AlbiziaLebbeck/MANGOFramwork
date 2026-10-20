@@ -27,7 +27,7 @@ public sealed class BankReadiness(CommerceOptions commerce, TtbOptions ttb, Repo
 
     public void AssertOutgoing()
     {
-        // Recovery queries must remain possible when the callback service itself is unavailable.
+        // Recovery/first acceptance queries remain possible before callback or gateway acceptance.
         var required = new[] { "Ttb.MerchantId", "Ttb.BillerNo", "Ttb.Issuer", "Ttb.PrivateKeyPath", "Ttb.TokenSeconds", "Ttb.SigningPrivateKey", "Ttb.SenderName", "BankEnvironment" };
         if (commerce.PaymentMode != PaymentMode.Bank || commerce.Environment == CommerceEnvironment.Local || Missing().Any(x => required.Contains(x, StringComparer.Ordinal)))
             throw new CommerceException(503, "bank_query_unavailable", "Bank enquiry authentication is not available.");
@@ -57,7 +57,8 @@ public sealed class BankJwtSigner(TtbOptions options, TimeProvider clock)
     public static string Create(RSA rsa, string issuer, DateTimeOffset now, int seconds)
     {
         if (rsa.KeySize != 2048 || string.IsNullOrWhiteSpace(issuer) || seconds is < 1 or > 1200) throw new ArgumentException("An approved RSA2048 issuer and short token lifetime are required.");
-        var header = Encode(JsonSerializer.SerializeToUtf8Bytes(new { alg = "RS256", typ = "JWT" }));
+        // Literal field name from TTB's confirmed JWT profile (20 October 2026).
+        var header = Encode(JsonSerializer.SerializeToUtf8Bytes(new { alg = "RS256", type = "JWT" }));
         var payload = Encode(JsonSerializer.SerializeToUtf8Bytes(new { iss = issuer, iat = now.ToUnixTimeSeconds(), exp = now.AddSeconds(seconds).ToUnixTimeSeconds() }));
         var signingInput = $"{header}.{payload}";
         var signature = rsa.SignData(Encoding.ASCII.GetBytes(signingInput), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);

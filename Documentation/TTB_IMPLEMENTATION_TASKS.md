@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | P0-01 | P0 | ตรวจ workspace, source อ้างอิง และเครื่องมือ | DONE | Unity 6000.3.26f1, .NET SDK10, Node24; KKU deployed binaries และ bridge ตรวจแล้ว |
 | P0-02 | P0 | กำหนด decision baseline และโครงสร้าง source | DONE | TTB_IMPLEMENTATION_DECISIONS.md; source KKU ที่ระบุใน PDB อยู่คนละเครื่อง ไม่พบใน checkout นี้ |
-| P0-03 | P0 | รับ provisioning และข้อตกลงธนาคาร | WAITING | ขอที่เก็บข้อมูล UAT จากผู้ใช้แล้ว; ไม่ใช้ sample credentials แทนค่าจริง |
+| P0-03 | P0 | รับ provisioning และข้อตกลงธนาคาร | WAITING | TTBยืนยันPYA/Billerร่วม/iss jwt-key-pya/วงธนาคาร/สิทธิ์API/authของmerchantแล้ว; ติดตั้งUATจริง. Verifyครั้งแรก20Octได้401 รอธนาคารตรวจkey/gateway registration และรับBasic credentials; SFTPคุยภายหลัง |
 | P1-01 | P1 | แยก .NET solution, configuration และ test harness | DONE | .NET10 solution; foundation tests 24/24 ผ่าน |
 | P1-02 | P1 | PostgreSQL schema, migrations และ durable jobs | DONE | 30/30 tests รวม 6 PostgreSQL integration tests ผ่าน; private dev DB บน ntserver02 |
 | P1-03 | P1 | MANGOs identity, sessions, CSRF และ ownership | DONE | 40/40 tests ผ่าน รวม HTTP account switch/logout/CSRF/CORS และเก็บเฉพาะ token hash |
@@ -39,12 +39,16 @@
 | P7-03 | P7 | Admin/finance cases/roles/audit | DONE | full205/205; browser8/8; two-officer manual attestation/private evidence, explicit goods units/stock; privateUAT20261019-p7-finance |
 | P7-04 | P7 | Monitoring/backup/restore/operations | WAITING | UATbackup/restore/private monitoring/rotationพร้อม; ServiceLocalและliveCNIprobeผ่าน, KKU9GEThashเดิม+Ready1; operator liveapplicationhandoffผ่านแล้ว; รอactualTTBNAT/auth, continuousoff-server/actualkeypolicy/host-loss/alertreceiver |
 | P8-01 | P8 | Automated requirement matrix และ browser/Unity QA | DONE | ล่าสุด full268/268ผ่าน CI; matrix46/46/26requirements. HTMLล่าสุด browser11/11+native3/3+fullworld1/1+PWA1/1ผ่าน; load1หลักฐานเดิม. บริษัท/สินค้าmockแก้ได้ตามคำอนุญาต; actualbank/device/operations/Productionยังpending |
-| P8-02 | P8 | Bank UAT และไฟล์/settlement จริง | WAITING | ขึ้นกับ P0-03 และการทดสอบที่ธนาคารเปิดให้ |
+| P8-02 | P8 | Bank UAT และไฟล์/settlement จริง | WAITING | QRdiagnostic1บาทของPYAสร้างได้จริง; Verifyส่งจากNTถึงTTBได้401 ไม่มีpolling/retry. callbackUATเปิดเฉพาะbankIPพร้อมBasic; ยังไม่มีbankscan/callbackจริง/ชื่อผู้รับยืนยัน. ไม่ถือว่าเงินจ่ายผ่าน |
 | P9-01 | P9 | Production deployment/rehearsal และ acceptance | WAITING | เตรียม UAT/release acceptance pack และ closed Production config แล้ว; รอbank/company/device/operations sign-off และวงเงิน controlled transaction |
 
 ไม่ถือว่า DONE เพียงเพราะเขียนโค้ดแล้ว และไม่ถือว่าทดสอบ mock ผ่านเท่ากับธนาคารรับรอง. 
 
-## ล่าสุด 20 ตุลาคม 2026 — SSO และภาษา
+## ล่าสุด 20 ตุลาคม 2026 — คำยืนยัน TTB
+
+อัปเดตUATเป็นPYA/issuerจริง, JWTtypeheader, callbackBasic+bankIPexactroute, diagnosticQR1บาทและVerifyครั้งเดียวจากNTได้401 (RequestUIDอยู่TTB_BANK_CONFIRMATION_20261020_TH.md). เพิ่มgatewayacceptancegateเพื่อไม่เปิดcheckoutเพียงเพราะไฟล์keyมีอยู่; ยังต้องธนาคารตรวจauth/รับcredentials/สแกนcallback/ยืนยันชื่อผู้รับและรายงาน. Portalpairedbuildใหม่720b6fb4df314d22a0fc0258f0fb3824พร้อมให้ผู้ใช้อัปโหลดเอง; ฉาก/WorldManagerเดิม KKU9GEThashesเดิม ไม่เปิดProduction
+
+## ประวัติ 20 ตุลาคม 2026 — SSO และภาษา
 
 - Push snapshot ก่อนแก้ขึ้น GitHub branch `MANGOxTTB` แล้ว commit `ec64c555c354758136bf7aabdc66a53c04546a86` ตามคำสั่งผู้ใช้ รวม source, assets, backend, infrastructure และเอกสาร โดยไม่มี Build/private-key/token/runtime storage
 - รับ Auth public settings ใหม่ของผู้ใช้และคงโหมด Auto บน plus จึงใช้ FirstPartyCookieSso; OAuth client UUID ไม่ใช่ TTB Merchant ID แก้ storefront GET-session-only ให้แลก verified MANGOs cookie ผ่าน POST/session อัตโนมัติและเริ่มใหม่เมื่อ host ready/login notification ไม่เชื่อ identity จาก Unity

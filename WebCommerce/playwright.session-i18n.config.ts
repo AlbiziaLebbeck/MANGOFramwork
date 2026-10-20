@@ -6,7 +6,7 @@ const evidence =
   resolve(tmpdir(), 'mangos-ttb-session-i18n');
 export default defineConfig({
   testDir: './e2e',
-  testMatch: 'session-i18n.spec.ts',
+  testMatch: ['session-i18n.spec.ts', 'uat-bank-notice.spec.ts'],
   workers: 1,
   retries: 0,
   timeout: 90000,

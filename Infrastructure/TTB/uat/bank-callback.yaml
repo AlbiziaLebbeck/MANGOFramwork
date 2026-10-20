@@ -1,0 +1,30 @@
+# TTB accepted this URL and merchant-defined authentication on 20 October 2026.
+# Apply only after ttb-bank is installed and callback authorization tests pass.
+# Source acceptance remains false for checkout until the bank's real test is observed.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ttb-bank-callback-uat
+  namespace: ttb-uat
+  labels:
+    app.kubernetes.io/part-of: ttb-commerce
+  annotations:
+    nginx.ingress.kubernetes.io/whitelist-source-range: 203.148.142.200/32,203.148.143.101/32,203.148.143.102/32,203.148.143.103/32,203.148.143.104/32,203.148.143.105/32
+    nginx.ingress.kubernetes.io/proxy-body-size: 32k
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '10'
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [ttb-api-test.mangosgo.com]
+      secretName: ttb-api-test-tls
+  rules:
+    - host: ttb-api-test.mangosgo.com
+      http:
+        paths:
+          - path: /ttb/v1/credit-notification
+            pathType: Exact
+            backend:
+              service:
+                name: ttb-commerce-api
+                port: { name: http }

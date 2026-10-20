@@ -1,6 +1,6 @@
 # TTB: BaseWorld และ Deployment Portal
 
-อัปเดต 20 ตุลาคม 2026 — รุ่นเชื่อมบัญชีอัตโนมัติและไทย–อังกฤษ
+อัปเดต 20 ตุลาคม 2026 — รุ่นคำยืนยัน TTB, SSO และไทย–อังกฤษ
 
 ## ฉากที่เปิดแก้ไข
 
@@ -12,18 +12,18 @@
 
 ## ชุดที่ Build และทดสอบแล้ว
 
-โฟลเดอร์ **`Builds/TTB/Portal/a572d58dd99246d2bbf5dcdc349bcd6e/Release/Upload/`** เป็นชุดล่าสุด รวม Auth public settings ที่ผู้ใช้แก้, การเชื่อม MANGOs SSO อัตโนมัติ และเมนูไทย–อังกฤษตาม `TTB_SSO_AND_LANGUAGE_TH.md` มี:
+โฟลเดอร์ **`Builds/TTB/Portal/720b6fb4df314d22a0fc0258f0fb3824/Release/Upload/`** เป็นชุดล่าสุด รวม Auth public settings ที่ผู้ใช้แก้, MANGOs SSO, เมนูไทย–อังกฤษ และคำอธิบายว่า UAT ต้องให้ TTB สแกนในวงธนาคาร. ใช้คู่ชุดนี้เมื่ออัปโหลด Portal; ยังไม่ได้เผยแพร่แทนslugเดิม มี:
 
 | อัปโหลดเป็น | ไฟล์ | ขนาด | SHA256 |
 |---|---|---:|---|
-| Server | `ttb-uat-server.zip` | 61,880,445 bytes | `5939cd424fb7d2c951bb9f4dc4d05456b41089c4938b18eaff5f9ba3c080903d` |
-| Client | `ttb-uat-client.zip` | 35,128,629 bytes | `67063d4b21af34493e2c6d575e2c599f24dbc118735fe494ca60f24d0206d0d5` |
+| Server | `ttb-uat-server.zip` | 61,880,657 bytes | `3db2fce035dca0b5f1ac24917a24104640c1ab36f870f6c0b009a01386390ab9` |
+| Client | `ttb-uat-client.zip` | 35,128,883 bytes | `45b6f1be674b5d9ce8185ea651dcb220b44d41ab3313e25755ac05690a340299` |
 
 Server เป็น Linux IL2CPP `.x86_64` พร้อม `_Data`, `GameAssembly.so`, `UnityPlayer.so` Client มี `index.html`, `Build/`, `TemplateData/`, HTML commerce และ PWA อยู่ครบในราก ZIP ตัดโฟลเดอร์ debug/backup ที่ Unity ระบุ DoNotShip ออกจาก ZIP แล้ว ไม่ต้อง ZIP `.x86_64` เพียงไฟล์เดียว และไม่ต้องอัปโหลดโฟลเดอร์ `Release` ครอบอีกชั้น
 
 ทั้งสองไฟล์เป็น **UAT ชุดเดียวกัน** และใช้ BaseWorld/meta fingerprint เดียวกัน ไม่ใช้ ZIP ของ run เก่าปะปน
 
-ชุด `01e6564154604c78979d07bc55d669d6` และผลตรวจ 08:22 ด้านล่างเป็นประวัติรุ่นก่อนเพิ่ม SSO/ภาษา อย่าใช้ ZIP รุ่นนั้นแทนชุดล่าสุดหากต้องการการแก้สองเรื่องนี้
+ชุด `a572d58dd99246d2bbf5dcdc349bcd6e` เป็นประวัติรุ่นSSO/ภาษาก่อนคำตอบธนาคาร ชุด `01e6564154604c78979d07bc55d669d6` และผลตรวจ08:22ด้านล่างเก่ากว่านั้น ไม่ใช้แทนชุดล่าสุด. Paired buildใหม่ผ่านและprotected5ไฟล์เดิม; browserQAของข้อความใหม่ผ่านLocaldisplayfixture ไม่อ้างว่าbankscan/Portalpublicacceptanceผ่าน
 
 ## อัปโหลดใน Portal
 

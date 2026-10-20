@@ -5,9 +5,10 @@ using TtbCommerce.Api;
 using TtbCommerce.Core;
 using TtbCommerce.Infrastructure;
 
-if (args.Contains("--prepare-uat-test-catalog") && args.Any(x => x is "--migrate" or "--seed-demo"))
-    throw new InvalidOperationException("UAT test catalog preparation is a separate operator command.");
-var builder = WebApplication.CreateBuilder(args.Where(x => x is not "--migrate" and not "--seed-demo" and not "--prepare-uat-test-catalog").ToArray());
+var operatorFlags = new[] { "--migrate", "--seed-demo", "--prepare-uat-test-catalog", "--uat-bank-probe", "--uat-bank-qr" };
+if (args.Count(x => operatorFlags.Contains(x)) > 1)
+    throw new InvalidOperationException("Operator commands must run separately.");
+var builder = WebApplication.CreateBuilder(args.Where(x => !operatorFlags.Contains(x)).ToArray());
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 262144);
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<CommerceErrors>();
@@ -119,6 +120,16 @@ await using (var scope = app.Services.CreateAsyncScope())
     }
     else if (!prepareUatCatalog) await DbGuard.AssertEnvironmentAsync(database, commerce.Environment);
     if (seedDemo) await scope.ServiceProvider.GetRequiredService<LocalDemoSeeder>().SeedAsync();
+    if (args.Any(x => x is "--uat-bank-probe" or "--uat-bank-qr"))
+    {
+        if (scope.ServiceProvider.GetRequiredService<OperationsOptions>().RecoveryFreeze)
+            throw new InvalidOperationException("Bank diagnostics cannot run during recovery freeze.");
+        var result = await UatBankDiagnostics.RunAsync(database, scope.ServiceProvider.GetRequiredService<Numbering>(), commerce,
+            scope.ServiceProvider.GetRequiredService<TtbOptions>(), scope.ServiceProvider.GetRequiredService<BankReadiness>(),
+            scope.ServiceProvider.GetRequiredService<IBankGateway>(), scope.ServiceProvider.GetRequiredService<TimeProvider>(), args.Contains("--uat-bank-probe"), default);
+        Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(result));
+        return;
+    }
     if (prepareUatCatalog)
     {
         if (scope.ServiceProvider.GetRequiredService<BankReadiness>().Missing().Count == 0)

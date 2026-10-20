@@ -40,6 +40,9 @@ public sealed class GatewayTests
             var gateway = new TtbBankGateway(client, commerce, options, new(commerce, options), new(options, clock), clock, new(new(), clock));
             // Outgoing recovery auth does not depend on callback availability.
             Assert.False(options.CallbackProfileApproved);
+            // A first Verify must work while its acceptance gate is still false (avoid a bootstrap deadlock).
+            Assert.False(options.GatewayAuthenticationValidated);
+            Assert.Contains("Ttb.GatewayAuthenticationValidation", new BankReadiness(commerce, options).Missing());
             var uid = Guid.NewGuid();
             var reply = await gateway.PostAsync(BankOperation.Verify, new { BillerNo = options.BillerNo, QRId = BankReadTests.Qr, TransDate = TtbBankGateway.BankTime(now) }, uid, default);
             Assert.Equal(503, reply.StatusCode); Assert.Equal(1, handler.Count);

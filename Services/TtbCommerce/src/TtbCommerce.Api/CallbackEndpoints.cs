@@ -60,7 +60,9 @@ public static class CallbackEndpoints
     private static void Authorize(HttpContext http, CommerceOptions commerce, TtbOptions ttb)
     {
         if (commerce.PaymentMode != PaymentMode.Bank || commerce.Environment == CommerceEnvironment.Local) throw new CommerceException(404, "not_found", "The callback is unavailable in this environment.");
-        if (!ttb.CallbackProfileApproved || !ttb.CallbackSourceIpValidated || ttb.CallbackAuthentication != "Basic" || string.IsNullOrEmpty(ttb.CallbackUsername) ||
+        // Accept the first real bank callback to establish source/contract acceptance.
+        // Checkout still requires CallbackSourceIpValidated; IP + Basic checks below always apply.
+        if (!ttb.CallbackProfileApproved || ttb.CallbackAuthentication != "Basic" || string.IsNullOrEmpty(ttb.CallbackUsername) ||
             string.IsNullOrEmpty(ttb.CallbackPassword) || ttb.MerchantId.Length != 3 || ttb.BillerNo.Length != 15)
             throw new CommerceException(503, "callback_unavailable", "The bank callback profile is not yet approved.");
         static IPAddress Normalize(IPAddress address) => address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address;

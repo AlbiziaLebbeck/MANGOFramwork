@@ -71,6 +71,7 @@ public sealed class TtbOptions
     public bool CallbackSourceIpValidated { get; set; }
     public string[] TrustedProxyCidrs { get; set; } = [];
     public bool QrProfileApproved { get; set; }
+    public bool GatewayAuthenticationValidated { get; set; }
     public bool CrossBorderApproved { get; set; }
     public string CallbackAuthentication { get; set; } = "Unavailable";
     public string CallbackUsername { get; set; } = "";
@@ -90,6 +91,7 @@ public sealed class TtbOptions
         if (!CallbackProfileApproved || CallbackAuthentication != "Basic" || string.IsNullOrEmpty(CallbackUsername) || string.IsNullOrEmpty(CallbackPassword))
             missing.Add("Ttb.CallbackAuthenticationProfile");
         if (!QrProfileApproved) missing.Add("Ttb.QrProfileApproval");
+        if (!GatewayAuthenticationValidated) missing.Add("Ttb.GatewayAuthenticationValidation");
         if (!CallbackSourceIpValidated) missing.Add("Ttb.CallbackSourceIpValidation");
         if (string.IsNullOrWhiteSpace(BeneficiaryName)) missing.Add("Ttb.BeneficiaryName");
         if (QrMerchantName.Length is < 1 or > 25 || QrMerchantName.Any(c => c is < ' ' or > '~')) missing.Add("Ttb.QrMerchantName");

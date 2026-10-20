@@ -14,7 +14,7 @@ using Xunit;
 
 namespace TtbCommerce.Tests;
 
-public sealed class BankCallbackApiFactory(string connection, bool approved = true) : CommerceApiFactory(connection, environment: CommerceEnvironment.Uat)
+public sealed class BankCallbackApiFactory(string connection, bool approved = true, bool sourceValidated = true) : CommerceApiFactory(connection, environment: CommerceEnvironment.Uat)
 {
     public IPAddress Peer { get; set; } = IPAddress.Parse("203.148.143.101");
     public string[] TrustedProxyCidrs { get; set; } = [];
@@ -26,7 +26,7 @@ public sealed class BankCallbackApiFactory(string connection, bool approved = tr
             var settings = new Dictionary<string, string?>
             {
                 ["Ttb:MerchantId"] = "TST", ["Ttb:BillerNo"] = "111111111111111",
-                ["Ttb:CallbackProfileApproved"] = approved.ToString(), ["Ttb:CallbackSourceIpValidated"] = approved.ToString(),
+                ["Ttb:CallbackProfileApproved"] = approved.ToString(), ["Ttb:CallbackSourceIpValidated"] = (approved && sourceValidated).ToString(),
                 ["Ttb:CallbackAuthentication"] = "Basic", ["Ttb:CallbackUsername"] = "unit-test-callback", ["Ttb:CallbackPassword"] = "unit-test-only-not-a-bank-secret"
             };
             for (var index = 0; index < TrustedProxyCidrs.Length; index++) settings[$"Ttb:TrustedProxyCidrs:{index}"] = TrustedProxyCidrs[index];
@@ -46,6 +46,24 @@ public sealed class BankCallbackApiFactory(string connection, bool approved = tr
 
 public sealed class CallbackHttpTests
 {
+    [PgFact]
+    public async Task First_bank_callback_requires_source_and_auth_even_before_checkout_source_acceptance()
+    {
+        await using var database = await PgDatabase.CreateAsync();
+        await using var factory = new BankCallbackApiFactory(database.ConnectionString, sourceValidated: false);
+        using var client = factory.ShopperClient();
+        Assert.Contains("Ttb.CallbackSourceIpValidation", factory.Services.GetRequiredService<BankReadiness>().Missing());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await SendAsync(client, "{}"u8.ToArray())).StatusCode);
+        Basic(client); factory.Peer = IPAddress.Parse("198.51.100.10");
+        Assert.Equal(HttpStatusCode.Forbidden, (await SendAsync(client, "{}"u8.ToArray())).StatusCode);
+        factory.Peer = IPAddress.Parse("203.148.143.101");
+        Assert.Equal(HttpStatusCode.OK, (await SendAsync(client, "{}"u8.ToArray())).StatusCode);
+        Assert.Contains("Ttb.CallbackSourceIpValidation", factory.Services.GetRequiredService<BankReadiness>().Missing());
+        await using var db = database.Open();
+        Assert.Equal(1, await db.Observations.CountAsync());
+        Assert.Equal(0, await db.Allocations.CountAsync());
+        Assert.Equal(0, await db.Orders.CountAsync());
+    }
     [PgFact]
     public async Task Open_outgoing_service_circuits_do_not_block_authenticated_credit_commit_or_duplicate_ACKs()
     {

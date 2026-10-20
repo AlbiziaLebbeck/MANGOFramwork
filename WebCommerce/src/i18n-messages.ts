@@ -453,6 +453,8 @@ export const english: Record<string, string> = {
   เพิ่มจำนวน: 'Increase quantity',
   'โหมดทดสอบ · ไม่มีการรับเงินจริง': 'Test mode · No real money is received',
   'UAT · ระบบทดสอบธนาคาร': 'UAT · Bank test environment',
+  'UAT · ให้ TTB สแกนในวงทดสอบธนาคารเท่านั้น': 'UAT · TTB must scan using the bank test network',
+  'กำลังเตรียมทดสอบรับชำระร่วมกับ TTB': 'Preparing joint payment testing with TTB',
   กำลังตรวจผลยกเลิก: 'Checking void result',
   คืนเงินแล้ว: 'Refunded',
   ปิดหน้าต่าง: 'Close dialog',

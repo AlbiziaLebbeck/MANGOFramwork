@@ -51,6 +51,8 @@ public sealed class QrTests
         static byte[] Decode(string text) => Convert.FromBase64String(text.Replace('-', '+').Replace('_', '/').PadRight((text.Length + 3) / 4 * 4, '='));
         using var header = JsonDocument.Parse(Decode(parts[0])); using var payload = JsonDocument.Parse(Decode(parts[1]));
         Assert.Equal("RS256", header.RootElement.GetProperty("alg").GetString());
+        Assert.Equal("JWT", header.RootElement.GetProperty("type").GetString());
+        Assert.False(header.RootElement.TryGetProperty("typ", out _));
         Assert.Equal("unit-test-issuer", payload.RootElement.GetProperty("iss").GetString());
         Assert.Equal(now.ToUnixTimeSeconds(), payload.RootElement.GetProperty("iat").GetInt64());
         Assert.Equal(now.ToUnixTimeSeconds() + 120, payload.RootElement.GetProperty("exp").GetInt64());
