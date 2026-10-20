@@ -2,6 +2,38 @@
 
 อัปเดต 20 ตุลาคม 2026 — รุ่นคำยืนยัน TTB, SSO และไทย–อังกฤษ
 
+## Build เองหลังแก้ CDN/PWA (20 ตุลาคม 10:30 น.)
+
+พบว่าเว็บ `/ttb-uat/` ใช้ JavaScript SHA256 `839e2125e9320935a1285246f1d327b5b4a74fc29c05adb6bac1c42d8257b1a0` และ release `5c97b1fb90908ba7eda630703fb09563d02d61873c47b55071c34605b5dce9e0` ตรงกับชุด720bเดิมแล้ว แต่ HTMLที่Cloudflareส่งมีสคริปต์analyticsเพิ่ม:3230→3597bytes ทำให้hashของindexไม่ตรงและPWAอัปเดตไม่สำเร็จ. จึงไม่ควรสรุปว่าPortalไม่ได้อัปโหลดเพียงเพราะUIเดิมยังแสดงอยู่
+
+แก้แล้ว: PWAอ่านHTMLต้นฉบับจาก`mango-ttb-shell.json`และตรวจขนาด/SHA256ก่อนcacheเป็นHTML ใช้releaseในURLของIIFE/CSS/config/workerเพื่อเลี่ยงCDNaliasเก่า ยังคงไม่cacheAPI/auth/เอกสาร/Unityruntimeหรือqueryทั่วไป. ทดสอบจำลองhostingเพิ่มscript+CDNเก็บIIFE/workerเก่า ผ่านbrowser1/1; policy4/4/types/unit33/33ผ่าน. ไม่แก้Cloudflare/Portal/KKUหรือCORSpolicy
+
+**ต้อง Build ใหม่จากsourceหลังแก้รอบนี้** ชุด720bด้านล่างเป็นประวัติก่อนแก้CDN/PWAแล้ว ยังไม่เผยแพร่ชุดใหม่ให้ผู้ใช้โดยอัตโนมัติ
+
+วิธีที่1 — จากUnity:
+
+1. บันทึกscene/assetsที่แก้อยู่
+2. เปิดPowerShell7ที่รากโปรเจกต์แล้วรัน `./Tools/TTB/prepare-overlay.ps1 -Environment Uat -Experience world` ทุกครั้งก่อนBuild เพื่อcompileHTML UIจากsourceล่าสุด (ไฟล์generatedไม่ได้อยู่Git)
+3. Unity: `MANGOs Framework > Build Center > Use Deployment Portal UAT defaults`, ตรวจ `TTB commerce=Uat`, เปิด `Deployment Portal slug routing`, แล้ว `Save Profile`
+4. กด`Build Both` รอServer+ClientและZIPสำเร็จ ใช้คู่จาก `Builds/<deployment>/<build-id>/Upload/` ของงานเดียวกัน
+
+วิธีที่2 — คำสั่งเดียวในPowerShell7 (ใช้สำเนาแยก ไม่ปิดEditorที่เปิดอยู่):
+
+```powershell
+Set-Location C:\CosmoPC\Work\Unity\MANGOxTTB
+./Tools/TTB/build-portal.ps1
+```
+
+คำสั่งนี้เตรียมoverlayล่าสุดให้อัตโนมัติแล้วก่อนBuildBoth ผลอยู่`Builds/TTB/Portal/<run-id>/Release/Upload/`. ต้องSaveProfileในEditorก่อนเพื่อให้scriptอ่านprofileที่บันทึกแล้ว ห้ามเริ่มงานซ้อนในBuildWorkspaceเดียวกัน
+
+นำ`ttb-uat-server.zip`และ`ttb-uat-client.zip`คู่ใหม่ขึ้นPortal ใช้slug/versionเดียวกันและตรวจว่าversionนั้นถูกเผยแพร่แล้ว เปิดURLที่Portalแสดง. หลังอัปโหลดครั้งแรกจากPWAรุ่นเดิม ให้ปิดแท็บTTBเดิมแล้วเปิดหน้าผ่านCtrl+Shift+R; ถ้ายังค้างให้DevTools > Application > Service Workers > Unregister **เฉพาะscope `/ttb-uat/`** แล้วเปิดใหม่ เก็บcookies/MANGOsloginไว้ ไม่ลบstorageทั้งโดเมนหรือworkerของKKU. ควรเห็นตัวเลือกไทย/Englishบนheader
+
+## CORS ที่ตรวจจริง
+
+`Origin: https://plus.mangosgo.com` → API`https://ttb-api-test.mangosgo.com/ttb-commerce-test/v1`: OPTIONS`/session`204, GET`/storefront/config`200, `Access-Control-Allow-Origin`ตรงorigin, `Access-Control-Allow-Credentials:true`, headers`content-type,x-csrf-token`อนุญาต. Originที่ไม่อนุญาตไม่มีACAO. ไม่ใช้wildcardร่วมcredentialsและไม่ใส่slug/pathในOrigin. เปลี่ยนslug/versionภายในplusโดเมนเดิมไม่ต้องเพิ่มCORSorigin
+
+APIUATยังจำกัดIPทดสอบเดิม58.11.26.155/32 หากใช้เครือข่ายอื่นจนถูกingress403เบราว์เซอร์อาจแสดงอาการคล้ายCORS ต้องตรวจHTTPstatusก่อน ไม่แก้ด้วยการเปิดทุกorigin/IP. การทดสอบนี้เป็นpreflight/GET ไม่มีออเดอร์หรือbankrequest
+
 ## ฉากที่เปิดแก้ไข
 
 เปิด `Assets/_Project/Scenes/BaseWorld.unity` ตามปกติ ใน Hierarchy มี `TTB commerce zone` และ `MangoTtbCommerceBridge` แล้ว ตัวร้านอยู่ที่ `(0,0,8)` และมีสินค้าสาธิตสามชิ้น หน้าชมสินค้า หมุน/ซูม ตะกร้า ประวัติ และใบเสร็จใช้ HTML overlay
@@ -12,7 +44,7 @@
 
 ## ชุดที่ Build และทดสอบแล้ว
 
-โฟลเดอร์ **`Builds/TTB/Portal/720b6fb4df314d22a0fc0258f0fb3824/Release/Upload/`** เป็นชุดล่าสุด รวม Auth public settings ที่ผู้ใช้แก้, MANGOs SSO, เมนูไทย–อังกฤษ และคำอธิบายว่า UAT ต้องให้ TTB สแกนในวงธนาคาร. ใช้คู่ชุดนี้เมื่ออัปโหลด Portal; ยังไม่ได้เผยแพร่แทนslugเดิม มี:
+โฟลเดอร์ **`Builds/TTB/Portal/720b6fb4df314d22a0fc0258f0fb3824/Release/Upload/`** เป็นชุดก่อนแก้CDN/PWA รวม Auth public settings, SSO, ไทย–อังกฤษ และคำอธิบายUAT. ตรวจพบว่าขึ้นเว็บจริงแล้วตามhash แต่ควรBuildชุดใหม่ด้วยขั้นตอนด้านบนเพื่อรวมการแก้PWA มี:
 
 | อัปโหลดเป็น | ไฟล์ | ขนาด | SHA256 |
 |---|---|---:|---|
@@ -55,6 +87,8 @@ UAT API ยังจำกัด IP ทดสอบ `58.11.26.155/32` ตาม�
 
 ใน Unity เปิด `MANGOs Framework > Build Center`:
 
+ก่อนกดBuildให้รัน`Tools/TTB/prepare-overlay.ps1 -Environment Uat -Experience world`ตามขั้นตอนใหม่ด้านบน เพื่อไม่ใช้HTMLbundleเก่าที่generatedค้างอยู่
+
 1. ตั้ง `TTB commerce = Uat` หรือใช้ `Use Deployment Portal UAT defaults`
 2. เปิด `Deployment Portal slug routing` ตรวจ Server WS `7770` และ Client WSS `443`, host `multiplayer-plus.mangosgo.com` แล้ว Save Profile
 3. กด `Build Both` เพื่อได้ Server/Client ที่ใช้ฉากชุดเดียวกัน รอทั้งสอง target และขั้นตอนสร้าง ZIP สำเร็จ ผลอยู่ `Builds/<deployment>/<build-id>/Upload/`
@@ -65,7 +99,7 @@ UAT API ยังจำกัด IP ทดสอบ `58.11.26.155/32` ตาม�
 & Tools/TTB/build-portal.ps1
 ```
 
-สคริปต์ใช้สำเนา `Builds/TTB/BuildWorkspace` กับ pipeline เดียวกับ Build Center ไม่ปิด Editor ของผู้ใช้ ต้องบันทึกฉากและ build HTML overlay ล่าสุดก่อนเริ่ม ห้ามรันงานสองชุดพร้อมกันในสำเนานี้ ผลอยู่ `Builds/TTB/Portal/<run-id>/Release/Upload/` งาน generic เดิมใช้ `TTB commerce = None`
+สคริปต์ใช้สำเนา `Builds/TTB/BuildWorkspace` กับ pipeline เดียวกับ Build Center ไม่ปิด Editor ของผู้ใช้ ต้องบันทึกฉาก/SaveProfileก่อนเริ่ม และscriptจะcompileHTMLoverlayล่าสุดให้อัตโนมัติ ห้ามรันงานสองชุดพร้อมกันในสำเนานี้ ผลอยู่ `Builds/TTB/Portal/<run-id>/Release/Upload/` งาน generic เดิมใช้ `TTB commerce = None`
 
 ## ผลตรวจและสิ่งที่ยังต้องตรวจหลังเผยแพร่
 

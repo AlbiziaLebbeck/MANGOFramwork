@@ -14,11 +14,23 @@ self.addEventListener('install',event=>event.waitUntil((async()=>{
   try{
     for(const file of FILES){
       const url=new URL(file.path,ROOT);if(url.origin!==ROOT.origin||financial(url)||url.search||file.path.startsWith('Build/'))throw new Error('Invalid public shell manifest');
-      const response=await fetch(url,{cache:'no-store',credentials:'omit'});
+      if(file.source&&(file.path!=='index.html'||file.source!=='mango-ttb-shell.json'))throw new Error('Invalid shell source');
+      const download=new URL(file.source??file.path,ROOT);
+      // A release-specific URL avoids a CDN returning an older same-named IIFE for hours.
+      download.searchParams.set('__mangos_release',RELEASE);
+      const response=await fetch(download,{cache:'no-store',credentials:'omit',redirect:'error'});
       if(!response.ok||response.type==='opaque')throw new Error('Public shell asset unavailable');
-      const bytes=await response.arrayBuffer();if(bytes.byteLength!==file.size||await hash(bytes)!==file.sha256)throw new Error('Public shell release mismatch');
+      let bytes=await response.arrayBuffer();
+      if(file.source){
+        if(bytes.byteLength>file.size*6+128)throw new Error('Public shell envelope too large');
+        const shell=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
+        if(!shell||typeof shell.html!=='string'||Object.keys(shell).length!==1)throw new Error('Invalid public shell envelope');
+        bytes=new TextEncoder().encode(shell.html);
+      }
+      if(bytes.byteLength!==file.size||await hash(bytes)!==file.sha256)throw new Error('Public shell release mismatch');
       // fetch exposes decoded bytes. Transport encoding/length and negotiation headers must not describe the cached decoded response.
       const headers=new Headers(response.headers);for(const key of ['Content-Encoding','Content-Length','Transfer-Encoding','Vary'])headers.delete(key);
+      if(file.source)headers.set('Content-Type','text/html; charset=utf-8');
       headers.set('Cache-Control','no-cache');
       await cache.put(url.href,new Response(bytes,{status:200,headers}));
     }
@@ -44,7 +56,12 @@ self.addEventListener('message',event=>{
 self.addEventListener('fetch',event=>{
   const request=event.request;const url=new URL(request.url);
   // Intentionally do not call respondWith for APIs, documents, credentials, public config, foreign hosts, queries, or Unity Build/StreamingAssets.
-  if(request.method!=='GET'||url.origin!==ROOT.origin||url.search||financial(url))return;
+  if(request.method!=='GET'||url.origin!==ROOT.origin||financial(url))return;
+  if(url.search){
+    // Only this worker's exact public release tag is cacheable; arbitrary/token queries stay network-only.
+    if(url.searchParams.size!==1||url.searchParams.get('__mangos_release')!==RELEASE)return;
+    url.search='';if(!PUBLIC.has(url.href))return;
+  }
   const navigation=request.mode==='navigate'&&(url.href===ROOT.href||url.href===INDEX);
   if(navigation){event.respondWith((async()=>{
     const cached=await (await caches.open(CACHE)).match(INDEX);

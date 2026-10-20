@@ -6,6 +6,9 @@ import { packagePwa } from '../package-pwa.mjs';
 import { gzipSync } from 'node:zlib';
 const repository=resolve(import.meta.dirname,'../../..');
 const fixtures=resolve(repository,'.artifacts/pwa-browser-fixtures');
+const port=Number(process.env.TTB_PWA_QA_PORT??5176);
+if(!Number.isInteger(port)||port<1024||port>65535)throw new Error('Invalid loopback QA port');
+const edge=process.env.TTB_PWA_QA_EDGE==='1';
 if(!fixtures.startsWith(repository+sep+'.artifacts'+sep))throw new Error('Invalid fixture root');
 await mkdir(fixtures,{recursive:true});
 for(const version of ['v1','v2']){
@@ -14,12 +17,20 @@ for(const version of ['v1','v2']){
   await packagePwa(root);
 }
 let root=resolve(fixtures,'v1');
+const firstRelease=JSON.parse(await readFile(resolve(fixtures,'v1/pwa-release.json'),'utf8')).release;
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.webmanifest':'application/manifest+json','.svg':'image/svg+xml','.png':'image/png','.ttf':'font/ttf'};
 createServer(async(req,res)=>{
-  const pathname=new URL(req.url,'http://127.0.0.1:5176').pathname;
+  const url=new URL(req.url,`http://127.0.0.1:${port}`),pathname=url.pathname;
   if(pathname==='/__qa/release2'&&req.method==='POST'){root=resolve(fixtures,'v2');res.writeHead(204).end();return}
   if(pathname.startsWith('/ttb-commerce/v1/')){const upstream=request({hostname:'127.0.0.1',port:5286,path:req.url,method:req.method,headers:{...req.headers,host:'127.0.0.1:5286'}},response=>{res.writeHead(response.statusCode??502,response.headers);response.pipe(res)});upstream.on('error',()=>{if(!res.headersSent)res.writeHead(502);res.end()});req.pipe(upstream);return}
   let path;try{path=resolve(root,'.'+decodeURIComponent(pathname));if(path!==root&&!path.startsWith(root+sep)){res.writeHead(403).end();return}if((await stat(path)).isDirectory())path=resolve(path,'index.html');const info=await stat(path);const headers={'Content-Type':types[extname(path)]??'application/octet-stream','Cache-Control':'no-store'};
-    if(/\.(?:html|js|css|webmanifest|svg|json)$/.test(path)){const compressed=gzipSync(await readFile(path));res.writeHead(200,{...headers,'Content-Encoding':'gzip','Vary':'Accept-Encoding','Content-Length':compressed.length});res.end(compressed)}else{res.writeHead(200,{...headers,'Content-Length':info.size});createReadStream(path).pipe(res)}
+    if(/\.(?:html|js|css|webmanifest|svg|json)$/.test(path)){
+      // Reproduce the observed hosting transformation and stale unversioned CDN aliases.
+      const staleScript=edge&&pathname==='/mango-ttb.js'&&!url.searchParams.has('__mangos_release');
+      const staleWorker=edge&&pathname==='/mango-ttb-sw.js'&&url.searchParams.get('__mangos_release')===firstRelease;
+      const actual=staleScript?resolve(fixtures,'v1/mango-ttb.js'):staleWorker?resolve(fixtures,'v1/mango-ttb-sw.js'):path;
+      let body=await readFile(actual);if(edge&&path.endsWith('index.html'))body=Buffer.from(body.toString().replace('</body>','<script>window.__hostingAnalyticsInjected=true</script></body>'));
+      const compressed=gzipSync(body);res.writeHead(200,{...headers,'Content-Encoding':'gzip','Vary':'Accept-Encoding','Content-Length':compressed.length});res.end(compressed)
+    }else{res.writeHead(200,{...headers,'Content-Length':info.size});createReadStream(path).pipe(res)}
   }catch{res.writeHead(404).end()}
-}).listen(5176,'127.0.0.1',()=>console.log('PWA isolated QA fixtures ready on loopback 5176'));
+}).listen(port,'127.0.0.1',()=>console.log(`PWA isolated QA fixtures ready on loopback ${port}`));

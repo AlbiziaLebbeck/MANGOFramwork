@@ -19,7 +19,9 @@ export class PwaStore {
     window.addEventListener('appinstalled',()=>{this.installPrompt=null;this.patch({installAvailable:false})});
     navigator.serviceWorker.addEventListener('controllerchange',()=>{if(this.state.applying){location.reload();return}void this.inspectVersion()});
     try{
-      this.registration=await navigator.serviceWorker.register(new URL('mango-ttb-sw.js',new URL('./',location.href)),{scope:'./',updateViaCache:'none'});
+      const workerUrl=new URL('mango-ttb-sw.js',new URL('./',location.href));
+      if(/^[a-f0-9]{64}$/.test(this.pageRelease))workerUrl.searchParams.set('__mangos_release',this.pageRelease);
+      this.registration=await navigator.serviceWorker.register(workerUrl,{scope:'./',updateViaCache:'none'});
       const inspect=()=>{this.patch({updateAvailable:!!this.registration?.waiting||this.activeNewer});void this.inspectVersion()};
       this.registration.addEventListener('updatefound',()=>{const installing=this.registration?.installing;installing?.addEventListener('statechange',()=>{if(installing.state==='installed')setTimeout(inspect,0)})});
       inspect();this.lastCheck=Date.now();

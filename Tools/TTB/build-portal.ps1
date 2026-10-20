@@ -15,6 +15,11 @@ $before=Read-Protected
 New-Item -ItemType Directory -Path $runRoot | Out-Null
 $report=[ordered]@{runId=$RunId;status='building';startedAt=[DateTimeOffset]::UtcNow.ToString('o');protectedBefore=$before;stages=@();uploaded=$false;bankAccepted=$false}
 try {
+ $ttbProfile=Get-Content -LiteralPath (Join-Path $repositoryRoot 'ProjectSettings/MangosBuildProfile.json') -Raw | ConvertFrom-Json
+ if($ttbProfile.commerceEnvironment -notin @('Local','Uat','Production')){throw 'Choose a TTB commerce profile before the Portal build.'}
+ # Generated template files are ignored by Git. Always compile current sources before copying them.
+ & (Join-Path $PSScriptRoot 'prepare-overlay.ps1') -Environment $ttbProfile.commerceEnvironment -Experience world
+ if($LASTEXITCODE -ne 0){throw 'Cannot prepare the latest commerce overlay.'}
  foreach($folder in @('Assets','Packages','ProjectSettings')){
   & robocopy (Join-Path $repositoryRoot $folder) (Join-Path $isolatedProject $folder) /E /R:1 /W:1 /NFL /NDL /NJH /NJS /NP
   if($LASTEXITCODE -gt 7){throw "Cannot copy $folder to the isolated workspace."}
