@@ -1,0 +1,3 @@
+/* Dedicated space for web navigation keeps it clear of native login and world HUD. */
+#unity-canvas{top:var(--mangos-commerce-top,64px);bottom:var(--mangos-commerce-bottom,0px);height:calc(100dvh - var(--mangos-commerce-top,64px) - var(--mangos-commerce-bottom,0px))}
+@media(max-width:760px){#unity-canvas{top:var(--mangos-commerce-top,58px);bottom:var(--mangos-commerce-bottom,58px);height:calc(100dvh - var(--mangos-commerce-top,58px) - var(--mangos-commerce-bottom,58px))}}

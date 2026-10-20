@@ -1,0 +1,51 @@
+# Deployment gates: working TLS, tested source-IP preservation, approved callback auth.
+# Shopper and bank callbacks intentionally have separate ingress objects.
+# Prepare the owned certificate separately with provision-tls-certificate.ps1/tls-certificate.yaml.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ttb-shopper-uat
+  namespace: ttb-uat
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 256k
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '30'
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [ttb-api-test.mangosgo.com]
+      secretName: ttb-api-test-tls
+  rules:
+    - host: ttb-api-test.mangosgo.com
+      http:
+        paths:
+          - path: /ttb-commerce-test/v1
+            pathType: Prefix
+            backend:
+              service:
+                name: ttb-commerce-api
+                port: { name: http }
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ttb-bank-callback-uat
+  namespace: ttb-uat
+  annotations:
+    nginx.ingress.kubernetes.io/whitelist-source-range: 203.148.142.200/32,203.148.143.101/32,203.148.143.102/32,203.148.143.103/32,203.148.143.104/32,203.148.143.105/32
+    nginx.ingress.kubernetes.io/proxy-body-size: 32k
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '10'
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [ttb-api-test.mangosgo.com]
+      secretName: ttb-api-test-tls
+  rules:
+    - host: ttb-api-test.mangosgo.com
+      http:
+        paths:
+          - path: /ttb/v1/credit-notification
+            pathType: Exact
+            backend:
+              service:
+                name: ttb-commerce-api
+                port: { name: http }

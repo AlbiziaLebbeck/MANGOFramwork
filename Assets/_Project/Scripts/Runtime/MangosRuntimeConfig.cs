@@ -15,12 +15,36 @@ public sealed class MangosRuntimeConfig
     public string roomNamespace = "mangos";
     public string serverCertificatePath = "";
     public string serverCertificatePasswordVariable = "MANGOS_TLS_PASSWORD";
+    public bool portalRouting;
     public static MangosRuntimeConfig Load()
     {
         var config = new MangosRuntimeConfig();
         var file = Resources.Load<TextAsset>("MangosRuntimeConfig");
         if (file != null) JsonUtility.FromJsonOverwrite(file.text, config);
+#if UNITY_WEBGL && !UNITY_EDITOR
+        if (config.portalRouting && TryPortalPath(Application.absoluteURL, out var portalPath))
+        {
+            config.clientHost = "multiplayer-plus.mangosgo.com";
+            config.clientPath = portalPath;
+            config.clientPort = 443;
+            config.clientWss = true;
+            config.roomNamespace = "mangos-ttb-" + portalPath.Trim('/').Replace('/', '-');
+        }
+#endif
         return config;
+    }
+    public static bool TryPortalPath(string pageUrl, out string route)
+    {
+        route = null;
+        if (!Uri.TryCreate(pageUrl, UriKind.Absolute, out var page) || page.Scheme != "https" ||
+            page.Host != "plus.mangosgo.com" || !page.IsDefaultPort || !string.IsNullOrEmpty(page.UserInfo)) return false;
+        var path = page.AbsolutePath.Trim('/');
+        if (path.EndsWith("/index.html", StringComparison.Ordinal)) path = path.Substring(0, path.Length - 11);
+        var parts = path.Split('/');
+        if (parts.Length < 1 || parts.Length > 2 || Array.Exists(parts, p =>
+            !System.Text.RegularExpressions.Regex.IsMatch(p, "^[a-z0-9]+(-[a-z0-9]+)*$"))) return false;
+        route = "/" + path;
+        return true;
     }
     public void Apply(GameObject manager)
     {

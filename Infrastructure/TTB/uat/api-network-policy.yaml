@@ -1,0 +1,19 @@
+# Apply before configuring trusted ingress proxy CIDRs. The CNI must enforce NetworkPolicy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ttb-api-ingress
+  namespace: ttb-uat
+spec:
+  podSelector:
+    matchLabels: { app: ttb-commerce-api }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: mangos-ingress }
+          podSelector:
+            matchLabels: { app.kubernetes.io/name: ingress-nginx, app.kubernetes.io/component: controller }
+        - podSelector:
+            matchLabels: { app.kubernetes.io/part-of: ttb-commerce }
+      ports: [{ protocol: TCP, port: 8080 }]

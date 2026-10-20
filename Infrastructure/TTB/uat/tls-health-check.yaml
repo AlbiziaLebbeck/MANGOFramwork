@@ -1,0 +1,30 @@
+# Transport preflight only: one harmless exact GET route, limited to the verified SSH operator address.
+# No rewrite/regex or shopper/callback/metrics path. Keep financial routes in their separately gated manifests.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ttb-uat-tls-check
+  namespace: ttb-uat
+  labels: { app.kubernetes.io/part-of: ttb-commerce, mangosgo.com/environment: Uat }
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/force-ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/whitelist-source-range: __OPERATOR_IPV4__/32
+    nginx.ingress.kubernetes.io/proxy-body-size: 1k
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '5'
+    nginx.ingress.kubernetes.io/limit-rps: '5'
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [ttb-api-test.mangosgo.com]
+      secretName: ttb-api-test-tls
+  rules:
+    - host: ttb-api-test.mangosgo.com
+      http:
+        paths:
+          - path: /health/live
+            pathType: Exact
+            backend:
+              service:
+                name: ttb-commerce-api
+                port: { name: http }

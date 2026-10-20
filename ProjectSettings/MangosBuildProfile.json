@@ -1,15 +1,17 @@
 {
-  "deployment": "mangos",
+  "deployment": "mangos-ttb-uat",
   "network": {
     "serverPort": 7770,
     "serverWss": false,
     "clientPort": 443,
     "clientWss": true,
     "clientHost": "multiplayer-plus.mangosgo.com",
-    "clientPath": "/systemtester",
-    "roomNamespace": "mangos",
+    "clientPath": "/ttb-uat",
+    "roomNamespace": "mangos-ttb-uat",
     "serverCertificatePath": "",
-    "serverCertificatePasswordVariable": "MANGOS_TLS_PASSWORD"
+    "serverCertificatePasswordVariable": "MANGOS_TLS_PASSWORD",
+    "portalRouting": true
   },
-  "development": false
+  "development": false,
+  "commerceEnvironment": "Uat"
 }

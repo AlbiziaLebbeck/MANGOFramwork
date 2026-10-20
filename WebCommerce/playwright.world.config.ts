@@ -1,0 +1,2 @@
+import { defineConfig } from '@playwright/test';
+export default defineConfig({outputDir:'./test-results/world',testDir:'./e2e-world',testIgnore:'**/uat-private.spec.ts',timeout:240000,workers:1,retries:0,reporter:[['list'],['json',{outputFile:'../.artifacts/acceptance/world-results.json'}]],use:{baseURL:'http://127.0.0.1:5188',viewport:{width:1280,height:720},trace:'retain-on-failure',screenshot:'only-on-failure'}});

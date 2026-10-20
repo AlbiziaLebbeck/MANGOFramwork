@@ -6,6 +6,8 @@
 
 ## Build Center
 
+สำหรับร้านค้า TTB ใน BaseWorld ใช้ `TTB commerce = Uat` และ `Deployment Portal slug routing` แล้ว Build Both เพื่อได้ Linux Server/WebGL พร้อม ZIP อัปโหลดทั้งคู่ ดู [คู่มือ TTB Deployment Portal](TTB_DEPLOYMENT_PORTAL_TH.md) รวมขั้นตอนผูก private game API หลังเลือก slug ส่วนงานทั่วไปใช้ `TTB commerce = None`
+
 เปิด **MANGOs Framework > Build Center** แก้ Client Path แล้วกด **Build Server**, **Build Client** หรือ **Build Both**
 
 ค่า Server และ Client แก้ได้แยกจากกัน:

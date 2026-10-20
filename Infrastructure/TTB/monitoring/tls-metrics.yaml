@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: ttb-tls-metrics, namespace: ttb-uat }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  revisionHistoryLimit: 3
+  selector: { matchLabels: { app: ttb-tls-metrics } }
+  template:
+    metadata:
+      labels: { app: ttb-tls-metrics, app.kubernetes.io/part-of: ttb-commerce }
+      annotations: { mangosgo.com/ttb-observer-source-sha256: __SOURCE_SHA256__ }
+    spec:
+      automountServiceAccountToken: false
+      securityContext: { runAsUser: 1000, runAsGroup: 1000, runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: observer
+          image: mcr.microsoft.com/playwright:v1.63.0-noble
+          command: [python3, '-B', /observer/tls-metrics.py]
+          env:
+            - { name: TTB_TLS_ENVIRONMENT, value: Uat }
+            # Set true only after separately verified public routing/auth/source-IP acceptance.
+            - { name: TTB_CALLBACK_PUBLIC_SERVING_EXPECTED, value: 'false' }
+            - name: Operations__MetricsToken
+              valueFrom: { secretKeyRef: { name: ttb-operations, key: Operations__MetricsToken } }
+          ports: [{ name: metrics, containerPort: 8081 }]
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+          resources: { requests: { cpu: 10m, memory: 32Mi }, limits: { cpu: 100m, memory: 128Mi } }
+          readinessProbe: { httpGet: { path: /health/live, port: metrics }, initialDelaySeconds: 3, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /health/live, port: metrics }, initialDelaySeconds: 15, periodSeconds: 15 }
+          volumeMounts:
+            - { name: observer, mountPath: /observer, readOnly: true }
+            - { name: public-certificate, mountPath: /issued, readOnly: true }
+      volumes:
+        - { name: observer, configMap: { name: ttb-tls-observer, defaultMode: 0444 } }
+        # Project only the public certificate; tls.key is never exposed to this process.
+        - name: public-certificate
+          secret:
+            secretName: ttb-api-test-tls
+            defaultMode: 0444
+            items: [{ key: tls.crt, path: tls.crt }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: ttb-tls-metrics, namespace: ttb-uat }
+spec:
+  type: ClusterIP
+  selector: { app: ttb-tls-metrics }
+  ports: [{ name: metrics, port: 8081, targetPort: metrics }]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: ttb-tls-observer-isolation, namespace: ttb-uat }
+spec:
+  podSelector: { matchLabels: { app: ttb-tls-metrics } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from: [{ podSelector: { matchLabels: { app: ttb-prometheus } } }]
+      ports: [{ protocol: TCP, port: 8081 }]
+  egress:
+    - to: [{ ipBlock: { cidr: 209.15.122.115/32 } }]
+      ports: [{ protocol: TCP, port: 443 }]
+    # The same fixed node's HTTPS listener may be DNATed to its existing ingress pod.
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: mangos-ingress } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: ingress-nginx, app.kubernetes.io/component: controller } }
+      ports: [{ protocol: TCP, port: 443 }]

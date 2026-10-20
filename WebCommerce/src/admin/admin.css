@@ -1,0 +1,746 @@
+#mango-ttb-root .commerce-dialog-wrap:has(.screen-admin) {
+  padding: 0;
+  align-items: stretch;
+  inset: var(--mangos-commerce-top,64px) 0 var(--mangos-commerce-bottom,0px);
+}
+#mango-ttb-root .commerce-dialog.screen-admin {
+  width: 100%;
+  max-width: none;
+  max-height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: #fff;
+  --mc-ink: #102c28;
+  --mc-primary: #19483d;
+  --mc-line: #d7dfde;
+  --mc-muted: #687878;
+}
+#mango-ttb-root .commerce-header:has(.admin-return) > nav {
+  margin-right: auto;
+  margin-left: 64px;
+}
+#mango-ttb-root .commerce-header:has(.admin-return) > nav button {
+  font-size: 16px;
+}
+#mango-ttb-root .screen-admin > .dialog-tools {
+  display: none;
+}
+#mango-ttb-root .admin-panel {
+  padding: 4px 38px 30px;
+  max-width: 1600px;
+  margin: auto;
+  min-height: calc(100dvh - 64px);
+  background: #fff;
+  font-size: 16px;
+  line-height: 1.55;
+}
+#mango-ttb-root .screen-admin button,
+#mango-ttb-root .screen-admin input,
+#mango-ttb-root .screen-admin select,
+#mango-ttb-root .screen-admin textarea {
+  font-family: MangoThai, Arial, sans-serif;
+}
+#mango-ttb-root .admin-panel > .message {
+  margin: 12px 0 24px;
+  font-size: 16px;
+  min-height: 54px;
+}
+#mango-ttb-root .admin-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 24px;
+  min-height: calc(100dvh - 188px);
+}
+#mango-ttb-root .admin-queue {
+  min-width: 0;
+}
+#mango-ttb-root .admin-queue h1 {
+  font-size: 34px;
+  line-height: 1.3;
+  margin: 4px 0 20px;
+  letter-spacing: -0.5px;
+}
+#mango-ttb-root .admin-inspector {
+  border-left: 1px solid var(--mc-line);
+  padding: 8px 0 12px 30px;
+  min-width: 0;
+}
+#mango-ttb-root .admin-inspector > section {
+  padding-top: 18px;
+  margin-top: 22px;
+  border-top: 1px solid var(--mc-line);
+}
+#mango-ttb-root .admin-inspector h2 {
+  font-size: 26px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+#mango-ttb-root .admin-inspector h3 {
+  margin: 0 0 12px;
+  font-size: 19px;
+  line-height: 1.5;
+}
+#mango-ttb-root .admin-inspector p,
+#mango-ttb-root .admin-inspector dd {
+  overflow-wrap: anywhere;
+}
+#mango-ttb-root .admin-detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+#mango-ttb-root .admin-order-number {
+  font-size: 17px;
+  margin: 8px 0 5px;
+}
+#mango-ttb-root .admin-case-amount {
+  display: flex;
+  flex-direction: column;
+  margin: 20px 0 12px;
+}
+#mango-ttb-root .admin-case-amount strong {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+#mango-ttb-root .admin-counts {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 12px 0 20px;
+}
+#mango-ttb-root .admin-counts > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e2e7e5;
+  background: #f5f7f6;
+  padding: 10px 13px;
+  border-radius: 10px;
+  font-size: 15px;
+}
+#mango-ttb-root .admin-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #9b5b0b;
+  border: 1px solid #f3dfbd;
+  border-radius: 9px;
+  background: #fff5df;
+  padding: 6px 9px;
+  width: fit-content;
+  max-width: 100%;
+  white-space: normal;
+}
+#mango-ttb-root .admin-state.ok {
+  background: #f5f9f6;
+  border-color: #d6e3da;
+  color: #216b43;
+}
+#mango-ttb-root .admin-counts .admin-state {
+  color: var(--mc-ink);
+}
+#mango-ttb-root .admin-toolbar {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  margin: 18px 0 16px;
+  flex-wrap: wrap;
+}
+#mango-ttb-root .admin-toolbar select {
+  width: auto;
+  min-width: 160px;
+  max-width: 100%;
+  border: 1px solid #c6d1cd;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 16px;
+  min-height: 49px;
+}
+#mango-ttb-root .admin-search {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #c6d1cd;
+  border-radius: 10px;
+  padding: 0 14px;
+  min-height: 49px;
+  color: #52615d;
+}
+#mango-ttb-root .screen-admin .admin-search input {
+  border: 0;
+  outline-offset: 1px;
+  min-width: 0;
+  width: 100%;
+  height: auto;
+  font-size: 16px;
+  background: #fff;
+  padding: 11px 0;
+}
+#mango-ttb-root .admin-refresh {
+  width: 49px;
+  min-height: 49px;
+  border: 1px solid #c6d1cd;
+  border-radius: 10px;
+  display: grid;
+  place-content: center;
+  background: #fff;
+  padding: 10px;
+}
+#mango-ttb-root .admin-table {
+  width: 100%;
+  min-width: 0;
+}
+#mango-ttb-root .finance-table {
+  border: 1px solid #dbe2df;
+  border-radius: 10px;
+  overflow: hidden;
+  min-height: 580px;
+}
+#mango-ttb-root .admin-table-head,
+#mango-ttb-root .admin-table-row {
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 18px;
+  width: 100%;
+  text-align: left;
+  font-size: 16px;
+  line-height: 1.5;
+}
+#mango-ttb-root .admin-table-head {
+  background: #f4f6f6;
+  font-weight: 600;
+  min-height: 54px;
+}
+#mango-ttb-root .admin-table-row {
+  position: relative;
+  border: 0;
+  border-top: 1px solid #dfe5e2;
+  border-radius: 0;
+  background: #fff;
+  min-height: 64px;
+  padding-right: 31px;
+}
+#mango-ttb-root .admin-table-row.selected {
+  background: #e9f2ed;
+}
+#mango-ttb-root .admin-table-row:hover {
+  background: #f1f6f2;
+}
+#mango-ttb-root .admin-table-row > span {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+#mango-ttb-root .admin-table-row .admin-state {
+  font-size: 12px;
+  padding: 5px 7px;
+}
+#mango-ttb-root .case-row {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.35fr) minmax(0, 0.85fr) minmax(0, 1.1fr);
+}
+#mango-ttb-root .order-row {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1fr);
+}
+#mango-ttb-root .catalog-row {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 0.6fr) minmax(0, 0.8fr);
+}
+#mango-ttb-root .report-row {
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.8fr) minmax(0, 0.9fr) minmax(0, 0.4fr);
+}
+#mango-ttb-root .admin-row-end {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+#mango-ttb-root .admin-fact {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.8fr) minmax(0, 1.6fr);
+  gap: 14px;
+  margin: 7px 0;
+  font-size: 16px;
+  line-height: 1.65;
+}
+#mango-ttb-root .admin-fact dt {
+  color: #62716b;
+}
+#mango-ttb-root .admin-fact dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+#mango-ttb-root .admin-inspector dl {
+  margin: 10px 0 18px;
+}
+#mango-ttb-root .admin-evidence {
+  background: #f4f6f6;
+  border-radius: 10px;
+  padding: 12px 18px;
+}
+#mango-ttb-root .admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 0;
+  font-size: 15px;
+  font-weight: 600;
+  min-width: 0;
+}
+#mango-ttb-root .admin-field input,
+#mango-ttb-root .admin-field select,
+#mango-ttb-root .admin-field textarea {
+  width: 100%;
+  border: 1px solid #c2cdca;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  min-height: 44px;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.55;
+}
+#mango-ttb-root .admin-field textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+#mango-ttb-root .admin-field input:read-only {
+  background: #f5f7f6;
+  color: #63756c;
+}
+#mango-ttb-root .admin-character-count {
+  text-align: right;
+  font-size: 13px;
+  color: var(--mc-muted);
+  margin-top: -8px;
+}
+#mango-ttb-root .admin-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 15px 0;
+}
+#mango-ttb-root .admin-actions > .button {
+  flex: 1;
+}
+#mango-ttb-root .admin-panel .button {
+  font-size: 16px;
+  border-radius: 10px;
+  min-height: 49px;
+  padding: 11px 14px;
+}
+#mango-ttb-root .admin-check {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 14px 0;
+  font-size: 14px;
+}
+#mango-ttb-root .screen-admin .admin-check input {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  accent-color: var(--mc-primary);
+  margin-top: 3px;
+}
+#mango-ttb-root .admin-timeline {
+  list-style: none;
+  margin: 10px 0;
+  padding: 0 0 0 10px;
+}
+#mango-ttb-root .admin-timeline {
+  max-height: 220px;
+  overflow: auto;
+  scrollbar-gutter: stable;
+  padding-right: 8px;
+}
+#mango-ttb-root .admin-timeline li {
+  position: relative;
+  padding: 0 0 18px 24px;
+  border-left: 1px solid #cad5cf;
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+#mango-ttb-root .admin-timeline li::before {
+  content: '';
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  position: absolute;
+  left: -7px;
+  top: 5px;
+  background: var(--mc-primary);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--mc-primary);
+}
+#mango-ttb-root .admin-timeline small {
+  display: block;
+  color: var(--mc-muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+#mango-ttb-root .admin-documents > div {
+  border-bottom: 1px solid var(--mc-line);
+  padding: 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+#mango-ttb-root .admin-documents small {
+  display: block;
+  color: var(--mc-muted);
+  font-size: 12px;
+}
+#mango-ttb-root .admin-void-operation {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  flex-direction: column;
+  padding: 16px 0;
+  border-top: 1px solid var(--mc-line);
+  overflow-wrap: anywhere;
+}
+#mango-ttb-root .admin-inspector > .admin-back {
+  display: none;
+}
+#mango-ttb-root .admin-resolution p {
+  margin-bottom: 14px;
+}
+#mango-ttb-root .admin-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 15px;
+}
+#mango-ttb-root .admin-product-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  border-bottom: 1px solid var(--mc-line);
+  padding: 14px 0;
+  font-size: 15px;
+}
+#mango-ttb-root .admin-product-line > div {
+  flex: 1;
+  min-width: 0;
+}
+#mango-ttb-root .admin-product-line small {
+  display: block;
+  color: var(--mc-muted);
+  font-size: 12px;
+}
+#mango-ttb-root .admin-contact {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 10px 0;
+}
+#mango-ttb-root .admin-credit {
+  border-bottom: 1px solid var(--mc-line);
+  padding: 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow-wrap: anywhere;
+}
+#mango-ttb-root .admin-credit small {
+  font-size: 12px;
+  color: var(--mc-muted);
+}
+#mango-ttb-root .admin-delivery {
+  margin-bottom: 20px;
+}
+#mango-ttb-root .admin-config {
+  margin: 20px 0;
+  font-size: 14px;
+}
+#mango-ttb-root .admin-config summary {
+  cursor: pointer;
+  min-height: 44px;
+  align-content: center;
+  color: var(--mc-primary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-weight: 600;
+}
+#mango-ttb-root .admin-config summary svg {
+  vertical-align: middle;
+  margin-right: 7px;
+}
+#mango-ttb-root .admin-report-notice {
+  margin: 10px 0 25px;
+}
+#mango-ttb-root .admin-report-notice p {
+  margin: 6px 0;
+  font-size: 16px;
+  color: var(--mc-muted);
+}
+#mango-ttb-root .admin-report-totals {
+  border: 1px solid var(--mc-line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+#mango-ttb-root .admin-report-total-heading {
+  padding: 10px 15px;
+  background: #eff3f1;
+  font-weight: 600;
+}
+#mango-ttb-root .admin-report-totals > .admin-fact {
+  margin: 0;
+  padding: 10px 15px;
+  border-top: 1px solid #e2e7e4;
+}
+#mango-ttb-root .admin-report-totals dd {
+  text-align: right;
+}
+#mango-ttb-root .admin-report-totals .admin-state {
+  margin-left: auto;
+}
+#mango-ttb-root .admin-proof-reference {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 14px;
+}
+#mango-ttb-root .admin-proof-reference small {
+  display: block;
+  color: var(--mc-muted);
+  font-size: 12px;
+}
+#mango-ttb-root .admin-private-json {
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #f4f6f6;
+  padding: 14px;
+  font:
+    12px/1.6 ui-monospace,
+    monospace;
+  max-height: 280px;
+  overflow: auto;
+  border-radius: 8px;
+}
+@media (max-width: 1100px) {
+  #mango-ttb-root .admin-panel {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  #mango-ttb-root .admin-columns {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 18px;
+  }
+  #mango-ttb-root .admin-inspector {
+    padding-left: 20px;
+  }
+  #mango-ttb-root .admin-table-head {
+    display: none;
+  }
+  #mango-ttb-root .admin-table-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  #mango-ttb-root .admin-table-row > span:first-child {
+    font-weight: 600;
+  }
+  #mango-ttb-root .admin-toolbar select {
+    min-width: 140px;
+  }
+}
+@media (max-width: 850px) {
+  #mango-ttb-root .admin-panel {
+    padding: 3px 20px 28px;
+  }
+  #mango-ttb-root .admin-columns {
+    display: block;
+    min-height: 0;
+  }
+  #mango-ttb-root .admin-inspector {
+    display: none;
+    border: 0;
+    padding: 0;
+  }
+  #mango-ttb-root .admin-columns.has-detail > .admin-queue {
+    display: none;
+  }
+  #mango-ttb-root .admin-columns.has-detail > .admin-inspector {
+    display: block;
+  }
+  #mango-ttb-root .admin-inspector > .admin-back {
+    display: flex;
+    margin: 0 0 18px;
+  }
+  #mango-ttb-root .admin-actions > .button {
+    flex-basis: 100%;
+  }
+  #mango-ttb-root .finance-table {
+    min-height: 280px;
+  }
+  #mango-ttb-root .admin-queue h1 {
+    font-size: 30px;
+  }
+  #mango-ttb-root .admin-detail-heading h2 {
+    font-size: 30px;
+  }
+  #mango-ttb-root .admin-counts {
+    gap: 8px;
+  }
+  #mango-ttb-root .admin-counts > span {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+  #mango-ttb-root .admin-fact {
+    grid-template-columns: minmax(90px, 0.8fr) minmax(0, 1.5fr);
+    gap: 10px;
+  }
+  #mango-ttb-root .admin-inspector .admin-evidence {
+    padding: 12px 14px;
+  }
+  #mango-ttb-root .admin-case-amount strong {
+    font-size: 34px;
+  }
+  #mango-ttb-root .admin-check {
+    font-size: 14px;
+  }
+}
+@media (max-width: 760px) {
+  #mango-ttb-root:has(.admin-columns.has-detail) .commerce-header:has(.admin-return) {
+    height: 58px;
+  }
+  #mango-ttb-root:has(.admin-columns.has-detail) .commerce-header:has(.admin-return) > nav {
+    display: none;
+  }
+  #mango-ttb-root:has(.admin-columns.has-detail) .commerce-dialog-wrap:has(.screen-admin) {
+    top: var(--mangos-commerce-top,58px);
+  }
+  #mango-ttb-root:has(.admin-columns.has-detail) .commerce-dialog.screen-admin {
+    max-height: calc(100dvh - 58px);
+  }
+  #mango-ttb-root .commerce-header:has(.admin-return) {
+    height: 110px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-content: start;
+    gap: 0;
+    padding: 0 20px;
+  }
+  #mango-ttb-root .commerce-header:has(.admin-return) > .brand {
+    height: 58px;
+    justify-self: start;
+    font-size: 25px;
+  }
+  #mango-ttb-root .commerce-header:has(.admin-return) > nav {
+    position: static;
+    inset: auto;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    grid-row: 2;
+    grid-column: 1 / -1;
+    order: 3;
+    height: 52px;
+    gap: 22px;
+    justify-content: flex-start;
+    overflow-x: auto;
+    border-top: 1px solid #edf0ee;
+  }
+  #mango-ttb-root .commerce-header:has(.admin-return) > nav button {
+    font-size: 14px;
+    min-width: 48px;
+    flex: none;
+    border-top: 0;
+    border-bottom: 3px solid transparent;
+  }
+  .commerce-header:has(.admin-return) > nav button[aria-current='page'] {
+    border-bottom-color: var(--mc-primary);
+  }
+  #mango-ttb-root .admin-return {
+    font-size: 14px;
+    grid-column: 2;
+    grid-row: 1;
+    margin: 5px 0;
+    white-space: nowrap;
+  }
+  #mango-ttb-root .commerce-dialog-wrap:has(.screen-admin) {
+    top: var(--mangos-commerce-top,110px);
+  }
+  #mango-ttb-root .commerce-dialog.screen-admin {
+    max-height: calc(100dvh - 110px);
+  }
+  #mango-ttb-root .admin-panel {
+    min-height: calc(100dvh - 110px);
+  }
+  #mango-ttb-root .admin-panel > .message {
+    font-size: 14px;
+    margin-bottom: 22px;
+  }
+  #mango-ttb-root .admin-toolbar {
+    gap: 9px;
+  }
+  #mango-ttb-root .admin-search {
+    flex-basis: 100%;
+  }
+  #mango-ttb-root .admin-toolbar select {
+    flex: 1;
+  }
+  #mango-ttb-root .admin-pair {
+    grid-template-columns: 1fr;
+  }
+  #mango-ttb-root .admin-counts > span {
+    font-size: 12px;
+  }
+}
+.admin-refund-form {
+  border-top: 1px solid var(--line, #e5e8e5);
+  padding-block: 24px;
+  margin-top: 16px;
+}
+.admin-refund-form > h3 {
+  margin-top: 0;
+}
+.admin-refund-form dl {
+  margin-block: 20px;
+}
+.admin-refund-form > .admin-field {
+  margin-block: 16px;
+}
+.admin-proof-file {
+  padding-block: 16px;
+  border-bottom: 1px solid #e5e8e5;
+  overflow-wrap: anywhere;
+}
+.admin-proof-file > small,
+.admin-unit-check small {
+  display: block;
+  color: #6b746e;
+  margin-top: 4px;
+}
+.admin-proof-file code {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.admin-return-line {
+  align-items: start;
+  flex-wrap: wrap;
+}
+.admin-return-line .admin-field {
+  width: 130px;
+  max-width: 100%;
+}
+.admin-refund-form .admin-check {
+  margin-block: 16px;
+}
+

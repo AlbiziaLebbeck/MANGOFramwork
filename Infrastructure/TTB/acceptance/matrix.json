@@ -1,0 +1,574 @@
+{
+  "version": 1,
+  "plan": "Documentation/TTB_SYSTEM_DEVELOPMENT_PLAN_TH.md",
+  "gates": {
+    "BANK_PROFILE": "TTB-issued UAT identity/keys, HTTPS/authentication and actual callback peer/source verification",
+    "BANK_QR": "Bank-approved QR profiles, expiry/purge behavior and scans/imports with actual banking apps",
+    "BANK_REPORTS": "Actual pinned SFTP/PGP files, parser profile, C/D/V/LOST and settlement comparison",
+    "BANK_VOID": "Authorized UAT Void/Enquiry outcomes and Bangkok banking-date/cutoff boundaries",
+    "CROSS_BORDER": "Bank/corporate approval of cross-border fields/currencies/refund policy; feature remains closed",
+    "MANGOS": "Real MANGOs identity/cookie/session acceptance on the intended domain",
+    "COMPANY": "Approved seller/receipt/fulfillment/return/stock and independent-refund policies",
+    "DEVICE": "Physical Android/iOS/browser, banking-app, fullscreen/orientation and save/print acceptance",
+    "RESTORE": "Authorized UAT and populated Local SQL/private-file drills passed; continuous off-server RPO, production key recovery/RTO and bank loss-window reconciliation remain pending",
+    "ROTATION": "Environment-specific TLS/JWT/PGP/SFTP/session/backup custody and rehearsed rotation/recovery",
+    "LOAD": "Measured simultaneous callback/PDF/Unity workload against agreed capacity and latency targets",
+    "RELEASE": "Compatible rollout/rollback rehearsal with pending orders and final production acceptance"
+  },
+  "suites": {
+    "browser": {
+      "path": ".artifacts/acceptance/browser-results.json",
+      "minimumTests": 11,
+      "configFile": "playwright.config.ts",
+      "files": [
+        "accessibility.spec.ts",
+        "admin.spec.ts",
+        "checkout.spec.ts",
+        "refunds.spec.ts",
+        "void.spec.ts",
+        "issuer.spec.ts"
+      ]
+    },
+    "unity": {
+      "path": ".artifacts/acceptance/unity-results.json",
+      "minimumTests": 3,
+      "configFile": "playwright.unity.config.ts",
+      "files": [
+        "gallery.spec.ts"
+      ]
+    },
+    "world": {
+      "path": ".artifacts/acceptance/world-results.json",
+      "minimumTests": 1,
+      "configFile": "playwright.world.config.ts",
+      "files": [
+        "game-use.spec.ts"
+      ]
+    },
+    "pwa": {
+      "path": ".artifacts/acceptance/pwa-results.json",
+      "minimumTests": 1,
+      "configFile": "playwright.pwa.config.ts",
+      "files": [
+        "update.spec.ts"
+      ]
+    },
+    "load": {
+      "path": ".artifacts/acceptance/load-results.json",
+      "minimumTests": 1,
+      "configFile": "playwright.load.config.ts",
+      "files": [
+        "baseline.spec.ts"
+      ]
+    }
+  },
+  "cases": {
+    "T01": {
+      "tests": [
+        "QrTests.Bank_golden_payload_and_CRC_match_the_document_exactly",
+        "QrTests.QR_requires_correct_biller_amount_and_static_dynamic_profile"
+      ],
+      "gates": [
+        "BANK_QR"
+      ]
+    },
+    "T02": {
+      "tests": [
+        "QrTests.Concurrent_QR_requests_return_one_persisted_attempt_and_mock_is_not_a_payment_payload",
+        "QrTests.Concurrent_distinct_orders_exhaust_the_last_QR_numbers_without_wrapping_or_leaving_partial_attempts"
+      ],
+      "gates": [
+        "BANK_QR"
+      ]
+    },
+    "T03": {
+      "tests": [
+        "QrTests.QR_expiry_uses_the_same_Bangkok_minute_across_calendar_boundaries_and_never_reissues_after_expiry",
+        "QrTests.A_window_with_only_sixty_seconds_after_minute_rounding_cannot_allocate_a_QR_or_sequence"
+      ],
+      "gates": [
+        "BANK_QR"
+      ]
+    },
+    "T04": {
+      "tests": [
+        "PaymentTests.Concurrent_callbacks_commit_once_before_ACK_and_preserve_every_raw_delivery",
+        "CallbackHttpTests.Approved_callback_requires_both_bank_transport_and_credentials_and_emits_bank_ACK_shape"
+      ],
+      "gates": [
+        "BANK_PROFILE"
+      ]
+    },
+    "T05": {
+      "tests": [
+        "PaymentTests.Concurrent_callbacks_commit_once_before_ACK_and_preserve_every_raw_delivery",
+        "DigitalTests.Digital_quantity_is_granted_per_line_unit_once_and_does_not_complete_physical_lines"
+      ],
+      "gates": [
+        "BANK_PROFILE"
+      ]
+    },
+    "T06": {
+      "tests": [
+        "PaymentTests.Callback_and_verify_race_cannot_allocate_twice",
+        "ReportIntegrationTests.Concurrent_import_stage_and_replay_keep_one_immutable_row_and_one_payment_effect"
+      ],
+      "gates": [
+        "BANK_PROFILE",
+        "BANK_REPORTS"
+      ]
+    },
+    "T07": {
+      "tests": [
+        "PaymentTests.Extra_credit_and_changed_duplicate_are_cases_without_extra_fulfillment"
+      ],
+      "gates": [
+        "BANK_PROFILE"
+      ]
+    },
+    "T08": {
+      "tests": [
+        "PaymentTests.Mismatch_is_retained_for_reconciliation_and_cannot_release_goods"
+      ],
+      "gates": [
+        "BANK_PROFILE"
+      ]
+    },
+    "T09": {
+      "tests": [
+        "PaymentTests.Payment_after_cancellation_and_unapproved_cross_border_are_reviewed_without_delivery"
+      ],
+      "gates": [
+        "CROSS_BORDER",
+        "BANK_PROFILE"
+      ]
+    },
+    "T10": {
+      "tests": [
+        "MockBankTests.HTTP_vertical_slice_buys_a_mixed_cart_and_history_remains_owner_private"
+      ],
+      "suites": [
+        "browser"
+      ],
+      "gates": [
+        "BANK_PROFILE"
+      ]
+    },
+    "T11": {
+      "tests": [
+        "VerificationTests.Verify_and_enquiry_share_three_requests_and_cooldown_with_no_automatic_retries",
+        "VerificationTests.A_second_tab_cannot_start_enquiry_while_verify_is_in_flight",
+        "VerificationTests.Merchant_rate_limit_is_shared_by_orders_and_does_not_consume_a_rejected_attempt"
+      ],
+      "gates": [
+        "BANK_PROFILE"
+      ]
+    },
+    "T12": {
+      "tests": [
+        "BankReadTests.Verify_result_codes_follow_the_current_table_not_the_removed_example",
+        "BankReadTests.Verify_requires_both_service_and_payment_success_and_preserves_optional_Ref2"
+      ],
+      "gates": [
+        "BANK_PROFILE"
+      ]
+    },
+    "T13": {
+      "tests": [
+        "BankReadTests.Range_supports_multiple_static_QR_transactions_and_rejects_mixed_QR_ids",
+        "BankReadTests.Range_cannot_exceed_the_previous24hours_or_query_the_future"
+      ],
+      "gates": [
+        "BANK_PROFILE"
+      ]
+    },
+    "T14": {
+      "tests": [
+        "BankReadTests.Unexpected_response_identity_and_transport_errors_never_confirm_payment",
+        "VerificationTests.Timeout_is_unconfirmed_and_consumes_one_check_without_retry",
+        "GatewayTests.Gateway_pins_TLS_host_and_path_signs_headers_and_does_not_retry_HTTP_failure",
+        "BankCircuitTests.Actual_HTTP_gateway_suppresses_open_requests_without_retries_and_transport_recovery_never_implies_a_paid_result",
+        "BankCircuitTests.A_stalled_body_after_successful_HTTP_headers_has_a_whole_request_deadline_and_never_strands_the_circuit",
+        "BankCircuitTests.Caller_cancellation_cannot_strand_the_single_trial_or_trigger_an_automatic_bank_retry",
+        "BankCircuitTests.An_open_verify_service_consumes_no_attempt_budget_and_does_not_block_the_separate_enquiry"
+      ],
+      "gates": [
+        "BANK_PROFILE"
+      ]
+    },
+    "T15": {
+      "tests": [
+        "OrderTests.Duplicate_checkout_creates_one_order_reservation_and_expiry_job",
+        "OrderTests.Same_checkout_key_with_another_quote_is_a_conflict"
+      ],
+      "suites": [
+        "browser"
+      ]
+    },
+    "T16": {
+      "tests": [
+        "OrderTests.Price_change_expiry_and_snapshot_corruption_cannot_create_an_order",
+        "CartTests.Concurrent_cart_edits_reject_one_stale_version",
+        "CartTests.Quote_rejects_stale_cart_or_unpublished_item_and_ignores_old_cart_prices"
+      ],
+      "suites": [
+        "browser"
+      ]
+    },
+    "T17": {
+      "tests": [
+        "OrderTests.Two_buyers_cannot_reserve_the_last_unit_twice"
+      ],
+      "gates": [
+        "COMPANY"
+      ]
+    },
+    "T18": {
+      "tests": [
+        "CartTests.Mixed_quote_uses_exact_server_prices_and_delivery_and_does_not_reserve_stock",
+        "CartTests.Physical_delivery_requires_contact_and_complete_address_but_digital_drops_unused_address",
+        "FulfillmentTests.Pickup_transitions_are_audited_and_completion_is_separate_from_payment",
+        "FulfillmentTests.Shipping_requires_tracking_and_cannot_use_pickup_transitions"
+      ],
+      "suites": [
+        "browser"
+      ],
+      "gates": [
+        "COMPANY"
+      ]
+    },
+    "T19": {
+      "tests": [
+        "PaymentTests.Payment_after_cancellation_and_unapproved_cross_border_are_reviewed_without_delivery",
+        "FinanceTests.Explicit_late_credit_acceptance_rechecks_released_stock_and_concurrent_retries_allocate_once"
+      ],
+      "gates": [
+        "BANK_PROFILE"
+      ]
+    },
+    "T20": {
+      "tests": [
+        "PaymentTests.Extra_credit_and_changed_duplicate_are_cases_without_extra_fulfillment",
+        "ManualRefundTests.Refunding_an_extra_credit_manually_keeps_primary_rights_and_requires_case_resolution_before_resuming"
+      ],
+      "gates": [
+        "BANK_PROFILE"
+      ]
+    },
+    "T21": {
+      "tests": [
+        "DatabaseTests.Concurrent_workers_claim_each_job_once_and_retry_is_durable",
+        "DatabaseTests.Expired_lease_cannot_complete_or_renew_after_another_worker_recovers_it",
+        "FulfillmentTests.Unpaid_line_cannot_dispatch_and_concurrent_paid_retries_create_one_delivery",
+        "DigitalTests.Digital_quantity_is_granted_per_line_unit_once_and_does_not_complete_physical_lines"
+      ],
+      "gates": [
+        "RESTORE"
+      ]
+    },
+    "T22": {
+      "tests": [
+        "DigitalTests.Digital_quantity_is_granted_per_line_unit_once_and_does_not_complete_physical_lines"
+      ],
+      "suites": [
+        "world"
+      ]
+    },
+    "T23": {
+      "tests": [
+        "ReceiptTests.Unpaid_cannot_issue_and_concurrent_paid_retries_keep_one_number_and_immutable_snapshot",
+        "ReceiptTests.Rendering_failure_and_retries_keep_number_and_ready_pdf_bytes_stable",
+        "ReceiptTests.Document_snapshot_corruption_never_renders_or_becomes_ready",
+        "IssuerProfileTests.Concurrent_first_edit_has_one_winner_and_version_prevents_lost_updates",
+        "IssuerProfileTests.Issued_snapshot_stays_immutable_after_profile_edit_and_contains_branch_and_contact",
+        "IssuerProfileTests.Profile_HTTP_requires_admin_CSRF_and_returns_persisted_unapproved_test_fields",
+        "IssuerProfileTests.Invalid_fields_never_write_and_production_ignores_test_profile_and_rejects_edits",
+        "IssuerProfileTests.Local_seed_starts_at_one_baht_preserves_edits_and_never_seeds_UAT"
+      ],
+      "suites": [
+        "browser"
+      ]
+    },
+    "T24": {
+      "tests": [
+        "ReceiptTests.Actual_chromium_generates_Thai_receipt_with_many_lines_for_visual_QA",
+        "VoidIntegrationTests.Void_document_is_confirmed_only_immutable_concurrent_and_preserves_original_receipt_hash"
+      ],
+      "suites": [
+        "browser"
+      ],
+      "gates": [
+        "COMPANY",
+        "DEVICE"
+      ]
+    },
+    "T25": {
+      "tests": [
+        "OrderTests.Http_order_history_detail_and_cancellation_are_owner_scoped",
+        "DigitalTests.HTTP_private_download_and_game_validation_do_not_trust_a_shopper_claim",
+        "IdentityTests.Account_switch_and_global_logout_cannot_reuse_previous_commerce_identity"
+      ],
+      "suites": [
+        "browser",
+        "world"
+      ],
+      "gates": [
+        "MANGOS"
+      ]
+    },
+    "T26": {
+      "tests": [
+        "IdentityTests.Mutations_reject_missing_csrf_and_untrusted_origin",
+        "FulfillmentTests.HTTP_queue_and_operator_actions_require_roles_while_shopper_status_requires_ownership",
+        "ManualRefundTests.Evidence_is_case_bound_deduplicated_private_and_hash_checked_before_download_or_approval"
+      ],
+      "suites": [
+        "browser"
+      ]
+    },
+    "T27": {
+      "tests": [
+        "CallbackHttpTests.Approved_callback_requires_both_bank_transport_and_credentials_and_emits_bank_ACK_shape",
+        "CallbackHttpTests.Unapproved_profile_is_closed_and_local_mock_has_no_bank_callback",
+        "CallbackHttpTests.Open_outgoing_service_circuits_do_not_block_authenticated_credit_commit_or_duplicate_ACKs",
+        "CallbackProxyTests.A_trusted_single_proxy_uses_only_its_rightmost_peer_and_cannot_promote_a_forged_bank_header",
+        "CallbackProxyTests.An_untrusted_proxy_cannot_forward_a_bank_identity_even_with_valid_callback_credentials",
+        "CallbackProxyTests.Universal_proxy_trust_is_rejected_before_forwarded_headers_can_be_used",
+        "TransportProbeTests.Authorized_UAT_probe_observes_socket_and_only_the_rightmost_forwarded_peer_without_exporting_addresses",
+        "TransportProbeTests.Missing_wrong_or_oversized_credentials_and_invalid_or_duplicate_nonce_never_reveal_a_proof",
+        "TransportProbeTests.The_probe_is_UAT_only_and_does_not_run_on_readiness_callback_or_non_GET_routes",
+        "TransportProbeTests.Disabled_trust_or_an_untrusted_socket_cannot_turn_forged_headers_into_the_effective_identity",
+        "TransportProbeTests.The_observation_window_expires_without_a_restart_and_a_far_future_window_is_disabled",
+        "TransportProbeTests.A_missing_socket_does_not_fabricate_transport_evidence",
+        "TransportProbeTests.Real_API_health_observation_preserves_cache_policy_and_never_opens_bank_gates_or_writes_financial_evidence"
+      ],
+      "gates": [
+        "BANK_PROFILE"
+      ]
+    },
+    "T28": {
+      "tests": [
+        "DatabaseTests.Wrong_environment_is_rejected_even_when_identifiers_would_match",
+        "FoundationTests.Local_credentials_cannot_leak_to_another_environment",
+        "PaymentTests.A_bank_result_cannot_confirm_an_attempt_created_by_the_mock_profile",
+        "UatTestCatalogTests.Other_environments_and_simulator_mode_are_rejected_before_any_connection",
+        "UatTestCatalogTests.Missing_or_wrong_database_marker_custom_catalog_collisions_and_existing_orders_are_never_overwritten"
+      ],
+      "gates": [
+        "RELEASE"
+      ]
+    },
+    "T29": {
+      "tests": [
+        "VoidProtocolTests.Exact_matching_response_codes_control_full_void_outcome",
+        "VoidProtocolTests.Eligibility_uses_original_proof_or_the_complete_issue_to_observation_bound_never_system_TransDate"
+      ],
+      "suites": [
+        "browser"
+      ],
+      "gates": [
+        "BANK_VOID"
+      ]
+    },
+    "T30": {
+      "tests": [
+        "VoidIntegrationTests.Lost_mutation_response_never_resends_and_original_transaction_enquiry_confirms",
+        "VoidIntegrationTests.Cancellation_after_the_committed_fence_preserves_unknown_evidence_and_does_not_retry_the_mutation",
+        "BankCircuitTests.An_open_void_service_creates_no_financial_intent_or_send_fence_and_keeps_the_paid_order_unchanged"
+      ],
+      "gates": [
+        "BANK_VOID"
+      ]
+    },
+    "T31": {
+      "tests": [
+        "VoidProtocolTests.Approved_banking_window_and_conservative_calendar_window_are_explicitly_different_at_midnight",
+        "VoidProtocolTests.Eligibility_uses_original_proof_or_the_complete_issue_to_observation_bound_never_system_TransDate"
+      ],
+      "gates": [
+        "BANK_VOID"
+      ]
+    },
+    "T32": {
+      "tests": [
+        "ManualRefundTests.Partial_cross_border_and_out_of_window_cases_reserve_exact_credit_without_a_bank_mutation_and_retry_once",
+        "ManualRefundTests.Independent_approval_is_policy_gated_idempotent_and_full_primary_refund_preserves_bank_and_receipt_evidence",
+        "GoodsDispositionTests.Downloaded_units_require_explicit_review_and_return_policy_and_revocation_keeps_other_units_active"
+      ],
+      "suites": [
+        "browser"
+      ],
+      "gates": [
+        "COMPANY",
+        "CROSS_BORDER"
+      ]
+    },
+    "T33": {
+      "tests": [
+        "PgpReportTests.Actual_PGP_requires_pinned_recipient_AES256_integrity_and_bounded_decompression",
+        "ReportIntegrationTests.Changed_content_requires_audited_revision_approval_and_corrupt_archive_never_stages"
+      ],
+      "gates": [
+        "BANK_REPORTS"
+      ]
+    },
+    "T34": {
+      "tests": [
+        "ReportParserTests.Thai_fields_and_independent_ISO_LOST_offsets_require_explicit_profile",
+        "ReportParserTests.Unknown_profile_layout_mismatch_and_bad_filenames_are_not_auto_detected"
+      ],
+      "gates": [
+        "BANK_REPORTS"
+      ]
+    },
+    "T35": {
+      "tests": [
+        "ReportParserTests.Whole_file_is_rejected_before_any_rows_can_be_applied",
+        "ReportIntegrationTests.Concurrent_import_stage_and_replay_keep_one_immutable_row_and_one_payment_effect",
+        "ReportIntegrationTests.Changed_content_requires_audited_revision_approval_and_corrupt_archive_never_stages"
+      ],
+      "gates": [
+        "BANK_REPORTS"
+      ]
+    },
+    "T36": {
+      "tests": [
+        "ReportParserTests.V_is_an_original_marker_and_never_a_second_debit_and_trailer_convention_is_explicit",
+        "ReportIntegrationTests.V_and_D_void_one_original_credit_and_hold_delivery_without_restock_or_erasing_receipt",
+        "ReportIntegrationTests.LOST_retains_payer_debit_and_operation_credit_times_without_relabeling_original_credit_time"
+      ],
+      "gates": [
+        "BANK_REPORTS"
+      ]
+    },
+    "T37": {
+      "tests": [
+        "ReportIntegrationTests.Daily_comparison_finds_exact_missing_ledger_instructions_without_inventing_original_bank_times",
+        "ReportIntegrationTests.Missing_file_is_waiting_then_overdue_once_and_later_download_is_never_treated_as_zero_settlement",
+        "ReportIntegrationTests.Fifty_character_API_instruction_is_never_prefix_allocated_from_a_thirty_five_column_report"
+      ],
+      "gates": [
+        "BANK_REPORTS"
+      ]
+    },
+    "T38": {
+      "suites": [
+        "browser",
+        "unity"
+      ],
+      "gates": [
+        "DEVICE"
+      ]
+    },
+    "T39": {
+      "tests": [
+        "CatalogTests.Model_binding_is_global_public_only_and_rejects_ambiguous_products",
+        "CatalogTests.Drafts_are_hidden_and_publication_requires_a_deliverable_priced_variant",
+        "UatTestCatalogTests.Concurrent_preparation_creates_one_atomic_catalog_with_stock_audit_but_no_financial_or_mock_effect"
+      ],
+      "suites": [
+        "browser",
+        "unity"
+      ],
+      "gates": [
+        "DEVICE"
+      ]
+    },
+    "T40": {
+      "tests": [
+        "GameTicketTests.HTTP_ticket_requires_owned_session_CSRF_and_server_key_and_account_switch_revokes_lease",
+        "GameTicketTests.Active_game_lease_stops_on_finance_hold_revocation_void_and_logout"
+      ],
+      "suites": [
+        "browser",
+        "unity",
+        "world"
+      ],
+      "gates": [
+        "MANGOS",
+        "DEVICE"
+      ]
+    },
+    "T41": {
+      "tests": [
+        "OrderTests.Http_order_history_detail_and_cancellation_are_owner_scoped"
+      ],
+      "suites": [
+        "browser",
+        "pwa"
+      ],
+      "gates": [
+        "DEVICE",
+        "MANGOS"
+      ]
+    },
+    "T42": {
+      "suites": [
+        "browser",
+        "unity"
+      ],
+      "gates": [
+        "BANK_QR",
+        "DEVICE"
+      ]
+    },
+    "T43": {
+      "tests": [
+        "OperationsTests.Callback_histograms_have_bounded_labels_cumulative_buckets_and_thread_safe_committed_ACK_counts",
+        "PaymentTests.Concurrent_callbacks_commit_once_before_ACK_and_preserve_every_raw_delivery"
+      ],
+      "suites": [
+        "unity",
+        "load"
+      ],
+      "gates": [
+        "LOAD"
+      ]
+    },
+    "T44": {
+      "tests": [
+        "DatabaseTests.Concurrent_workers_claim_each_job_once_and_retry_is_durable",
+        "DatabaseTests.Expired_lease_cannot_complete_or_renew_after_another_worker_recovers_it",
+        "OperationsTests.Recovery_freeze_keeps_reads_available_blocks_mutations_and_stops_every_worker_before_claiming_a_job",
+        "OperationsTests.Storage_capacity_reads_the_existing_filesystem_without_creating_directories_or_exporting_file_metadata",
+        "OperationsTests.Metrics_preserve_private_capacity_and_callback_telemetry_when_only_the_disposable_test_database_disappears",
+        "OperationsTests.A_missing_private_mount_is_an_explicit_probe_failure_instead_of_a_fabricated_zero_capacity",
+        "OperationsTests.Metrics_are_private_disabled_by_default_and_require_a_separate_collector_token_even_for_finance",
+        "BankCircuitTests.Only_one_explicit_trial_is_admitted_and_an_old_response_cannot_close_a_newer_failure_generation"
+      ],
+      "gates": [
+        "RESTORE"
+      ]
+    },
+    "T45": {
+      "tests": [
+        "QrTests.JWT_signature_is_RS256_and_claim_times_are_epoch_seconds",
+        "PgpReportTests.Actual_PGP_requires_pinned_recipient_AES256_integrity_and_bounded_decompression",
+        "GatewayTests.Gateway_pins_TLS_host_and_path_signs_headers_and_does_not_retry_HTTP_failure",
+        "ReportRotationTests.New_files_accept_only_active_recipient_and_signer_even_when_retired_keys_are_retained",
+        "ReportRotationTests.Archived_ciphertext_requires_both_explicit_retired_pins_and_original_exact_profile",
+        "ReportRotationTests.An_unsigned_archive_cannot_bypass_a_new_required_signing_policy",
+        "ReportRotationTests.Retired_trust_rejects_wildcards_duplicates_nulls_active_pins_and_unbounded_lists",
+        "ReportRotationTests.Audited_repair_after_rotation_uses_immutable_old_pins_and_never_duplicates_money_or_accepts_new_old_key_files",
+        "ReportRotationTests.Legacy_archives_without_crypto_snapshot_use_current_pins_only_and_never_guess_retired_keys",
+        "BankKeyLifecycleTests.Mounted_JWT_key_rotation_changes_the_next_gateway_signature_without_a_cached_key_or_automatic_retry",
+        "BankKeyLifecycleTests.Missing_public_only_or_wrong_size_keys_never_reuse_a_previous_signing_key_or_expose_key_details",
+        "BankKeyLifecycleTests.Bare_RSA_probe_has_no_invented_expiry_and_scheduling_requires_an_explicit_operational_deadline",
+        "BankKeyLifecycleTests.Private_key_metrics_survive_database_loss_and_report_missing_key_without_exporting_paths_or_material"
+      ],
+      "gates": [
+        "ROTATION"
+      ]
+    },
+    "T46": {
+      "tests": [
+        "DatabaseTests.Migrations_match_model_and_round_trip_on_empty_test_database",
+        "DatabaseTests.Populated_financial_rollback_is_refused_and_forward_recovery_preserves_pending_orders_and_effect_keys"
+      ],
+      "gates": [
+        "RELEASE",
+        "RESTORE"
+      ]
+    }
+  }
+}

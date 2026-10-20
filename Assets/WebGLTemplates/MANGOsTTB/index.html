@@ -1,0 +1,19 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>MANGOs · Gallery</title>
+<script src="ttb-commerce-config.js"></script><link rel="stylesheet" href="commerce/mango-ttb.css"><script src="commerce/mango-ttb.js" defer></script>
+<link rel="stylesheet" href="TemplateData/style.css"><link rel="stylesheet" href="ttb-viewport.css"></head><body>
+<canvas id="unity-canvas" tabindex="-1" aria-label="MANGOs แกลเลอรีสินค้า 3D"></canvas><div id="mango-ttb-root"></div>
+<div id="ttb-start"><h1>MANGOs Gallery</h1><div id="ttb-progress"><div></div></div><p id="ttb-load-message">กำลังเปิดแกลเลอรี…</p><button id="ttb-enter" disabled>เริ่มชมแกลเลอรี</button></div>
+<script>
+var canvas=document.getElementById('unity-canvas');
+var config={dataUrl:'Build/{{{ DATA_FILENAME }}}',frameworkUrl:'Build/{{{ FRAMEWORK_FILENAME }}}',streamingAssetsUrl:'StreamingAssets',companyName:{{{ JSON.stringify(COMPANY_NAME) }}},productName:{{{ JSON.stringify(PRODUCT_NAME) }}},productVersion:{{{ JSON.stringify(PRODUCT_VERSION) }}},devicePixelRatio:Math.min(window.devicePixelRatio||1,2),
+#if USE_WASM
+codeUrl:'Build/{{{ CODE_FILENAME }}}',
+#endif
+#if USE_THREADS
+workerUrl:'Build/{{{ WORKER_FILENAME }}}',
+#endif
+showBanner:function(message,type){if(type==='error'){document.getElementById('ttb-load-message').textContent='เปิดแกลเลอรีไม่สำเร็จ กรุณาโหลดหน้าใหม่';console.error(message)}}};
+var loader=document.createElement('script');loader.src='Build/{{{ LOADER_FILENAME }}}';loader.onload=function(){createUnityInstance(canvas,config,function(progress){document.querySelector('#ttb-progress>div').style.width=(progress*100)+'%'}).then(function(instance){window.unityInstance=instance;if(window.MangoTtb)window.MangoTtb.attachUnity(instance);var activate=function(){document.getElementById('ttb-enter').disabled=false;document.getElementById('ttb-load-message').textContent='คลิกโมเดลเพื่อดูสินค้า · ลากเพื่อดูรอบแกลเลอรี';};if(window.MANGOS_TTB_CONFIG&&window.MANGOS_TTB_CONFIG.experience==='world')activate();else{var awaitNative=function(){if(canvas.dataset.commerceReady==='true')activate();else requestAnimationFrame(awaitNative)};awaitNative();}}).catch(function(error){document.getElementById('ttb-load-message').textContent='เปิดแกลเลอรีไม่สำเร็จ กรุณาโหลดหน้าใหม่';if(window.MangoTtbShowLoadError)window.MangoTtbShowLoadError();console.error(error)})};document.body.appendChild(loader);
+document.getElementById('ttb-enter').addEventListener('click',function(){document.getElementById('ttb-start').remove();canvas.focus();var context=window.unityInstance&&window.unityInstance.Module&&window.unityInstance.Module.audioContext;if(context&&context.state==='suspended')context.resume()});
+</script></body></html>
+

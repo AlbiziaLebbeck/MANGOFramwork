@@ -1,0 +1,6 @@
+[
+  {"op":"test","path":"/metadata/uid","value":"1cca9e12-7496-4fa3-94c5-01f6b5778bb2"},
+  {"op":"test","path":"/metadata/resourceVersion","value":"999"},
+  {"op":"test","path":"/spec/externalTrafficPolicy","value":"Cluster"},
+  {"op":"replace","path":"/spec/externalTrafficPolicy","value":"Local"}
+]

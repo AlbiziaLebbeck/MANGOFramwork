@@ -1,0 +1,17 @@
+{
+  "readerContract": 3,
+  "capabilities": [
+    "manual-refund-v1",
+    "goods-disposition-v1",
+    "operations-freeze-v1",
+    "private-metrics-v1",
+    "private-storage-capacity-v1",
+    "per-service-bank-circuit-v1",
+    "pgp-archive-key-rotation-v1",
+    "bank-signing-key-lifecycle-v1",
+    "uat-transport-probe-v1",
+    "editable-test-issuer-v1",
+    "uat-test-catalog-v1"
+  ],
+  "description": "Contract 3 preserves the financial reader floor and requires recovery freeze support in every API/worker before read-only restore inspection. Do not roll back to a binary which ignores RecoveryFreeze. PGP rotation preserves archive pins and scoped retired-key trust. JWT lifecycle telemetry distinguishes private-key usability from an explicitly agreed operational rotation deadline. Optional UAT health transport observation expires, requires the metrics credential, and returns nonce-bound peer digests only; bank acceptance gates are independent. Test issuer profiles are editable only in Local/UAT; branch/contact are frozen into the existing receipt-v1 issuer address, preserving snapshot readers. Production continues to use its approved deployment profile. An explicit UAT-only operator command prepares an atomic, audited merchandise fixture without bank configuration, financial effects, simulator routes or stock-reset retries."
+}

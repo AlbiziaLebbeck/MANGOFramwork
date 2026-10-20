@@ -15,6 +15,23 @@ public sealed class MangosBuildCenter : EditorWindow
         profile ??= MangosBuildProfile.Load();
         scroll = EditorGUILayout.BeginScrollView(scroll);
         EditorGUILayout.LabelField("MANGOs Build Center", EditorStyles.boldLabel);
+        var commerceOptions = new[] { "None", "Local", "Uat", "Production" };
+        var commerceIndex = Array.IndexOf(commerceOptions, profile.commerceEnvironment);
+        profile.commerceEnvironment = commerceOptions[EditorGUILayout.Popup("TTB commerce", Math.Max(0, commerceIndex), commerceOptions)];
+        if (profile.commerceEnvironment != "None")
+        {
+            EditorGUILayout.HelpBox("Includes the editable BaseWorld gallery and HTML commerce overlay. Bank payment availability is controlled by the backend.", MessageType.Info);
+            profile.network.portalRouting = EditorGUILayout.Toggle("Deployment Portal slug routing", profile.network.portalRouting);
+            if (GUILayout.Button("Use Deployment Portal UAT defaults"))
+            {
+                profile.commerceEnvironment = "Uat";
+                profile.deployment = "mangos-ttb-uat";
+                profile.network = new MangosRuntimeConfig { portalRouting = true, serverPort = 7770, serverWss = false,
+                    clientHost = "multiplayer-plus.mangosgo.com", clientPort = 443, clientWss = true, clientPath = "/ttb-uat" };
+            }
+            if (profile.network.portalRouting)
+                EditorGUILayout.HelpBox("On plus.mangosgo.com, the Client reads slug/version from its page URL. Upload Server and Client with the same slug/version. Client Path is only the fallback outside that host.", MessageType.Info);
+        }
         profile.network.clientPath = EditorGUILayout.TextField("Client Path", profile.network.clientPath);
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Server — Linux Dedicated", EditorStyles.boldLabel);

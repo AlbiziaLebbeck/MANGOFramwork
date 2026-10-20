@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TtbCommerce.Core/TtbCommerce.Core.csproj" />
+    <Project Path="src/TtbCommerce.Infrastructure/TtbCommerce.Infrastructure.csproj" />
+    <Project Path="src/TtbCommerce.Api/TtbCommerce.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TtbCommerce.Tests/TtbCommerce.Tests.csproj" />
+  </Folder>
+</Solution>

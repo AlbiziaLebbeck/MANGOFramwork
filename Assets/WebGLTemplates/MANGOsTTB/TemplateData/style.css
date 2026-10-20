@@ -1,0 +1,9 @@
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#eef0ed}
+#unity-canvas{position:fixed;inset:0;width:100%;height:100dvh;display:block;touch-action:none;outline:0}
+#ttb-start{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;background:#f1f3ef;color:#17342b;font:16px MangoThai,sans-serif;z-index:9999}
+#ttb-start h1{font-size:42px;font-weight:600;letter-spacing:-1px;margin:0}
+#ttb-enter{border:0;background:#233d33;color:#fff;border-radius:9px;padding:15px 30px;font:600 16px MangoThai,sans-serif;cursor:pointer}
+#ttb-enter:disabled{opacity:.4;cursor:wait}
+#ttb-progress{width:200px;height:3px;background:#dce3dc;border-radius:2px;overflow:hidden}
+#ttb-progress>div{height:100%;width:0;background:#233d33}
+#ttb-load-message{color:#617367;font-size:14px;margin:0;max-width:80%;text-align:center}

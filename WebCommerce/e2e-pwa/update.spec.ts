@@ -1,0 +1,24 @@
+import { test,expect,type Page } from '@playwright/test';
+import { mkdir } from 'node:fs/promises';
+import { resolve } from 'node:path';
+async function ready(page:Page){await page.goto('/');await expect(page.getByRole('button',{name:/Orbit Lamp Orbit Lamp/})).toBeVisible();await expect.poll(()=>page.evaluate(()=>!!navigator.serviceWorker.controller),{timeout:30000}).toBe(true)}
+test('public-only offline shell and a two-tab update preserve an unpaid QR until explicit completion',async({page,context})=>{
+  const config=await (await page.request.get('/ttb-commerce/v1/storefront/config')).json();expect(config.environment).toBe('Local');expect(config.paymentMode).toBe('Mock');
+  let checks=0;page.on('request',request=>{if(request.url().endsWith('/verify'))checks++});await ready(page);
+  const cdp=await context.newCDPSession(page);const manifest=await cdp.send('Page.getAppManifest');expect(manifest.errors).toEqual([]);
+  const installability=await cdp.send('Page.getInstallabilityErrors');expect(installability.installabilityErrors).toEqual([]);
+  await page.getByRole('button',{name:'เข้าสู่ระบบ',exact:true}).click();await page.getByRole('textbox',{name:'ชื่อบัญชีทดสอบ',exact:true}).fill('pwa-qa-'+Date.now());await page.getByRole('button',{name:'เข้าสู่ระบบทดสอบ Local',exact:true}).click();await expect(page.getByRole('button',{name:'ออกจากระบบซื้อสินค้า',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:/Mango Star — Digital Mango Star/}).click();await page.getByRole('button',{name:'เพิ่มลงตะกร้า',exact:true}).click();await expect(page.getByRole('button',{name:'ตะกร้าสินค้า 1 ชิ้น',exact:true})).toBeVisible();await page.getByRole('button',{name:'ปิดหน้าต่าง',exact:true}).click();
+  await page.getByRole('button',{name:'ตะกร้าสินค้า 1 ชิ้น',exact:true}).click();await page.getByRole('button',{name:'ดำเนินการสั่งซื้อ',exact:true}).click();await page.getByRole('textbox',{name:'ชื่อผู้ซื้อ',exact:true}).fill('PWA Local QA');await page.getByRole('button',{name:'ตรวจสอบยอดชำระ',exact:true}).click();await page.getByRole('button',{name:'สร้าง QR เพื่อชำระเงิน',exact:true}).click();await expect(page.getByRole('img',{name:'QR จำลองสำหรับทดสอบ ไม่มีการรับเงินจริง',exact:true})).toBeVisible();
+  const reference=await page.locator('.payment-reference>strong').innerText();const version1=await page.locator('meta[name="mango-ttb-release"]').getAttribute('content');
+  const qrBox=await page.getByRole('img',{name:'QR จำลองสำหรับทดสอบ ไม่มีการรับเงินจริง',exact:true}).boundingBox();const dialogBox=await page.locator('.commerce-dialog').boundingBox();expect(qrBox!.y).toBeGreaterThanOrEqual(dialogBox!.y);expect(qrBox!.y+qrBox!.height).toBeLessThanOrEqual(dialogBox!.y+dialogBox!.height);
+  const other=await context.newPage();await ready(other);expect((await page.request.post('/__qa/release2')).ok()).toBe(true);
+  await page.evaluate(async()=>{await (await navigator.serviceWorker.getRegistration())!.update()});await expect(page.getByRole('button',{name:'อัปเดตแอป',exact:true})).toBeDisabled();
+  await expect(other.getByRole('button',{name:'อัปเดตแอป',exact:true})).toBeEnabled();await other.getByRole('button',{name:'อัปเดตแอป',exact:true}).click();
+  await expect.poll(()=>other.locator('meta[name="mango-ttb-release"]').getAttribute('content')).not.toBe(version1);
+  expect(await page.locator('meta[name="mango-ttb-release"]').getAttribute('content')).toBe(version1);await expect(page.locator('.payment-reference>strong')).toHaveText(reference);expect(checks).toBe(0);
+  const evidence=resolve('../.artifacts/pwa-qa');await mkdir(evidence,{recursive:true});await page.screenshot({path:resolve(evidence,'update-keeps-qr.png')});
+  await page.getByRole('button',{name:'ยกเลิกคำสั่งซื้อ',exact:true}).click();await expect(page.getByRole('heading',{name:'ประวัติรายการ',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'อัปเดตแอป',exact:true})).toBeEnabled();await page.getByRole('button',{name:'อัปเดตแอป',exact:true}).click();await expect.poll(()=>page.locator('meta[name="mango-ttb-release"]').getAttribute('content')).not.toBe(version1);
+  const keys=await page.evaluate(async()=>{const all:string[]=[];for(const key of await caches.keys())for(const request of await (await caches.open(key)).keys())all.push(request.url);return all});expect(keys.some(key=>key.includes('/ttb-commerce/')||key.includes('/ttb-commerce-test/')||key.includes('/Build/')||key.includes('/StreamingAssets/'))).toBe(false);
+  await context.setOffline(true);await page.reload();await expect(page.getByRole('status').filter({hasText:/ออฟไลน์|เชื่อมต่อไม่ได้/})).toBeVisible();await expect(page.getByRole('button',{name:'ออกจากระบบซื้อสินค้า',exact:true})).toBeHidden();await page.screenshot({path:resolve(evidence,'offline-shell.png')});await context.setOffline(false);
+});

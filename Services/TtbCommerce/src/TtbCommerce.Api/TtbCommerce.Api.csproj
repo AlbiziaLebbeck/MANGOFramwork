@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <Content Update="release-compatibility.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <ProjectReference Include="../TtbCommerce.Infrastructure/TtbCommerce.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

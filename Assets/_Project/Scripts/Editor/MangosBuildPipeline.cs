@@ -23,6 +23,7 @@ public static class MangosBuildPipeline
         public string phase = "next", id, output;
         public bool cancel, hadConfig;
         public string originalConfig, originalTemplate;
+        public string commerceSceneFingerprint;
         public int originalTarget, originalSubtarget, originalBackend, originalCompression, originalTexture;
     }
     [Serializable] private sealed class Manifest
@@ -53,6 +54,8 @@ public static class MangosBuildPipeline
             originalTexture = (int)EditorUserBuildSettings.webGLBuildSubtarget,
             originalTemplate = PlayerSettings.WebGL.template
         };
+        if (Mangos.Ttb.Commerce.Editor.TtbPortalPackaging.Enabled(profile))
+            job.commerceSceneFingerprint = Mangos.Ttb.Commerce.Editor.TtbProjectWorld.Fingerprint();
         Directory.CreateDirectory(job.output);
         SaveJob(job);
         EditorApplication.delayCall += Resume;
@@ -96,6 +99,9 @@ public static class MangosBuildPipeline
                 return;
             }
             executing = true;
+            if (!string.IsNullOrEmpty(job.commerceSceneFingerprint) &&
+                job.commerceSceneFingerprint != Mangos.Ttb.Commerce.Editor.TtbProjectWorld.Fingerprint())
+                throw new InvalidOperationException("BaseWorld changed between paired builds. Start a new Build Both after saving the scene.");
             job.phase = "building"; SaveJob(job);
             BuildOne(job.profile, name, Path.Combine(job.output, name), job.id);
             job.cancel = IsRunning && ReadJob().cancel;
@@ -120,7 +126,8 @@ public static class MangosBuildPipeline
         var scenes = MangosCompatibility.Scenes();
         if (scenes.Length == 0 || !scenes[0].EndsWith("/Bootstrap.unity", StringComparison.Ordinal))
             throw new InvalidOperationException("The first enabled Build Settings scene must be Bootstrap.unity.");
-        if (!File.Exists("Assets/WebGLTemplates/MANGOsPWA/voice-overlay/app.js")) throw new FileNotFoundException("Voice overlay is missing from the template.");
+        if (Mangos.Ttb.Commerce.Editor.TtbPortalPackaging.Enabled(profile)) Mangos.Ttb.Commerce.Editor.TtbPortalPackaging.Preflight(profile);
+        else if (!File.Exists("Assets/WebGLTemplates/MANGOsPWA/voice-overlay/app.js")) throw new FileNotFoundException("Voice overlay is missing from the template.");
     }
     public static BuildReport BuildOne(MangosBuildProfile profile, string name, string output, string buildId)
     {
@@ -136,7 +143,7 @@ public static class MangosBuildPipeline
         if (server) PlayerSettings.SetScriptingBackend(NamedBuildTarget.Server, ScriptingImplementation.IL2CPP);
         else
         {
-            PlayerSettings.WebGL.template = "PROJECT:MANGOsPWA";
+            PlayerSettings.WebGL.template = Mangos.Ttb.Commerce.Editor.TtbPortalPackaging.Enabled(profile) ? "PROJECT:MANGOsTTB" : "PROJECT:MANGOsPWA";
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
             EditorUserBuildSettings.webGLBuildSubtarget = WebGLTextureSubtarget.Generic;
         }
@@ -157,6 +164,8 @@ public static class MangosBuildPipeline
             if (!File.Exists(Path.Combine(output, "MANGOsServer.x86_64")) || !File.Exists(Path.Combine(output, "GameAssembly.so"))) throw new IOException("Incomplete Linux IL2CPP package.");
             File.WriteAllText(Path.Combine(output, "start-server.sh"), "#!/bin/sh\nset -eu\ncd -- \"$(dirname -- \"$0\")\"\nchmod +x ./MANGOsServer.x86_64\nexec ./MANGOsServer.x86_64 -batchmode -nographics -logFile - \"$@\"\n");
         }
+        else if (Mangos.Ttb.Commerce.Editor.TtbPortalPackaging.Enabled(profile))
+            Mangos.Ttb.Commerce.Editor.TtbPortalPackaging.CompleteClient(profile, output);
         else
         {
             foreach (var asset in new[] { "index.html", "voice-app.js", "voice-overlay/app.js", "voice-overlay/config.js", "TemplateData/style.css" })
@@ -164,6 +173,8 @@ public static class MangosBuildPipeline
             var publicVoice = new { requireGameRoom = true, roomId = "", roomNamespace = profile.deployment };
             File.WriteAllText(Path.Combine(output, "mangos-config.js"), "window.MANGOS_BUILD_ID=" + Newtonsoft.Json.JsonConvert.SerializeObject(buildId) + ";\nwindow.VOICE_APP_CONFIG=" + Newtonsoft.Json.JsonConvert.SerializeObject(publicVoice) + ";\n");
         }
+        if (Mangos.Ttb.Commerce.Editor.TtbPortalPackaging.Enabled(profile))
+            Mangos.Ttb.Commerce.Editor.TtbPortalPackaging.WriteEvidence(profile, output);
         return report;
     }
     private static void Finish(Job job, string status, string error)
@@ -177,6 +188,8 @@ public static class MangosBuildPipeline
             if (status == "Succeeded") manifest.status = "Finalizing";
             File.WriteAllText(Path.Combine(job.output, "build-manifest.json"), JsonUtility.ToJson(manifest, true));
             WriteDeployment(job);
+            if (status == "Succeeded" && Mangos.Ttb.Commerce.Editor.TtbPortalPackaging.Enabled(job.profile))
+                Mangos.Ttb.Commerce.Editor.TtbPortalPackaging.CreateUploadArchives(job.profile, job.output, job.targets.Take(job.index).ToArray());
             if (status == "Succeeded")
             {
                 var complete = job.output.Substring(0, job.output.Length - ".staging".Length);
@@ -235,6 +248,8 @@ public static class MangosBuildPipeline
         var text = $"# Example: configure host/certificates/root before deployment.\nserver {{\n  listen {n.clientPort}{tls};\n  server_name {host};\n{certificates}  root /usr/share/nginx/html;\n  index index.html;\n  location {n.clientPath} {{\n    proxy_pass {(n.serverWss ? "https" : "http")}://127.0.0.1:{n.serverPort};\n    proxy_http_version 1.1;\n    proxy_set_header Upgrade $http_upgrade;\n    proxy_set_header Connection \"upgrade\";\n    proxy_read_timeout 3600s;\n  }}\n  location / {{ try_files $uri $uri/ =404; }}\n}}\n";
         File.WriteAllText(Path.Combine(folder, "nginx-game.conf.example"), text);
         File.WriteAllText(Path.Combine(folder, "README.txt"), "Serve the Client folder with correct wasm/JavaScript MIME types. Start the entire Server package with start-server.sh.\nThe proxy file is a deployment example and is not applied automatically.\nServer certificates/passwords are provided on the deployment host, never in WebGL.\n");
+        if (Mangos.Ttb.Commerce.Editor.TtbPortalPackaging.Enabled(job.profile))
+            Mangos.Ttb.Commerce.Editor.TtbPortalPackaging.WriteDeployment(job.profile, folder);
     }
     public static void BuildServerBatch() => BuildBatch("Server");
     public static void BuildClientBatch() => BuildBatch("Client");

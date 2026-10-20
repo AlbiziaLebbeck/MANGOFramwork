@@ -1,0 +1,19 @@
+# Certificate preparation only. Public API/callback ingress requires its separate acceptance gates.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ttb-api-test
+  namespace: ttb-uat
+  labels: { app.kubernetes.io/part-of: ttb-commerce, mangosgo.com/environment: Uat }
+spec:
+  secretName: ttb-api-test-tls
+  issuerRef:
+    name: letsencrypt-production-cloudflare-dns01
+    kind: ClusterIssuer
+  dnsNames: [ttb-api-test.mangosgo.com]
+  renewBefore: 720h
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Always
+  usages: [digital signature, key encipherment, server auth]

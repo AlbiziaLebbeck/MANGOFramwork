@@ -1,0 +1,37 @@
+# TTB overlay visual QA ledger
+
+18 October 2026. Interactive inspection: Codex in-app browser,127.0.0.1:5176,1280×720. Repeatable project E2E: production bundle1536×1024 and390×844,3/3passed. ImageGen reference and actual saved screenshots were viewed together with view_image for checkout, QR and history. This is the React surface gate; compiled Unity final acceptance is pending.
+
+| Comparison | Reference / actual evidence | Action / status |
+|---|---|---|
+| Header/copy | product concept plain full-width MANGOs; checkout generated a conflicting floating logo; actual uses one plain header | Intentional consistent baseline, see DESIGN_SPEC. Runtime catalog/IDs/Thai Buddhist dates replace fictitious values |
+| Layout | checkout62/38, history58/42, white16px dialog, gray summary; actual matches structural grid | Summary originally too short; stretched to complete checkout column. Final checkout screenshot has aligned bottom edge |
+| Typography/forms | Thai font and explicit control sizes; optional email originally made its input lower than name | Grouped optional label inline; actual columns now align. Self-hosted OFL font embedded; no framework/browser-default form typography |
+| Color/components | white, forest primary, gray lines, amber Mock state, outlined icons; actual verified in both screens | Matches token palette; production strings and state drive colors. Screenshot of history taken during refresh shows temporary disabled button state; functional test waits/clicks actual ready download successfully |
+| Assets | toroidal lamp, wood sculpture, faceted star in concepts | Three standalone generated assets saved under WebCommerce/public/products. In standalone mode clearly labeled images; actual interactive Unity meshes and gallery backdrop still P6-03 |
+| QR | drawn mock reference; actual uses persisted backend payload + PNG, quiet zone intact | Deliberate financial-safety adaptation. No logo/text drawn over real modules. Mock notice explicit; no automaticVerify requests observed |
+| Mobile | portrait concept1024×1536; actual phone390×844 has less vertical room | Single column, readable QR and inner-dialog scrolling, fixed bottom navigation; E2E confirms zero horizontal overflow and recovery. Additional physical-device/pinch QA remains |
+| Async states | reference selected Paid row + document buttons; initial actual stale Pending screen | Added bounded3s visible activityGET refresh until document/fulfillment available. Whole mixed purchase passes with real PDF, Paid separate from physical Pending |
+| Keyboard / 3D | DOM focus trap, close/Escape, disabled 3D controls when host absent | React foundation present. Unity camera matching, world input suspension/restoration and full native visual comparison still pending P6-03/04 |
+
+No final10/10 Unity visual sign-off is claimed before the native gallery/model/camera and mobile/focus evidence exist. All remaining differences above have an explicit follow-up phase rather than being silently accepted as completed.
+
+## Native gallery verification, 18 October 2026
+
+- Actual screenshots `.artifacts/unity-qa/product-native-desktop.png` and `product-native-mobile.png` were viewed after the final native renderer repair. Desktop1280×720: same plain header, forest primary, right-side purchase panel and neutral preview. Phone390×844: single-column native preview and readable details with inner scrolling; no horizontal overflow. The zoomed screenshot is intentionally a close view, and reset restores the complete sculpture before the primary mobile evidence is saved.
+- Native torus lamp, editable wood sculpture and faceted star follow the authored concept shapes. They are procedural demonstration geometry/materials; production merchant models still require catalog/registry mapping. No raster image substitutes for native rotation. Gallery positioning was moved directly ahead of BaseWorld's initial spawn, and the paid star sits beside the avatar rather than behind its head.
+- Repairs from comparison: reduce overexposure, then restore mid-tone lighting; isolate preview lights, reserve layer31; move preview stage from12000 to-500Y and raise near clip to prevent triangle artifacts. Disable preview camera legacy mouse event mask. Wait for native scene readiness before allowing the gallery start action; queued loader availability alone was insufficient.
+- Final compiled-gallery tests2/2 passed in32.0s: real collider click, framebuffer changes on orbit/zoom, reset/Escape, second product, emulated phone tap/pinch and layout. Both page errors and native/browser console errors were required to be absent. The full-world trusted game-use flow was checked interactively (consume/renew/logout); its repeatable dedicated-server regression is being completed separately. Physical-phone testing and PWA behavior remainP6-04.
+
+## P6 final integration gate
+
+- Subsequent gallery2/2 (50.8s), full-world game-use1/1 (48.0s), shopper3/3 (44.6s), PWA two-tab/offline1/1 (11.5s), security11/11 and worker policy3/3 passed. Physical-device and bank acceptance remainP8.
+- Short desktop1280×720 previously clipped the QR below the fold. The payment card now uses two columns only on short desktop screens; the entire300px QR and quiet zone remain visible. Final screenshot `.artifacts/pwa-qa/update-keeps-qr.png` was inspected and its bounds asserted. Informational notices clear after6s and entering checkout clears a stale add-to-cart notice; errors stay visible.
+- Gallery/world packages contain the same latest293630-byte overlay; public PWA shell excludes Unity binaries and private financial responses. No public deployment is implied.
+
+## P8 verification, 19 October 2026
+
+- Keyboard review in IAB exposed that Escape closed the product but lost its opener when the gallery was remounted. The dialog now restores the selected public product after render, with the home control as a fallback; Tab/Shift+Tab remain inside. Verified the repaired IAB focus state and repeatable keyboard test.
+- New390×844/844×390/320×568 checks exposed the narrow preview's340px minimum forcing horizontal overflow. A bounded grid/preview at≤360px and wrapping control caption removed it. All three saved screenshots were viewed; purchase controls remain reachable by scrolling. Landscape has separate detail scrolling, with the same forest/white palette and typography.
+- Compiled Unity failure handling now presents the same product thumbnail (or an explicit unavailable-image placeholder), a persistent error and retry, with zoom disabled until a real matching ready event. Retry refetches public catalogue metadata, uses a new correlation ID and preserves selected quantity. The GET-only fault fixture changes only display metadata and supplies the owned OrbitLamp thumbnail; it does not fake a payment or native ready event. Actual native error→retry→native framebuffer recovery and retainedquantity2 were tested. Screenshots`product-native-missing-model.png`/`product-native-model-recovered.png` were viewed.
+- Latest Gallery/World HTML/React/PWA packages use377.05KB JS/gzip107.72KB. Galleryrelease`84296d93def4959f3359cf92c8f18b32fd71f37d53f2302355fd609021557c78`; Worldrelease`1f612a70fe21682e05a2498e1ecc39abc662d8cb885718fd7c070d3ce305287b`. Fullshopper/admin10/10, native3/3, world1/1, PWA1/1, security17/17 and shellpolicy3/3 passed. Physical phones, bank app scans, target-domain identity and public deployment remain explicit acceptance gates.

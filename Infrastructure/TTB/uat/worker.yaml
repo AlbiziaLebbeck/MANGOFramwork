@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ttb-commerce-worker
+  namespace: ttb-uat
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: { app: ttb-commerce-worker }
+  template:
+    metadata:
+      labels: { app: ttb-commerce-worker, app.kubernetes.io/part-of: ttb-commerce }
+    spec:
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        runAsNonRoot: true
+      containers:
+        - name: worker
+          image: mcr.microsoft.com/playwright:v1.63.0-noble
+          workingDir: /app
+          command: [/app/TtbCommerce.Api]
+          env:
+            - { name: ASPNETCORE_ENVIRONMENT, value: Uat }
+            - { name: Commerce__Role, value: CommerceWorker }
+            - { name: ASPNETCORE_URLS, value: 'http://0.0.0.0:8080' }
+            - { name: DOTNET_EnableDiagnostics, value: '0' }
+            - { name: Ttb__PrivateKeyPath, value: /run/ttb-key/private.pem }
+          envFrom:
+            - secretRef: { name: ttb-operations, optional: true }
+            - secretRef: { name: ttb-commerce-runtime }
+            - secretRef: { name: ttb-bank, optional: true }
+            - secretRef: { name: ttb-reports, optional: true }
+          ports: [{ name: http, containerPort: 8080 }]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          resources:
+            requests: { cpu: 100m, memory: 192Mi }
+            limits: { cpu: '2', memory: 768Mi }
+          startupProbe:
+            httpGet: { path: /health/live, port: http, httpHeaders: [{ name: Host, value: localhost }] }
+            periodSeconds: 3
+            failureThreshold: 40
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http, httpHeaders: [{ name: Host, value: localhost }] }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health/live, port: http, httpHeaders: [{ name: Host, value: localhost }] }
+            periodSeconds: 15
+          volumeMounts:
+            - { name: app, mountPath: /app, readOnly: true }
+            - { name: signing-key, mountPath: /run/ttb-key, readOnly: true }
+            - { name: report-keys, mountPath: /run/ttb-report-keys, readOnly: true }
+            - { name: temporary, mountPath: /tmp }
+            - { name: private, mountPath: /var/ttb-private }
+      volumes:
+        - name: app
+          hostPath:
+            path: /opt/ttb-commerce/uat/releases/__RELEASE__/api
+            type: Directory
+        - name: signing-key
+          secret: { secretName: ttb-signing-key, optional: true, defaultMode: 0440 }
+        - name: report-keys
+          secret: { secretName: ttb-report-keys, optional: true, defaultMode: 0440 }
+        - name: temporary
+          emptyDir: { sizeLimit: 256Mi }
+        - name: private
+          persistentVolumeClaim: { claimName: ttb-private }

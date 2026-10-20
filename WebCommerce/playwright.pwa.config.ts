@@ -1,0 +1,2 @@
+import { defineConfig } from '@playwright/test';
+export default defineConfig({outputDir:'./test-results/pwa',testDir:'./e2e-pwa',timeout:180000,workers:1,retries:0,reporter:[['list'],['json',{outputFile:'../.artifacts/acceptance/pwa-results.json'}]],webServer:{command:'node ../Tools/TTB/tests/pwa-server.mjs',url:'http://127.0.0.1:5176',reuseExistingServer:false,timeout:30000},use:{baseURL:'http://127.0.0.1:5176',viewport:{width:1280,height:720},trace:'retain-on-failure',screenshot:'only-on-failure'}});

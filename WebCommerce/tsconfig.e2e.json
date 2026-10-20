@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "types": ["node", "@playwright/test"] },
+  "include": ["e2e", "e2e-unity", "e2e-world", "e2e-pwa", "e2e-load", "playwright*.config.ts"]
+}

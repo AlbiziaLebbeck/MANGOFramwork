@@ -1,0 +1,438 @@
+rule_files: [alerts.yml]
+evaluation_interval: 1m
+tests:
+  - name: missing JWT telemetry cannot look healthy after rollback while an intentionally unknown deadline is valid
+    interval: 1m
+    input_series:
+      - series: 'up{job="ttb-api",instance="old-release"}'
+        values: '1+0x5'
+      - series: 'up{job="ttb-api",instance="partial"}'
+        values: '1+0x5'
+      - series: 'ttb_bank_signing_key_expected{job="ttb-api",instance="partial"}'
+        values: '0+0x5'
+      - series: 'ttb_bank_signing_key_probe_success{job="ttb-api",instance="partial"}'
+        values: '0+0x5'
+      - series: 'up{job="ttb-api",instance="unknown-deadline"}'
+        values: '1+0x5'
+      - series: 'ttb_bank_signing_key_expected{job="ttb-api",instance="unknown-deadline"}'
+        values: '0+0x5'
+      - series: 'ttb_bank_signing_key_probe_success{job="ttb-api",instance="unknown-deadline"}'
+        values: '0+0x5'
+      - series: 'ttb_bank_signing_key_rotation_scheduled{job="ttb-api",instance="unknown-deadline"}'
+        values: '0+0x5'
+      - series: 'up{job="ttb-api",instance="missing-date"}'
+        values: '1+0x5'
+      - series: 'ttb_bank_signing_key_expected{job="ttb-api",instance="missing-date"}'
+        values: '1+0x5'
+      - series: 'ttb_bank_signing_key_probe_success{job="ttb-api",instance="missing-date"}'
+        values: '1+0x5'
+      - series: 'ttb_bank_signing_key_rotation_scheduled{job="ttb-api",instance="missing-date"}'
+        values: '1+0x5'
+      - series: 'up{job="ttb-api",instance="down"}'
+        values: '0+0x5'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: TtbBankSigningKeyTelemetryMissing
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: old-release, severity: critical }
+            exp_annotations: { summary: 'TTB JWT key telemetry is incomplete; verify the compatible release and private collector', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+          - exp_labels: { job: ttb-api, instance: partial, severity: critical }
+            exp_annotations: { summary: 'TTB JWT key telemetry is incomplete; verify the compatible release and private collector', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+          - exp_labels: { job: ttb-api, instance: missing-date, severity: critical }
+            exp_annotations: { summary: 'TTB JWT key telemetry is incomplete; verify the compatible release and private collector', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+  - name: JWT key failure is independent of bank profile readiness and skips unprovisioned environments
+    interval: 1m
+    input_series:
+      - series: 'ttb_bank_signing_key_expected{job="ttb-api",instance="expected"}'
+        values: '1+0x10'
+      - series: 'ttb_bank_signing_key_probe_success{job="ttb-api",instance="expected"}'
+        values: '0+0x10'
+      - series: 'ttb_bank_signing_key_expected{job="ttb-api",instance="unprovisioned"}'
+        values: '0+0x10'
+      - series: 'ttb_bank_signing_key_probe_success{job="ttb-api",instance="unprovisioned"}'
+        values: '0+0x10'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: TtbBankSigningKeyUnavailable
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: expected, severity: critical }
+            exp_annotations: { summary: 'The expected TTB JWT private key is unreadable or invalid; never fall back to a retired key', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+  - name: an expected RSA key without an agreed rotation schedule is visible after the grace period
+    interval: 1m
+    input_series:
+      - series: 'ttb_bank_signing_key_expected{job="ttb-api",instance="expected"}'
+        values: '1+0x35'
+      - series: 'ttb_bank_signing_key_rotation_scheduled{job="ttb-api",instance="expected"}'
+        values: '0+0x35'
+      - series: 'ttb_bank_signing_key_expected{job="ttb-api",instance="unprovisioned"}'
+        values: '0+0x35'
+      - series: 'ttb_bank_signing_key_rotation_scheduled{job="ttb-api",instance="unprovisioned"}'
+        values: '0+0x35'
+    alert_rule_test:
+      - eval_time: 31m
+        alertname: TtbBankSigningKeyRotationUnscheduled
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: expected, severity: warning }
+            exp_annotations: { summary: 'The provisioned TTB JWT key has no agreed rotation deadline; RSA PEM does not supply certificate expiry', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+  - name: explicit JWT rotation warning and overdue deadlines are distinct and never inferred for missing schedules
+    interval: 1m
+    input_series:
+      - series: 'ttb_bank_signing_key_expected{job="ttb-api",instance="soon"}'
+        values: '1+0x10'
+      - series: 'ttb_bank_signing_key_rotation_scheduled{job="ttb-api",instance="soon"}'
+        values: '1+0x10'
+      - series: 'ttb_bank_signing_key_rotation_due_timestamp_seconds{job="ttb-api",instance="soon"}'
+        values: '86400+0x10'
+      - series: 'ttb_bank_signing_key_expected{job="ttb-api",instance="overdue"}'
+        values: '1+0x10'
+      - series: 'ttb_bank_signing_key_rotation_scheduled{job="ttb-api",instance="overdue"}'
+        values: '1+0x10'
+      - series: 'ttb_bank_signing_key_rotation_due_timestamp_seconds{job="ttb-api",instance="overdue"}'
+        values: '1+0x10'
+      - series: 'ttb_bank_signing_key_expected{job="ttb-api",instance="later"}'
+        values: '1+0x10'
+      - series: 'ttb_bank_signing_key_rotation_scheduled{job="ttb-api",instance="later"}'
+        values: '1+0x10'
+      - series: 'ttb_bank_signing_key_rotation_due_timestamp_seconds{job="ttb-api",instance="later"}'
+        values: '5184000+0x10'
+      - series: 'ttb_bank_signing_key_expected{job="ttb-api",instance="unscheduled"}'
+        values: '1+0x10'
+      - series: 'ttb_bank_signing_key_rotation_scheduled{job="ttb-api",instance="unscheduled"}'
+        values: '0+0x10'
+      - series: 'ttb_bank_signing_key_rotation_due_timestamp_seconds{job="ttb-api",instance="unscheduled"}'
+        values: '1+0x10'
+    alert_rule_test:
+      - eval_time: 7m
+        alertname: TtbBankSigningKeyRotationDueSoon
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: soon, severity: warning }
+            exp_annotations: { summary: 'The agreed TTB JWT key rotation deadline is less than thirty days away; coordinate the bank switch', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+      - eval_time: 7m
+        alertname: TtbBankSigningKeyRotationOverdue
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: overdue, severity: critical }
+            exp_annotations: { summary: 'The agreed TTB JWT key rotation deadline has passed; investigate without automatic key replacement', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+  - name: prepared UAT TLS failure is visible but only accepted public serving creates an outage
+    interval: 1m
+    input_series:
+      - series: 'probe_success{job="ttb-callback-tls",instance="prepared"}'
+        values: '0+0x10'
+      - series: 'ttb_callback_public_serving_expected{job="ttb-callback-tls",instance="prepared"}'
+        values: '0+0x10'
+      - series: 'probe_success{job="ttb-callback-tls",instance="accepted"}'
+        values: '0+0x10'
+      - series: 'ttb_callback_public_serving_expected{job="ttb-callback-tls",instance="accepted"}'
+        values: '1+0x10'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: TtbCallbackTlsInvalid
+        exp_alerts:
+          - exp_labels: { job: ttb-callback-tls, instance: accepted, severity: critical }
+            exp_annotations: { summary: 'An accepted public TTB callback listener fails verified TLS; preserve bank retry/evidence', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+  - name: issued and verified-served certificate expiry are independent from backup recipient expiry
+    interval: 1m
+    input_series:
+      - series: 'ttb_callback_certificate_not_after_timestamp_seconds{job="ttb-callback-tls",instance="prepared"}'
+        values: '86400+0x10'
+      - series: 'ttb_callback_tls_leaf_not_after_timestamp_seconds{job="ttb-callback-tls",instance="serving"}'
+        values: '86400+0x10'
+      - series: 'probe_success{job="ttb-callback-tls",instance="serving"}'
+        values: '1+0x10'
+      - series: 'ttb_backup_recipient_not_after_timestamp_seconds{job="ttb-backups",instance="recipient"}'
+        values: '86400+0x10'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: TtbCallbackCertificateExpiring
+        exp_alerts:
+          - exp_labels: { job: ttb-callback-tls, instance: prepared, severity: warning }
+            exp_annotations: { summary: 'The issued UAT certificate expires in less than fourteen days; inspect cert-manager renewal', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+      - eval_time: 6m
+        alertname: TtbCallbackTlsExpiring
+        exp_alerts:
+          - exp_labels: { job: ttb-callback-tls, instance: serving, severity: warning }
+            exp_annotations: { summary: 'TTB callback TLS expires in less than fourteen days; verify the approved hostname/certificate', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+      - eval_time: 6m
+        alertname: TtbBackupRecipientExpiring
+        exp_alerts:
+          - exp_labels: { job: ttb-backups, instance: recipient, severity: warning }
+            exp_annotations: { summary: 'The backup recipient expires in less than thirty days; rehearse new-key recovery before switching', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+  - name: public-certificate observer and pinned backup-recipient metadata failures stay explicit
+    interval: 1m
+    input_series:
+      - series: 'up{job="ttb-callback-tls",instance="down"}'
+        values: '0+0x5'
+      - series: 'ttb_callback_certificate_probe_success{job="ttb-callback-tls",instance="bad-public-file"}'
+        values: '0+0x5'
+      - series: 'ttb_backup_recipient_probe_success{job="ttb-backups",instance="wrong-recipient"}'
+        values: '0+0x5'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: TtbCallbackCertificateUnavailable
+        exp_alerts:
+          - exp_labels: { job: ttb-callback-tls, instance: down, severity: critical }
+            exp_annotations: { summary: 'The prepared UAT public certificate cannot be observed; no private key should be read by this probe', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+          - exp_labels: { job: ttb-callback-tls, instance: bad-public-file, severity: critical }
+            exp_annotations: { summary: 'The prepared UAT public certificate cannot be observed; no private key should be read by this probe', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+      - eval_time: 3m
+        alertname: TtbBackupRecipientUnavailable
+        exp_alerts:
+          - exp_labels: { job: ttb-backups, instance: wrong-recipient, severity: critical }
+            exp_annotations: { summary: 'The pinned public backup recipient cannot be verified; preserve all historical recovery keys', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+  - name: service circuit alerts preserve the bounded service label and exclude unprovisioned bank profiles
+    interval: 1m
+    input_series:
+      - series: 'ttb_bank_circuit_open{job="ttb-api",instance="live",service="merchant-void"}'
+        values: '1+0x10'
+      - series: 'ttb_bank_circuit_open{job="ttb-api",instance="live",service="enquiry-void"}'
+        values: '0+0x10'
+      - series: 'ttb_bank_profile_ready{job="ttb-api",instance="live"}'
+        values: '1+0x10'
+      - series: 'ttb_recovery_frozen{job="ttb-api",instance="live"}'
+        values: '0+0x10'
+      - series: 'ttb_bank_circuit_open{job="ttb-api",instance="disabled",service="merchant-void"}'
+        values: '1+0x10'
+      - series: 'ttb_bank_profile_ready{job="ttb-api",instance="disabled"}'
+        values: '0+0x10'
+      - series: 'ttb_recovery_frozen{job="ttb-api",instance="disabled"}'
+        values: '0+0x10'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: TtbBankCircuitOpen
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: live, service: merchant-void, severity: warning }
+            exp_annotations: { summary: 'A TTB service circuit awaits an explicit successful request; do not replay money commands', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+  - name: private capacity distinguishes a missing probe from a low readable filesystem
+    interval: 1m
+    input_series:
+      - series: 'ttb_private_storage_capacity_probe_success{job="ttb-api",instance="missing"}'
+        values: '0+0x10'
+      - series: 'ttb_private_storage_filesystem_size_bytes{job="ttb-api",instance="missing"}'
+        values: '1000+0x10'
+      - series: 'ttb_private_storage_filesystem_available_bytes{job="ttb-api",instance="missing"}'
+        values: '0+0x10'
+      - series: 'ttb_private_storage_capacity_probe_success{job="ttb-api",instance="low"}'
+        values: '1+0x10'
+      - series: 'ttb_private_storage_filesystem_size_bytes{job="ttb-api",instance="low"}'
+        values: '1000+0x10'
+      - series: 'ttb_private_storage_filesystem_available_bytes{job="ttb-api",instance="low"}'
+        values: '50+0x10'
+      - series: 'ttb_private_storage_capacity_probe_success{job="ttb-api",instance="healthy"}'
+        values: '1+0x10'
+      - series: 'ttb_private_storage_filesystem_size_bytes{job="ttb-api",instance="healthy"}'
+        values: '1000+0x10'
+      - series: 'ttb_private_storage_filesystem_available_bytes{job="ttb-api",instance="healthy"}'
+        values: '800+0x10'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: TtbPrivateStorageUnavailable
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: missing, severity: critical }
+            exp_annotations: { summary: 'TTB private storage capacity cannot be read; inspect its mounted filesystem', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - eval_time: 5m
+        alertname: TtbPrivateFilesystemLow
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: low, severity: critical }
+            exp_annotations: { summary: 'TTB private-file filesystem has less than ten percent available capacity', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+  - name: live callback errors are distinct from disabled provisioning freeze and duplicate acknowledgements
+    interval: 1m
+    input_series:
+      - series: 'ttb_recovery_frozen{job="ttb-api",instance="live"}'
+        values: '0+0x20'
+      - series: 'ttb_bank_profile_ready{job="ttb-api",instance="live"}'
+        values: '1+0x20'
+      - series: 'ttb_callback_http_duration_seconds_count{job="ttb-api",instance="live",outcome="server_error"}'
+        values: '0+1x20'
+      - series: 'ttb_callback_http_duration_seconds_count{job="ttb-api",instance="live",outcome="rejected"}'
+        values: '0+8x20'
+      - series: 'ttb_callback_committed_acks_total{job="ttb-api",instance="live",ack="0002"}'
+        values: '0+1x20'
+      - series: 'ttb_recovery_frozen{job="ttb-api",instance="frozen"}'
+        values: '1+0x20'
+      - series: 'ttb_bank_profile_ready{job="ttb-api",instance="frozen"}'
+        values: '1+0x20'
+      - series: 'ttb_callback_http_duration_seconds_count{job="ttb-api",instance="frozen",outcome="server_error"}'
+        values: '0+1x20'
+      - series: 'ttb_callback_http_duration_seconds_count{job="ttb-api",instance="frozen",outcome="rejected"}'
+        values: '0+8x20'
+      - series: 'ttb_callback_committed_acks_total{job="ttb-api",instance="frozen",ack="0002"}'
+        values: '0+1x20'
+      - series: 'ttb_recovery_frozen{job="ttb-api",instance="disabled"}'
+        values: '0+0x20'
+      - series: 'ttb_bank_profile_ready{job="ttb-api",instance="disabled"}'
+        values: '0+0x20'
+      - series: 'ttb_callback_http_duration_seconds_count{job="ttb-api",instance="disabled",outcome="server_error"}'
+        values: '0+1x20'
+      - series: 'ttb_callback_http_duration_seconds_count{job="ttb-api",instance="disabled",outcome="rejected"}'
+        values: '0+8x20'
+      - series: 'ttb_callback_committed_acks_total{job="ttb-api",instance="disabled",ack="0002"}'
+        values: '0+1x20'
+      - series: 'ttb_recovery_frozen{job="ttb-api",instance="duplicate"}'
+        values: '0+0x20'
+      - series: 'ttb_bank_profile_ready{job="ttb-api",instance="duplicate"}'
+        values: '1+0x20'
+      - series: 'ttb_callback_committed_acks_total{job="ttb-api",instance="duplicate",ack="0004"}'
+        values: '0+5x20'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: TtbCallbackServerErrors
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: live, severity: critical }
+            exp_annotations: { summary: 'TTB callbacks are failing; preserve evidence and confirm durable commit before ACK', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - eval_time: 10m
+        alertname: TtbCallbackRejected
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: live, severity: warning }
+            exp_annotations: { summary: 'TTB callback transport or authentication is repeatedly rejected', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - eval_time: 10m
+        alertname: TtbCallbackBusinessMismatch
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: live, severity: warning }
+            exp_annotations: { summary: 'TTB callbacks contain a durable input or payment mismatch; inspect the finance case', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+  - name: expired leases alert only when work is allowed to run
+    interval: 1m
+    input_series:
+      - series: 'ttb_jobs_expired_leases{job="ttb-api",instance="live"}'
+        values: '1+0x10'
+      - series: 'ttb_recovery_frozen{job="ttb-api",instance="live"}'
+        values: '0+0x10'
+      - series: 'ttb_jobs_expired_leases{job="ttb-api",instance="frozen"}'
+        values: '1+0x10'
+      - series: 'ttb_recovery_frozen{job="ttb-api",instance="frozen"}'
+        values: '1+0x10'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: TtbWorkLeaseExpired
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: live, severity: warning }
+            exp_annotations: { summary: 'TTB work leases remain expired; recover existing effects without duplicating jobs', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+  - name: recovery freeze suppresses due-job outage while keeping its own inspection alert
+    interval: 1m
+    input_series:
+      - series: 'ttb_jobs_oldest_due_age_seconds{job="ttb-api",instance="frozen"}'
+        values: '600+0x10'
+      - series: 'ttb_recovery_frozen{job="ttb-api",instance="frozen"}'
+        values: '1+0x10'
+      - series: 'ttb_jobs_oldest_due_age_seconds{job="ttb-api",instance="live"}'
+        values: '600+0x10'
+      - series: 'ttb_recovery_frozen{job="ttb-api",instance="live"}'
+        values: '0+0x10'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: TtbDueWorkStalled
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: live, severity: critical }
+            exp_annotations: { summary: 'TTB due work is stalled; preserve original effect keys', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - eval_time: 5m
+        alertname: TtbRecoveryFreezeActive
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: frozen, severity: info }
+            exp_annotations: { summary: 'TTB is in read-only recovery inspection; no worker or mutation should run', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#restore-and-freeze' }
+  - name: disabled report provisioning never creates a missing-report outage
+    interval: 1m
+    input_series:
+      - series: 'ttb_reports_overdue{job="ttb-api",instance="disabled"}'
+        values: '2+0x15'
+      - series: 'ttb_reports_enabled{job="ttb-api",instance="disabled"}'
+        values: '0+0x15'
+      - series: 'ttb_reports_overdue{job="ttb-api",instance="enabled"}'
+        values: '1+0x15'
+      - series: 'ttb_reports_enabled{job="ttb-api",instance="enabled"}'
+        values: '1+0x15'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: TtbReportMissing
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: enabled, severity: warning }
+            exp_annotations: { summary: 'An enabled TTB report fetch is overdue', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+  - name: unknown void and stock invariants produce explicit critical investigation alerts
+    interval: 1m
+    input_series:
+      - series: 'ttb_voids_unknown{job="ttb-api",instance="api"}'
+        values: '1+0x5'
+      - series: 'ttb_inventory_invariant_failures{job="ttb-api",instance="api"}'
+        values: '1+0x5'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: TtbUnknownVoid
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: api, severity: critical }
+            exp_annotations: { summary: 'TTB Void outcome is unknown; use bounded enquiry and never blindly resend', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - eval_time: 0m
+        alertname: TtbStockInvariantFailed
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: api, severity: critical }
+            exp_annotations: { summary: 'TTB tracked stock violates its reserved/on-hand invariant', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+  - name: a pending suspended backup is distinct from a stale enabled schedule
+    interval: 1m
+    input_series:
+      - series: 'ttb_backup_last_success_timestamp_seconds{job="ttb-backups",instance="pending"}'
+        values: '0+0x60'
+      - series: 'ttb_backup_scheduling_expected{job="ttb-backups",instance="pending"}'
+        values: '0+0x60'
+      - series: 'ttb_backup_last_success_timestamp_seconds{job="ttb-backups",instance="active"}'
+        values: '0+0x60'
+      - series: 'ttb_backup_scheduling_expected{job="ttb-backups",instance="active"}'
+        values: '1+0x60'
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: TtbBackupStale
+        exp_alerts:
+          - exp_labels: { job: ttb-backups, instance: active, severity: critical }
+            exp_annotations: { summary: 'TTB scheduled local backup is stale; off-server RPO is a separate gate', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#restore-and-freeze' }
+  - name: API and database failures have independent timers
+    interval: 1m
+    input_series:
+      - series: 'up{job="ttb-api",instance="network-down"}'
+        values: '0+0x5'
+      - series: 'ttb_database_up{job="ttb-api",instance="db-down"}'
+        values: '0+0x5'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: TtbApiUnavailable
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: network-down, severity: critical }
+            exp_annotations: { summary: 'TTB private API cannot be scraped', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#boundaries-and-first-checks' }
+      - eval_time: 2m
+        alertname: TtbDatabaseUnavailable
+        exp_alerts:
+          - exp_labels: { job: ttb-api, instance: db-down, severity: critical }
+            exp_annotations: { summary: 'TTB database dependency is unavailable; do not ACK uncommitted credits', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+  - name: backup observer outage and malformed metadata remain visible without stale fake values
+    interval: 1m
+    input_series:
+      - series: 'up{job="ttb-backups",instance="down"}'
+        values: '0+0x5'
+      - series: 'up{job="ttb-backups",instance="bad-mount"}'
+        values: '1+0x5'
+      - series: 'ttb_backup_snapshot_probe_success{job="ttb-backups",instance="bad-mount"}'
+        values: '0+0x5'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: TtbBackupObserverUnavailable
+        exp_alerts:
+          - exp_labels: { job: ttb-backups, instance: down, severity: critical }
+            exp_annotations: { summary: 'TTB backup freshness/capacity cannot be observed; inspect the private read-only observer', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+          - exp_labels: { job: ttb-backups, instance: bad-mount, severity: critical }
+            exp_annotations: { summary: 'TTB backup freshness/capacity cannot be observed; inspect the private read-only observer', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+  - name: backup budget and shared filesystem reserve fail independently
+    interval: 1m
+    input_series:
+      - series: 'ttb_backup_pool_used_bytes{job="ttb-backups",instance="full-pool"}'
+        values: '20000000000+0x10'
+      - series: 'ttb_backup_pool_budget_bytes{job="ttb-backups",instance="full-pool"}'
+        values: '21474836480+0x10'
+      - series: 'ttb_backup_filesystem_size_bytes{job="ttb-backups",instance="low-node"}'
+        values: '100000000000+0x10'
+      - series: 'ttb_backup_filesystem_available_bytes{job="ttb-backups",instance="low-node"}'
+        values: '9000000000+0x10'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: TtbBackupPoolNearlyFull
+        exp_alerts:
+          - exp_labels: { job: ttb-backups, instance: full-pool, severity: warning }
+            exp_annotations: { summary: 'TTB backup pool is nearly full; no automatic retention deletion is approved', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - eval_time: 3m
+        alertname: TtbSharedFilesystemLow
+        exp_alerts:
+          - exp_labels: { job: ttb-backups, instance: low-node, severity: critical }
+            exp_annotations: { summary: 'Shared node filesystem is low; protect both TTB and KKU storage', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }

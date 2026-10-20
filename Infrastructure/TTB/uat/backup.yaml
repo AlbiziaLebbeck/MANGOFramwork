@@ -1,0 +1,175 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ttb-encrypted-backups
+  namespace: ttb-uat
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests: { storage: 20Gi }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ttb-backup-scripts
+  namespace: ttb-uat
+data:
+  dump.sh: |
+    #!/bin/sh
+    set -eu
+    umask 077
+    test "$PGDATABASE" = ttb_uat
+    # A newly scheduled pod can precede the node's policy/Service synchronization.
+    # Wait only for this private database; never change policy or retry a dump.
+    attempt=0
+    until pg_isready -q -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE"; do
+      attempt=$((attempt + 1))
+      if [ "$attempt" -ge 20 ]; then printf 'TTB_UAT_DATABASE_UNAVAILABLE\n' >&2; exit 24; fi
+      sleep 2
+    done
+    identity=$(psql -At -v ON_ERROR_STOP=1 -c 'SELECT "Environment" FROM ttb."Deployments" WHERE "Key" = '\''singleton'\''')
+    test "$identity" = Uat
+    date -u +%Y-%m-%dT%H:%M:%SZ > /scratch/snapshot-start.txt
+    pg_dump --format=custom --no-owner --no-acl --file=/scratch/database.dump
+    pg_restore --list /scratch/database.dump > /scratch/database.contents
+    date -u +%Y-%m-%dT%H:%M:%SZ > /scratch/dump-complete.txt
+  encrypt.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    umask 077
+    test "$PGDATABASE" = ttb_uat
+    test -s /scratch/database.dump
+    test -s /recipient/recipient.pem
+    # CronJob Forbid does not serialize manually created jobs; hold one kernel-released lock for this backup pool.
+    exec 9>/backups/.producer.lock
+    flock -n 9 || { printf 'TTB_UAT_BACKUP_PRODUCER_BUSY\n' >&2; exit 22; }
+    actual=$(openssl x509 -in /recipient/recipient.pem -outform DER | sha256sum | cut -d ' ' -f 1)
+    test "$actual" = "$TTB_RECIPIENT_SHA256"
+    openssl x509 -in /recipient/recipient.pem -checkend 86400 -noout >/dev/null
+    existing=$(du -sb /backups | awk '{print $1}')
+    raw=$(du -sb /scratch/database.dump /private | awk '{sum+=$1} END{print sum}')
+    estimate=$((raw + raw / 10 + 1048576))
+    budget=21474836480
+    read -r total available < <(df -PB1 /backups | awk 'NR==2 {print $2, $4}')
+    reserve=$((total / 10))
+    if ((reserve < 10737418240)); then reserve=10737418240; fi
+    # local-path PVC size is not a filesystem quota. Enforce a pool budget and spare shared-node capacity explicitly.
+    if ((existing + estimate > budget || available - estimate < reserve)); then
+      printf 'TTB_UAT_BACKUP_CAPACITY_BLOCKED existing_bytes=%s estimate_bytes=%s free_bytes=%s\n' "$existing" "$estimate" "$available" >&2
+      exit 21
+    fi
+    maximum=$((budget - existing))
+    if ((available - reserve < maximum)); then maximum=$((available - reserve)); fi
+    stamp=$(date -u +%Y%m%dT%H%M%SZ)
+    file="ttb-uat-${stamp}-${HOSTNAME}.tar.gz.p7m"
+    case "$file" in ttb-uat-*.tar.gz.p7m) ;; *) exit 20 ;; esac
+    part="/backups/${file}.part"
+    trap 'rm -f -- "$part"' EXIT
+    {
+      printf 'format=1\nenvironment=Uat\ndatabase=ttb_uat\nminimum_reader_contract=3\n'
+      printf 'snapshot_start='; cat /scratch/snapshot-start.txt
+      printf 'dump_complete='; cat /scratch/dump-complete.txt
+      printf 'recipient_sha256=%s\n' "$actual"
+      printf 'cipher=CMS-AES-256-GCM-RSA-OAEP-SHA256\n'
+    } > /scratch/manifest.txt
+    (cd /scratch && sha256sum database.dump database.contents manifest.txt) > /scratch/bundle-sha256.txt
+    find /private -type f ! -name '*.upload' ! -name '*.tmp' ! -name '*.part' -exec sha256sum '{}' \; |
+      sed 's|  /private/|  private/|' | LC_ALL=C sort > /scratch/private-sha256.txt
+    tar --exclude='*.upload' --exclude='*.tmp' --exclude='*.part' -czf - \
+      -C /scratch database.dump database.contents manifest.txt bundle-sha256.txt private-sha256.txt -C / private |
+      openssl cms -encrypt -aes-256-gcm -binary -stream -outform DER -recip /recipient/recipient.pem \
+        -keyopt rsa_padding_mode:oaep -keyopt rsa_oaep_md:sha256 | head -c "$maximum" > "$part"
+    test -s "$part"
+    # A concurrently growing private directory cannot overrun the persistent output budget or finalize a truncated CMS stream.
+    actual_bytes=$(stat -c %s "$part")
+    if ((actual_bytes >= maximum)); then printf 'TTB_UAT_BACKUP_STREAM_LIMIT_REACHED\n' >&2; exit 23; fi
+    # An atomic hard link fails if the final name already exists; never overwrite or silently accept a different backup.
+    ln -- "$part" "/backups/$file"
+    rm -- "$part"
+    (cd /backups && sha256sum "$file") > "/backups/${file}.sha256"
+    printf '%s\n' "$stamp" > /backups/last-success.part
+    mv -f -- /backups/last-success.part /backups/last-success
+    printf 'TTB_UAT_BACKUP_COMPLETE file=%s recipient_sha256=%s\n' "$file" "$actual"
+    # No automatic deletion: company retention/off-server policy has not been approved.
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ttb-uat-backup
+  namespace: ttb-uat
+spec:
+  schedule: '*/15 * * * *'
+  timeZone: Etc/UTC
+  suspend: true
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels: { app: ttb-uat-backup, app.kubernetes.io/part-of: ttb-commerce }
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext: { runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, runAsNonRoot: true }
+          initContainers:
+            - name: dump
+              image: postgres:18-alpine
+              command: [/bin/sh, /scripts/dump.sh]
+              env:
+                - { name: PGHOST, value: ttb-postgres }
+                - { name: PGDATABASE, value: ttb_uat }
+                - { name: PGUSER, value: ttb_backup }
+                - { name: PGCONNECT_TIMEOUT, value: '10' }
+                - { name: PGOPTIONS, value: '-c statement_timeout=240000 -c lock_timeout=10000' }
+                - name: PGPASSWORD
+                  valueFrom: { secretKeyRef: { name: ttb-backup-credentials, key: password } }
+              securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+              resources: { requests: { cpu: 50m, memory: 128Mi }, limits: { cpu: '1', memory: 2Gi } }
+              volumeMounts:
+                - { name: scratch, mountPath: /scratch }
+                - { name: scripts, mountPath: /scripts, readOnly: true }
+          containers:
+            - name: encrypt
+              image: mcr.microsoft.com/playwright:v1.63.0-noble
+              command: [/bin/bash, /scripts/encrypt.sh]
+              env:
+                - { name: PGDATABASE, value: ttb_uat }
+                - name: TTB_RECIPIENT_SHA256
+                  valueFrom: { configMapKeyRef: { name: ttb-backup-recipient, key: sha256 } }
+              securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+              resources: { requests: { cpu: 50m, memory: 128Mi }, limits: { cpu: '1', memory: 2Gi } }
+              volumeMounts:
+                - { name: scratch, mountPath: /scratch }
+                - { name: scripts, mountPath: /scripts, readOnly: true }
+                - { name: recipient, mountPath: /recipient, readOnly: true }
+                - { name: private, mountPath: /private, readOnly: true }
+                - { name: backups, mountPath: /backups }
+          volumes:
+            - { name: scratch, emptyDir: { medium: Memory, sizeLimit: 1Gi } }
+            - { name: scripts, configMap: { name: ttb-backup-scripts, defaultMode: 0444 } }
+            - { name: recipient, configMap: { name: ttb-backup-recipient, defaultMode: 0444 } }
+            - { name: private, persistentVolumeClaim: { claimName: ttb-private, readOnly: true } }
+            - { name: backups, persistentVolumeClaim: { claimName: ttb-encrypted-backups } }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ttb-backup-isolation
+  namespace: ttb-uat
+spec:
+  podSelector: { matchLabels: { app: ttb-uat-backup } }
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - to: [{ podSelector: { matchLabels: { app: ttb-postgres } } }]
+      ports: [{ protocol: TCP, port: 5432 }]
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
+          podSelector: { matchLabels: { k8s-app: kube-dns } }
+      ports: [{ protocol: UDP, port: 53 }, { protocol: TCP, port: 53 }]

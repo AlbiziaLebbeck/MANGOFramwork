@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ttb-postgres-init
+  namespace: ttb-uat
+data:
+  10-app-role.sh: |
+    #!/bin/sh
+    set -eu
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --set=api_password="$POSTGRES_API_PASSWORD" <<'SQL'
+    CREATE ROLE ttb_app LOGIN PASSWORD :'api_password';
+    CREATE SCHEMA ttb AUTHORIZATION ttb_owner;
+    GRANT CONNECT ON DATABASE ttb_uat TO ttb_app;
+    GRANT USAGE ON SCHEMA ttb TO ttb_app;
+    ALTER DEFAULT PRIVILEGES FOR ROLE ttb_owner IN SCHEMA ttb GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ttb_app;
+    ALTER DEFAULT PRIVILEGES FOR ROLE ttb_owner IN SCHEMA ttb GRANT USAGE, SELECT ON SEQUENCES TO ttb_app;
+    SQL
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ttb-postgres-data
+  namespace: ttb-uat
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests: { storage: 5Gi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ttb-postgres
+  namespace: ttb-uat
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app: ttb-postgres }
+  template:
+    metadata:
+      labels: { app: ttb-postgres, app.kubernetes.io/part-of: ttb-commerce }
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: postgres
+          image: postgres:18-alpine
+          env:
+            - { name: POSTGRES_DB, value: ttb_uat }
+            - { name: POSTGRES_USER, value: ttb_owner }
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: ttb-postgres-bootstrap, key: owner-password }
+            - name: POSTGRES_API_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: ttb-postgres-bootstrap, key: app-password }
+          ports: [{ name: postgres, containerPort: 5432 }]
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: '1', memory: 512Mi }
+          readinessProbe:
+            exec: { command: [sh, -c, 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'] }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec: { command: [sh, -c, 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'] }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql }
+            - { name: init, mountPath: /docker-entrypoint-initdb.d, readOnly: true }
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: ttb-postgres-data }
+        - name: init
+          configMap: { name: ttb-postgres-init, defaultMode: 0555 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ttb-postgres
+  namespace: ttb-uat
+spec:
+  type: ClusterIP
+  selector: { app: ttb-postgres }
+  ports: [{ name: postgres, port: 5432, targetPort: postgres }]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ttb-postgres-private
+  namespace: ttb-uat
+spec:
+  podSelector:
+    matchLabels: { app: ttb-postgres }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { app.kubernetes.io/part-of: ttb-commerce }
+      ports: [{ protocol: TCP, port: 5432 }]

@@ -1,0 +1,161 @@
+groups:
+  - name: ttb-private-operations
+    rules:
+      - alert: TtbApiUnavailable
+        expr: up{job="ttb-api"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: 'TTB private API cannot be scraped', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#boundaries-and-first-checks' }
+      - alert: TtbDatabaseUnavailable
+        expr: ttb_database_up{job="ttb-api"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations: { summary: 'TTB database dependency is unavailable; do not ACK uncommitted credits', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbPrivateStorageUnavailable
+        expr: ttb_private_storage_capacity_probe_success{job="ttb-api"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: 'TTB private storage capacity cannot be read; inspect its mounted filesystem', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbPrivateFilesystemLow
+        expr: (ttb_private_storage_filesystem_available_bytes{job="ttb-api"} / ttb_private_storage_filesystem_size_bytes{job="ttb-api"} < 0.1) and on(job, instance) (ttb_private_storage_capacity_probe_success{job="ttb-api"} == 1)
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: 'TTB private-file filesystem has less than ten percent available capacity', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbCallbackServerErrors
+        expr: (sum by(job, instance) (increase(ttb_callback_http_duration_seconds_count{job="ttb-api",outcome=~"exception|server_error"}[5m])) > 0) and on(job, instance) (ttb_recovery_frozen{job="ttb-api"} == 0) and on(job, instance) (ttb_bank_profile_ready{job="ttb-api"} == 1)
+        for: 1m
+        labels: { severity: critical }
+        annotations: { summary: 'TTB callbacks are failing; preserve evidence and confirm durable commit before ACK', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbBankCircuitOpen
+        expr: (ttb_bank_circuit_open{job="ttb-api"} == 1) and on(job, instance) (ttb_recovery_frozen{job="ttb-api"} == 0) and on(job, instance) (ttb_bank_profile_ready{job="ttb-api"} == 1)
+        for: 1m
+        labels: { severity: warning }
+        annotations: { summary: 'A TTB service circuit awaits an explicit successful request; do not replay money commands', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbCallbackRejected
+        expr: (sum by(job, instance) (increase(ttb_callback_http_duration_seconds_count{job="ttb-api",outcome="rejected"}[5m])) >= 5) and on(job, instance) (ttb_recovery_frozen{job="ttb-api"} == 0) and on(job, instance) (ttb_bank_profile_ready{job="ttb-api"} == 1)
+        for: 1m
+        labels: { severity: warning }
+        annotations: { summary: 'TTB callback transport or authentication is repeatedly rejected', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbCallbackBusinessMismatch
+        expr: (sum by(job, instance) (increase(ttb_callback_committed_acks_total{job="ttb-api",ack=~"0001|0002|0003|0005|0006|0007|other"}[5m])) > 0) and on(job, instance) (ttb_recovery_frozen{job="ttb-api"} == 0) and on(job, instance) (ttb_bank_profile_ready{job="ttb-api"} == 1)
+        for: 1m
+        labels: { severity: warning }
+        annotations: { summary: 'TTB callbacks contain a durable input or payment mismatch; inspect the finance case', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbWorkLeaseExpired
+        expr: (ttb_jobs_expired_leases{job="ttb-api"} > 0) and on(job, instance) (ttb_recovery_frozen{job="ttb-api"} == 0)
+        for: 2m
+        labels: { severity: warning }
+        annotations: { summary: 'TTB work leases remain expired; recover existing effects without duplicating jobs', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbDueWorkStalled
+        expr: (ttb_jobs_oldest_due_age_seconds{job="ttb-api"} > 300) and on(job, instance) (ttb_recovery_frozen{job="ttb-api"} == 0)
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: 'TTB due work is stalled; preserve original effect keys', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbReceiptBacklog
+        expr: (ttb_receipts_pending{job="ttb-api"} > 0) and on(job, instance) (ttb_recovery_frozen{job="ttb-api"} == 0)
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: 'TTB PDF backlog persists; retain original receipt number/snapshot', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbUnknownVoid
+        expr: ttb_voids_unknown{job="ttb-api"} > 0
+        for: 1m
+        labels: { severity: critical }
+        annotations: { summary: 'TTB Void outcome is unknown; use bounded enquiry and never blindly resend', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbReportMissing
+        expr: (ttb_reports_overdue{job="ttb-api"} > 0) and on(job, instance) (ttb_reports_enabled{job="ttb-api"} == 1)
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: 'An enabled TTB report fetch is overdue', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbReportQuarantined
+        expr: (ttb_reports_quarantined{job="ttb-api"} > 0) and on(job, instance) (ttb_reports_enabled{job="ttb-api"} == 1)
+        for: 1m
+        labels: { severity: warning }
+        annotations: { summary: 'TTB encrypted report requires finance investigation', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbStockInvariantFailed
+        expr: ttb_inventory_invariant_failures{job="ttb-api"} > 0
+        labels: { severity: critical }
+        annotations: { summary: 'TTB tracked stock violates its reserved/on-hand invariant', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbCallbackSlow
+        expr: (histogram_quantile(0.95, sum by(job, instance, le) (rate(ttb_callback_http_duration_seconds_bucket{job="ttb-api"}[5m]))) > 2) and on(job, instance) (ttb_recovery_frozen{job="ttb-api"} == 0) and on(job, instance) (ttb_bank_profile_ready{job="ttb-api"} == 1)
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: 'TTB callback P95 latency exceeds two seconds', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbRecoveryFreezeActive
+        expr: ttb_recovery_frozen{job="ttb-api"} == 1
+        labels: { severity: info }
+        annotations: { summary: 'TTB is in read-only recovery inspection; no worker or mutation should run', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#restore-and-freeze' }
+      - alert: TtbBackupStale
+        expr: (time() - ttb_backup_last_success_timestamp_seconds{job="ttb-backups"} > 1800) and on(job, instance) (ttb_backup_scheduling_expected{job="ttb-backups"} == 1)
+        for: 5m
+        labels: { severity: critical }
+        annotations: { summary: 'TTB scheduled local backup is stale; off-server RPO is a separate gate', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#restore-and-freeze' }
+      - alert: TtbBackupPoolNearlyFull
+        expr: ttb_backup_pool_used_bytes{job="ttb-backups"} / ttb_backup_pool_budget_bytes{job="ttb-backups"} > 0.9
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: 'TTB backup pool is nearly full; no automatic retention deletion is approved', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbBackupObserverUnavailable
+        expr: (up{job="ttb-backups"} == 0) or (ttb_backup_snapshot_probe_success{job="ttb-backups"} == 0)
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: 'TTB backup freshness/capacity cannot be observed; inspect the private read-only observer', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbSharedFilesystemLow
+        expr: (ttb_backup_filesystem_available_bytes{job="ttb-backups"} / ttb_backup_filesystem_size_bytes{job="ttb-backups"} < 0.1) or (ttb_backup_filesystem_available_bytes{job="ttb-backups"} < 10737418240)
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: 'Shared node filesystem is low; protect both TTB and KKU storage', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#incident-procedures' }
+      - alert: TtbCallbackTlsExpiring
+        expr: (ttb_callback_tls_leaf_not_after_timestamp_seconds{job="ttb-callback-tls"} - time() < 1209600) and on(job, instance) (probe_success{job="ttb-callback-tls"} == 1)
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: 'TTB callback TLS expires in less than fourteen days; verify the approved hostname/certificate', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+      - alert: TtbCallbackCertificateUnavailable
+        expr: (up{job="ttb-callback-tls"} == 0) or (ttb_callback_certificate_probe_success{job="ttb-callback-tls"} == 0)
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: 'The prepared UAT public certificate cannot be observed; no private key should be read by this probe', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+      - alert: TtbCallbackCertificateExpiring
+        expr: ttb_callback_certificate_not_after_timestamp_seconds{job="ttb-callback-tls"} - time() < 1209600
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: 'The issued UAT certificate expires in less than fourteen days; inspect cert-manager renewal', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+      - alert: TtbCallbackTlsInvalid
+        expr: (probe_success{job="ttb-callback-tls"} == 0) and on(job, instance) (ttb_callback_public_serving_expected{job="ttb-callback-tls"} == 1)
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: 'An accepted public TTB callback listener fails verified TLS; preserve bank retry/evidence', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+      - alert: TtbBackupRecipientUnavailable
+        expr: ttb_backup_recipient_probe_success{job="ttb-backups"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: 'The pinned public backup recipient cannot be verified; preserve all historical recovery keys', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+      - alert: TtbBackupRecipientExpiring
+        expr: ttb_backup_recipient_not_after_timestamp_seconds{job="ttb-backups"} - time() < 2592000
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: 'The backup recipient expires in less than thirty days; rehearse new-key recovery before switching', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+      - alert: TtbBankSigningKeyUnavailable
+        expr: (ttb_bank_signing_key_probe_success{job="ttb-api"} == 0) and on(job, instance) (ttb_bank_signing_key_expected{job="ttb-api"} == 1)
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: 'The expected TTB JWT private key is unreadable or invalid; never fall back to a retired key', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+      - alert: TtbBankSigningKeyTelemetryMissing
+        expr: ((up{job="ttb-api"} == 1) unless on(job, instance) ttb_bank_signing_key_expected{job="ttb-api"}) or ((up{job="ttb-api"} == 1) unless on(job, instance) ttb_bank_signing_key_probe_success{job="ttb-api"}) or ((up{job="ttb-api"} == 1) unless on(job, instance) ttb_bank_signing_key_rotation_scheduled{job="ttb-api"}) or (((ttb_bank_signing_key_rotation_scheduled{job="ttb-api"} == 1) unless on(job, instance) ttb_bank_signing_key_rotation_due_timestamp_seconds{job="ttb-api"}) and on(job, instance) (up{job="ttb-api"} == 1))
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: 'TTB JWT key telemetry is incomplete; verify the compatible release and private collector', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+      - alert: TtbBankSigningKeyRotationUnscheduled
+        expr: (ttb_bank_signing_key_rotation_scheduled{job="ttb-api"} == 0) and on(job, instance) (ttb_bank_signing_key_expected{job="ttb-api"} == 1)
+        for: 30m
+        labels: { severity: warning }
+        annotations: { summary: 'The provisioned TTB JWT key has no agreed rotation deadline; RSA PEM does not supply certificate expiry', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+      - alert: TtbBankSigningKeyRotationDueSoon
+        expr: ((ttb_bank_signing_key_rotation_due_timestamp_seconds{job="ttb-api"} - time() < 2592000) and (ttb_bank_signing_key_rotation_due_timestamp_seconds{job="ttb-api"} - time() >= 0)) and on(job, instance) (ttb_bank_signing_key_rotation_scheduled{job="ttb-api"} == 1) and on(job, instance) (ttb_bank_signing_key_expected{job="ttb-api"} == 1)
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: 'The agreed TTB JWT key rotation deadline is less than thirty days away; coordinate the bank switch', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }
+      - alert: TtbBankSigningKeyRotationOverdue
+        expr: (ttb_bank_signing_key_rotation_due_timestamp_seconds{job="ttb-api"} < time()) and on(job, instance) (ttb_bank_signing_key_rotation_scheduled{job="ttb-api"} == 1) and on(job, instance) (ttb_bank_signing_key_expected{job="ttb-api"} == 1)
+        for: 5m
+        labels: { severity: critical }
+        annotations: { summary: 'The agreed TTB JWT key rotation deadline has passed; investigate without automatic key replacement', runbook: 'Documentation/TTB_OPERATIONS_RUNBOOK.md#credentialcertificate-response' }

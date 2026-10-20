@@ -10,6 +10,8 @@ public sealed class MangosBuildProfile
     public string deployment = "mangos";
     public MangosRuntimeConfig network = new MangosRuntimeConfig();
     public bool development;
+    // None keeps the existing MANGOs/voice build behavior. Commerce must be selected explicitly.
+    public string commerceEnvironment = "None";
     public static MangosBuildProfile Load(string path = DefaultPath)
     {
         var profile = new MangosBuildProfile();
@@ -19,8 +21,13 @@ public sealed class MangosBuildProfile
     public void Save() { Validate(); File.WriteAllText(DefaultPath, JsonUtility.ToJson(this, true)); }
     public void Validate()
     {
+        if (commerceEnvironment != "None" && commerceEnvironment != "Local" && commerceEnvironment != "Uat" && commerceEnvironment != "Production")
+            throw new ArgumentException("Choose None, Local, Uat or Production for TTB commerce.");
         if (!Regex.IsMatch(deployment ?? "", "^[A-Za-z0-9_-]+$")) throw new ArgumentException("Deployment must contain letters, digits, _ or -.");
         if (network == null) throw new ArgumentException("Network settings are missing.");
+        if (network.portalRouting && (commerceEnvironment == "None" || network.serverPort != 7770 || network.serverWss ||
+            network.clientPort != 443 || !network.clientWss || network.clientHost != "multiplayer-plus.mangosgo.com"))
+            throw new ArgumentException("Portal commerce requires Server WS7770 and Client WSS443 at multiplayer-plus.mangosgo.com.");
         if (network.serverPort < 1 || network.serverPort > 65535 || network.clientPort < 1 || network.clientPort > 65535)
             throw new ArgumentException("Server and Client ports must be 1–65535.");
         if (!Regex.IsMatch(network.clientPath ?? "", "^/[A-Za-z0-9_./-]*$") || network.clientPath.Contains(".."))
