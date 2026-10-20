@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useState } from 'react';
 import { Copy, Send } from 'lucide-react';
 import { useCommerce } from '../store';
@@ -29,20 +30,20 @@ export default function Reports() {
   return (
     <div className={`admin-columns ${detail ? 'has-detail' : ''}`}>
       <section className="admin-queue">
-        <h1>รายงานธนาคาร</h1>
+        <h1>{t('รายงานธนาคาร')}</h1>
         {state.summary?.reportsState !== 'Configured' ? (
           <div className="admin-report-notice">
-            <h2>ยังไม่เปิดรับไฟล์ธนาคาร</h2>
-            <p>รอข้อมูล SFTP และการยืนยันรูปแบบไฟล์</p>
+            <h2>{t('ยังไม่เปิดรับไฟล์ธนาคาร')}</h2>
+            <p>{t('รอข้อมูล SFTP และการยืนยันรูปแบบไฟล์')}</p>
           </div>
         ) : (
           <p className="admin-report-notice">
-            รอไฟล์รายงาน {state.summary.waitingFiles ?? '—'} · ประมวลผลตามหลักฐานที่รับแล้ว
+            {t('รอไฟล์รายงาน')} {state.summary.waitingFiles ?? '—'} {t('· ประมวลผลตามหลักฐานที่รับแล้ว')}{' '}
           </p>
         )}
         <div className="admin-toolbar">
-          <select aria-label="ประเภทรายงาน" value={kind} onChange={(e) => setKind(e.target.value)}>
-            <option value="">ISO / LOST ทั้งหมด</option>
+          <select aria-label={t('ประเภทรายงาน')} value={kind} onChange={(e) => setKind(e.target.value)}>
+            <option value="">{t('ISO / LOST ทั้งหมด')}</option>
             <option value="iso">ISO</option>
             <option value="lost">LOST</option>
           </select>
@@ -50,10 +51,10 @@ export default function Reports() {
         </div>
         <div className="admin-table">
           <div className="admin-table-head report-row">
-            <span>ชื่อไฟล์</span>
-            <span>วันที่รายงาน</span>
-            <span>สถานะ</span>
-            <span>รุ่น</span>
+            <span>{t('ชื่อไฟล์')}</span>
+            <span>{t('วันที่รายงาน')}</span>
+            <span>{t('สถานะ')}</span>
+            <span>{t('รุ่น')}</span>
           </div>
           {rows.map((row) => (
             <button
@@ -68,11 +69,11 @@ export default function Reports() {
               <RowEnd />
             </button>
           ))}
-          {state.loaded && !rows.length ? <Empty>ยังไม่มีไฟล์ธนาคารตามเงื่อนไข</Empty> : null}
+          {state.loaded && !rows.length ? <Empty>{t('ยังไม่มีไฟล์ธนาคารตามเงื่อนไข')}</Empty> : null}
         </div>
         {state.reportCursor ? (
           <button className="text-button" disabled={busy} onClick={() => run(() => admin.refresh(true))}>
-            ดูไฟล์เพิ่มเติม
+            {t('ดูไฟล์เพิ่มเติม')}{' '}
           </button>
         ) : null}
       </section>
@@ -80,7 +81,7 @@ export default function Reports() {
         {detail ? (
           <ReportInspector key={detail.report.id} />
         ) : (
-          <Empty>เลือกไฟล์เพื่อดูผลตรวจรูปแบบและการเทียบรายการ</Empty>
+          <Empty>{t('เลือกไฟล์เพื่อดูผลตรวจรูปแบบและการเทียบรายการ')}</Empty>
         )}
       </aside>
     </div>
@@ -101,7 +102,7 @@ const displayAmount = (value: unknown) =>
   (typeof value === 'string' && /^-?\d+$/.test(value)) ||
   (typeof value === 'number' && Number.isSafeInteger(value))
     ? exactMoney(value as string | number)
-    : 'ต้องตรวจหลักฐานยอดเต็ม';
+    : t('ต้องตรวจหลักฐานยอดเต็ม');
 function ReportInspector() {
   const { report: detail, summary, reports } = useAdmin();
   const { busy } = useCommerce();
@@ -128,32 +129,37 @@ function ReportInspector() {
         <State value={report.state} label={labels[report.state] ?? report.state} />
       </div>
       <p className="muted">
-        {reports.find((x) => x.id === report.id)?.fileDate} · รุ่น v{report.revision}
+        {reports.find((x) => x.id === report.id)?.fileDate} {t('· รุ่น v')}
+        {report.revision}
       </p>
       <section>
-        <h3>รายละเอียดรายงาน</h3>
+        <h3>{t('รายละเอียดรายงาน')}</h3>
         {totals && Number.isInteger(totals.creditCount) && Number.isInteger(totals.debitCount) ? (
           <dl className="admin-report-totals">
-            <div className="admin-report-total-heading">ยอดรวมในไฟล์</div>
-            <Fact label="รายการรับเงิน">{totals.creditCount}</Fact>
-            <Fact label="รายการยกเลิก">{totals.debitCount}</Fact>
-            <Fact label="ยอด Credit">{displayAmount(totals.creditMinor)}</Fact>
-            <Fact label="ยอด Debit">{displayAmount(totals.debitMinor)}</Fact>
-            <Fact label="ผลตรวจยอดรวม">
+            <div className="admin-report-total-heading">{t('ยอดรวมในไฟล์')}</div>
+            <Fact label={t('รายการรับเงิน')}>{totals.creditCount}</Fact>
+            <Fact label={t('รายการยกเลิก')}>{totals.debitCount}</Fact>
+            <Fact label={t('ยอด Credit')}>{displayAmount(totals.creditMinor)}</Fact>
+            <Fact label={t('ยอด Debit')}>{displayAmount(totals.debitMinor)}</Fact>
+            <Fact label={t('ผลตรวจยอดรวม')}>
               <State
                 value={parsed ? 'Complete' : 'Review'}
-                label={parsed ? 'ผ่านยอดรวมในไฟล์' : 'ยังไม่ยืนยัน'}
+                label={parsed ? t('ผ่านยอดรวมในไฟล์') : t('ยังไม่ยืนยัน')}
               />
             </Fact>
           </dl>
         ) : (
-          <p className="muted">ยังไม่มียอดรวมที่ผ่านการตรวจรูปแบบ</p>
+          <p className="muted">{t('ยังไม่มียอดรวมที่ผ่านการตรวจรูปแบบ')}</p>
         )}
-        {report.failureCode ? <p className="message warning">ต้องตรวจสอบ · {report.failureCode}</p> : null}
-        {review ? <p className="message warning">ยังมีรายการที่ต้องตรวจสอบ</p> : null}
+        {report.failureCode ? (
+          <p className="message warning">
+            {t('ต้องตรวจสอบ ·')} {report.failureCode}
+          </p>
+        ) : null}
+        {review ? <p className="message warning">{t('ยังมีรายการที่ต้องตรวจสอบ')}</p> : null}
       </section>
       <section>
-        <h3>ผลเทียบรายการ</h3>
+        <h3>{t('ผลเทียบรายการ')}</h3>
         {detail.outcomes.length ? (
           <dl>
             {detail.outcomes.map((row) => (
@@ -163,18 +169,20 @@ function ReportInspector() {
             ))}
           </dl>
         ) : (
-          <p className="muted">ยังไม่มีผลประมวลผลแถวรายงาน</p>
+          <p className="muted">{t('ยังไม่มีผลประมวลผลแถวรายงาน')}</p>
         )}
         {comparison?.timeAttributionComplete === false ? (
-          <p className="muted">ยังมีรายการที่ไม่ทราบเวลาเงินเข้าต้นทาง จึงยังยืนยันการเทียบรายวันไม่ได้</p>
+          <p className="muted">
+            {t('ยังมีรายการที่ไม่ทราบเวลาเงินเข้าต้นทาง จึงยังยืนยันการเทียบรายวันไม่ได้')}
+          </p>
         ) : comparison?.scope === 'LostRepairRowsOnly' ? (
-          <p className="muted">LOST ใช้ซ่อมรายการ ไม่ใช้ยืนยันความครบถ้วนรายวัน</p>
+          <p className="muted">{t('LOST ใช้ซ่อมรายการ ไม่ใช้ยืนยันความครบถ้วนรายวัน')}</p>
         ) : null}
-        <p className="muted">การผ่านรูปแบบไฟล์และยอดรวม ไม่ใช่การยืนยันว่าเทียบรายการรับเงินครบแล้ว</p>
+        <p className="muted">{t('การผ่านรูปแบบไฟล์และยอดรวม ไม่ใช่การยืนยันว่าเทียบรายการรับเงินครบแล้ว')}</p>
       </section>
       <section>
-        <h3>การตรวจสอบซ้ำ</h3>
-        <Field label="เหตุผลที่ตรวจสอบซ้ำ">
+        <h3>{t('การตรวจสอบซ้ำ')}</h3>
+        <Field label={t('เหตุผลที่ตรวจสอบซ้ำ')}>
           <textarea
             rows={3}
             maxLength={500}
@@ -190,27 +198,27 @@ function ReportInspector() {
           onClick={() => run(() => admin.reprocess(reason))}
         >
           <Send size={18} />
-          ส่งตรวจสอบไฟล์เดิม
+          {t('ส่งตรวจสอบไฟล์เดิม')}{' '}
         </button>
         {!canReprocess ? (
           <p className="muted">
             {summary?.reportsState !== 'Configured'
-              ? 'ยังไม่พร้อมตรวจไฟล์ด้วยรูปแบบที่อนุมัติ'
-              : 'ไฟล์ที่สร้างแถวหลักฐานแล้วใช้ซ้ำโดยไม่เปลี่ยนแถวเดิม'}
+              ? t('ยังไม่พร้อมตรวจไฟล์ด้วยรูปแบบที่อนุมัติ')
+              : t('ไฟล์ที่สร้างแถวหลักฐานแล้วใช้ซ้ำโดยไม่เปลี่ยนแถวเดิม')}
           </p>
         ) : null}
       </section>
       <section>
         <div className="admin-proof-reference">
           <span>
-            หลักฐานอ้างอิง{' '}
+            {t('หลักฐานอ้างอิง')}{' '}
             <small>
               {report.encryptedSha256.slice(0, 8)}…{report.encryptedSha256.slice(-8)}
             </small>
           </span>
           <button
             className="text-button"
-            aria-label="คัดลอกหลักฐานอ้างอิง"
+            aria-label={t('คัดลอกหลักฐานอ้างอิง')}
             onClick={() =>
               run(async () => {
                 await navigator.clipboard.writeText(report.encryptedSha256);
@@ -219,15 +227,15 @@ function ReportInspector() {
             }
           >
             <Copy size={18} />
-            {copied ? 'คัดลอกแล้ว' : ''}
+            {copied ? t('คัดลอกแล้ว') : ''}
           </button>
         </div>
         <details className="admin-config">
-          <summary>ดูหลักฐานตรวจสอบฉบับเต็ม</summary>
+          <summary>{t('ดูหลักฐานตรวจสอบฉบับเต็ม')}</summary>
           <dl>
-            <Fact label="เข้ารหัส SHA256">{report.encryptedSha256}</Fact>
-            <Fact label="ถอดรหัส SHA256">{report.plaintextSha256 ?? 'ยังไม่ผ่านการถอดรหัส'}</Fact>
-            {report.replayOfId ? <Fact label="ไฟล์เดิม">{report.replayOfId}</Fact> : null}
+            <Fact label={t('เข้ารหัส SHA256')}>{report.encryptedSha256}</Fact>
+            <Fact label={t('ถอดรหัส SHA256')}>{report.plaintextSha256 ?? t('ยังไม่ผ่านการถอดรหัส')}</Fact>
+            {report.replayOfId ? <Fact label={t('ไฟล์เดิม')}>{report.replayOfId}</Fact> : null}
           </dl>
           <pre className="admin-private-json">{JSON.stringify({ totals, comparison }, null, 2)}</pre>
         </details>

@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useEffect } from 'react';
 import { Download, FileText, Printer, RefreshCw } from 'lucide-react';
 import { commerce, useCommerce } from '../store';
@@ -44,15 +45,15 @@ export default function HistoryScreen() {
   }, [activity?.order.id, pending]);
   return (
     <div className="history-panel">
-      <h1>ประวัติรายการ</h1>
+      <h1>{t('ประวัติรายการ')}</h1>
       <MockNotice />
       <div className="history-grid">
         <div className="history-list">
           <div className="history-table-head">
-            <span>คำสั่งซื้อ</span>
-            <span>วันที่</span>
-            <span>ยอดชำระ</span>
-            <span>สถานะ</span>
+            <span>{t('คำสั่งซื้อ')}</span>
+            <span>{t('วันที่')}</span>
+            <span>{t('ยอดชำระ')}</span>
+            <span>{t('สถานะ')}</span>
           </div>
           {history.map((order) => (
             <button
@@ -67,7 +68,7 @@ export default function HistoryScreen() {
               <PaymentStatus state={order.paymentState} />
             </button>
           ))}
-          {!history.length ? <Empty>ยังไม่มีประวัติรายการ</Empty> : null}
+          {!history.length ? <Empty>{t('ยังไม่มีประวัติรายการ')}</Empty> : null}
           <div className="history-more">
             <RefreshButton onClick={() => void commerce.run(() => commerce.loadHistory())} />
             {historyCursor ? (
@@ -76,7 +77,7 @@ export default function HistoryScreen() {
                 disabled={busy}
                 onClick={() => void commerce.run(() => commerce.loadHistory(true))}
               >
-                โหลดเพิ่มเติม
+                {t('โหลดเพิ่มเติม')}{' '}
               </button>
             ) : null}
           </div>
@@ -91,7 +92,7 @@ export default function HistoryScreen() {
                 </div>
                 <PaymentStatus state={activity.order.paymentState} />
               </div>
-              <h3>รายการสินค้า</h3>
+              <h3>{t('รายการสินค้า')}</h3>
               <div className="order-products">
                 {activity.order.lines.map((line) => {
                   const product = products.find((p) => p.id === line.productId);
@@ -105,16 +106,17 @@ export default function HistoryScreen() {
                       <div>
                         <strong>{line.name}</strong>
                         <p className="muted">
-                          {line.variantName} · {isPhysical(line.kind) ? 'สินค้าจัดส่งจริง' : 'สินค้าดิจิทัล'}
+                          {line.variantName} ·{' '}
+                          {isPhysical(line.kind) ? t('สินค้าจัดส่งจริง') : t('สินค้าดิจิทัล')}
                         </p>
                         <span className={`delivery-state ${item?.state === 'Delivered' ? 'success' : ''}`}>
                           {item
-                            ? (deliveryLabels[item.state] ?? item.state)
+                            ? t(deliveryLabels[item.state] ?? item.state)
                             : activity.order.paymentState === 'Paid'
-                              ? 'กำลังเตรียมการส่งมอบ'
+                              ? t('กำลังเตรียมการส่งมอบ')
                               : ['Refunded', 'Voided', 'VoidPending'].includes(activity.order.paymentState)
-                                ? 'พักหรือยกเลิกการส่งมอบ'
-                                : 'รอยืนยันชำระ'}
+                                ? t('พักหรือยกเลิกการส่งมอบ')
+                                : t('รอยืนยันชำระ')}
                         </span>
                         {item?.trackingNumber ? (
                           <p className="muted">
@@ -129,30 +131,35 @@ export default function HistoryScreen() {
                 })}
               </div>
               <div className="summary-row total">
-                <span>ยอดชำระ</span>
+                <span>{t('ยอดชำระ')}</span>
                 <strong>{money(activity.order.totalMinor)}</strong>
               </div>
               {activity.refund ? (
-                <section className="message subtle order-refund" aria-label="ประวัติคืนเงินภายนอก">
-                  <h3>คืนเงินภายนอกที่ผ่านการตรวจหลักฐาน</h3>
-                  <p>ยอดคืนสะสม {exactMoney(activity.refund.amountMinor)}</p>
+                <section className="message subtle order-refund" aria-label={t('ประวัติคืนเงินภายนอก')}>
+                  <h3>{t('คืนเงินภายนอกที่ผ่านการตรวจหลักฐาน')}</h3>
+                  <p>
+                    {t('ยอดคืนสะสม')} {exactMoney(activity.refund.amountMinor)}
+                  </p>
                   {activity.refund.latestApprovedAt ? (
-                    <p>ตรวจหลักฐานล่าสุด {date(activity.refund.latestApprovedAt)}</p>
+                    <p>
+                      {t('ตรวจหลักฐานล่าสุด')} {date(activity.refund.latestApprovedAt)}
+                    </p>
                   ) : null}
                   <p>
                     {activity.refund.goodsReviewPending
-                      ? 'กำลังตรวจการคืนสินค้าและสิทธิ์ที่เกี่ยวข้อง'
-                      : 'บันทึกการตรวจสินค้าและสิทธิ์แล้ว'}
+                      ? t('กำลังตรวจการคืนสินค้าและสิทธิ์ที่เกี่ยวข้อง')
+                      : t('บันทึกการตรวจสินค้าและสิทธิ์แล้ว')}
                   </p>
                   {activity.refund.returnedLines.map((line) => (
                     <p key={line.orderLineId}>
-                      {activity.order.lines.find((x) => x.id === line.orderLineId)?.name ?? 'สินค้า'} ·
-                      รับคืนเข้าสต็อก {line.quantity} หน่วย
+                      {activity.order.lines.find((x) => x.id === line.orderLineId)?.name ?? t('สินค้า')}{' '}
+                      {t('· รับคืนเข้าสต็อก')} {line.quantity} {t('หน่วย')}{' '}
                     </p>
                   ))}
                   <p className="muted">
-                    ใบเสร็จเดิมแสดงการรับเงินครั้งแรก
-                    การคืนเงินนี้ดำเนินการภายนอกและผ่านการตรวจเอกสารของบริษัท
+                    {t(
+                      'ใบเสร็จเดิมแสดงการรับเงินครั้งแรก การคืนเงินนี้ดำเนินการภายนอกและผ่านการตรวจเอกสารของบริษัท',
+                    )}{' '}
                   </p>
                 </section>
               ) : null}
@@ -162,24 +169,26 @@ export default function HistoryScreen() {
                   disabled={busy}
                   onClick={() => void commerce.run(() => commerce.openOrder(activity.order.id))}
                 >
-                  กลับไปชำระเงิน
+                  {t('กลับไปชำระเงิน')}{' '}
                 </button>
               ) : null}
               {activity.order.paymentState === 'VoidPending' ? (
                 <p className="message warning">
-                  กำลังตรวจผลการยกเลิก ระหว่างนี้พักการส่งมอบและใช้สิทธิ์ของรายการนี้
+                  {t('กำลังตรวจผลการยกเลิก ระหว่างนี้พักการส่งมอบและใช้สิทธิ์ของรายการนี้')}{' '}
                 </p>
               ) : activity.payment?.voided ? (
-                <p className="message warning">รายการรับเงินถูกยกเลิก โปรดอ่านเอกสารยกเลิกประกอบ</p>
+                <p className="message warning">{t('รายการรับเงินถูกยกเลิก โปรดอ่านเอกสารยกเลิกประกอบ')}</p>
               ) : null}
               <div className="documents">
-                <h3>เอกสาร</h3>
+                <h3>{t('เอกสาร')}</h3>
                 {activity.documents.map((document) => (
                   <div className="document-item" key={document.id}>
                     <div className="document-heading">
                       <FileText size={32} />
                       <div>
-                        <strong>{document.kind === 'Receipt' ? 'ใบเสร็จรับเงิน' : 'เอกสารยกเลิก'}</strong>
+                        <strong>
+                          {document.kind === 'Receipt' ? t('ใบเสร็จรับเงิน') : t('เอกสารยกเลิก')}
+                        </strong>
                         <p className="muted">{document.number}</p>
                       </div>
                     </div>
@@ -191,7 +200,7 @@ export default function HistoryScreen() {
                           onClick={() => void commerce.download(document)}
                         >
                           <Download size={20} />
-                          {document.kind === 'Receipt' ? 'ดาวน์โหลดใบเสร็จ' : 'ดาวน์โหลดเอกสารยกเลิก'}
+                          {document.kind === 'Receipt' ? t('ดาวน์โหลดใบเสร็จ') : t('ดาวน์โหลดเอกสารยกเลิก')}
                         </button>
                         <button
                           className="button secondary"
@@ -199,19 +208,19 @@ export default function HistoryScreen() {
                           onClick={() => void commerce.download(document, true)}
                         >
                           <Printer size={20} />
-                          {document.kind === 'Receipt' ? 'พิมพ์ใบเสร็จ' : 'พิมพ์เอกสารยกเลิก'}
+                          {document.kind === 'Receipt' ? t('พิมพ์ใบเสร็จ') : t('พิมพ์เอกสารยกเลิก')}
                         </button>
                       </>
                     ) : (
-                      <p className="message subtle">กำลังจัดทำเอกสาร</p>
+                      <p className="message subtle">{t('กำลังจัดทำเอกสาร')}</p>
                     )}
                   </div>
                 ))}
                 {!activity.documents.length ? (
                   <p className="muted">
                     {activity.order.paymentState === 'Paid'
-                      ? 'กำลังเตรียมใบเสร็จ'
-                      : 'เอกสารจะออกหลังยืนยันรับเงิน'}
+                      ? t('กำลังเตรียมใบเสร็จ')
+                      : t('เอกสารจะออกหลังยืนยันรับเงิน')}
                   </p>
                 ) : null}
                 <button
@@ -220,15 +229,15 @@ export default function HistoryScreen() {
                   onClick={() => void commerce.run(() => commerce.loadActivity(activity.order.id))}
                 >
                   <RefreshCw size={16} />
-                  อัปเดตเอกสารและการส่งมอบ
+                  {t('อัปเดตเอกสารและการส่งมอบ')}{' '}
                 </button>
               </div>
               <button className="text-button" onClick={() => commerce.navigate('inventory')}>
-                ไปที่สินค้าของฉัน
+                {t('ไปที่สินค้าของฉัน')}{' '}
               </button>
             </>
           ) : (
-            <Empty>เลือกรายการเพื่อดูข้อมูลและใบเสร็จ</Empty>
+            <Empty>{t('เลือกรายการเพื่อดูข้อมูลและใบเสร็จ')}</Empty>
           )}
         </aside>
       </div>

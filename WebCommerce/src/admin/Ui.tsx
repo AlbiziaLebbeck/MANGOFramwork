@@ -1,3 +1,4 @@
+import { t, locale } from '../i18n';
 import type { ReactNode } from 'react';
 import { ArrowLeft, CheckCircle2, Clock3, ChevronRight, Download, RefreshCw, Search } from 'lucide-react';
 import { useCommerce, commerce } from '../store';
@@ -8,7 +9,7 @@ export const run = (action: () => Promise<unknown>) =>
     await action();
   });
 export const stamp = (value: string) =>
-  new Intl.DateTimeFormat('th-TH', {
+  new Intl.DateTimeFormat(locale(), {
     dateStyle: 'medium',
     timeStyle: 'short',
     timeZone: 'Asia/Bangkok',
@@ -16,7 +17,7 @@ export const stamp = (value: string) =>
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="admin-field">
-      <span>{label}</span>
+      <span>{t(label)}</span>
       {children}
     </label>
   );
@@ -24,7 +25,7 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 export function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="admin-fact">
-      <dt>{label}</dt>
+      <dt>{t(label)}</dt>
       <dd>{children}</dd>
     </div>
   );
@@ -39,11 +40,11 @@ export function State({ value, label }: { value: string; label?: string }) {
       ) : (
         <Clock3 size={18} />
       )}{' '}
-      {label ?? value}
+      {t(label ?? value)}
     </span>
   );
 }
-export function Back({ label = 'กลับรายการ' }: { label?: string }) {
+export function Back({ label = t('กลับรายการ') }: { label?: string }) {
   return (
     <button className="text-button admin-back" onClick={() => admin.back()}>
       <ArrowLeft size={20} />
@@ -61,8 +62,8 @@ export function Refresh({ onClick }: { onClick?: () => void }) {
       type="button"
       className="admin-refresh"
       disabled={busy}
-      aria-label="อัปเดตรายการ"
-      title="อัปเดตรายการ"
+      aria-label={t('อัปเดตรายการ')}
+      title={t('อัปเดตรายการ')}
       onClick={onClick ?? (() => run(() => admin.refresh()))}
     >
       <RefreshCw size={21} />
@@ -74,8 +75,8 @@ export function SearchField({ value, onChange }: { value: string; onChange: (val
     <label className="admin-search">
       <Search size={21} />
       <input
-        aria-label="ค้นหาในรายการที่โหลด"
-        placeholder="ค้นหาในรายการที่โหลด"
+        aria-label={t('ค้นหาในรายการที่โหลด')}
+        placeholder={t('ค้นหาในรายการที่โหลด')}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
@@ -89,16 +90,16 @@ export function Documents({ items }: { items: CommerceDocument[] }) {
       {items.map((item) => (
         <div key={item.id}>
           <div>
-            <strong>{item.kind === 'Receipt' ? 'ใบเสร็จรับเงิน' : 'หลักฐานยกเลิกรายการ'}</strong>
+            <strong>{item.kind === 'Receipt' ? t('ใบเสร็จรับเงิน') : t('หลักฐานยกเลิกรายการ')}</strong>
             <small>{item.number}</small>
           </div>
           {item.state === 'Ready' ? (
             <button className="text-button" disabled={busy} onClick={() => run(() => admin.download(item))}>
               <Download size={18} />
-              ดาวน์โหลด
+              {t('ดาวน์โหลด')}{' '}
             </button>
           ) : (
-            <State value={item.state} label="กำลังจัดทำ" />
+            <State value={item.state} label={t('กำลังจัดทำ')} />
           )}
         </div>
       ))}

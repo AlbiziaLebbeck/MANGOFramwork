@@ -1,6 +1,6 @@
 # TTB: BaseWorld และ Deployment Portal
 
-อัปเดต 20 ตุลาคม 2026 เวลา 08:22 น.ไทย
+อัปเดต 20 ตุลาคม 2026 — รุ่นเชื่อมบัญชีอัตโนมัติและไทย–อังกฤษ
 
 ## ฉากที่เปิดแก้ไข
 
@@ -12,16 +12,18 @@
 
 ## ชุดที่ Build และทดสอบแล้ว
 
-โฟลเดอร์ `Builds/TTB/Portal/01e6564154604c78979d07bc55d669d6/Release/Upload/` มี:
+โฟลเดอร์ **`Builds/TTB/Portal/a572d58dd99246d2bbf5dcdc349bcd6e/Release/Upload/`** เป็นชุดล่าสุด รวม Auth public settings ที่ผู้ใช้แก้, การเชื่อม MANGOs SSO อัตโนมัติ และเมนูไทย–อังกฤษตาม `TTB_SSO_AND_LANGUAGE_TH.md` มี:
 
 | อัปโหลดเป็น | ไฟล์ | ขนาด | SHA256 |
 |---|---|---:|---|
-| Server | `ttb-uat-server.zip` | 61,880,325 bytes | `dde5b492f0f39d38aab4d75e18c1542c17030eef69a309cc416ea2f6cc12604c` |
-| Client | `ttb-uat-client.zip` | 35,115,031 bytes | `41b9b0f9a30b39ab2deb516de8e71cb160616615ef6c381c6e4f8be4a1630efb` |
+| Server | `ttb-uat-server.zip` | 61,880,445 bytes | `5939cd424fb7d2c951bb9f4dc4d05456b41089c4938b18eaff5f9ba3c080903d` |
+| Client | `ttb-uat-client.zip` | 35,128,629 bytes | `67063d4b21af34493e2c6d575e2c599f24dbc118735fe494ca60f24d0206d0d5` |
 
 Server เป็น Linux IL2CPP `.x86_64` พร้อม `_Data`, `GameAssembly.so`, `UnityPlayer.so` Client มี `index.html`, `Build/`, `TemplateData/`, HTML commerce และ PWA อยู่ครบในราก ZIP ตัดโฟลเดอร์ debug/backup ที่ Unity ระบุ DoNotShip ออกจาก ZIP แล้ว ไม่ต้อง ZIP `.x86_64` เพียงไฟล์เดียว และไม่ต้องอัปโหลดโฟลเดอร์ `Release` ครอบอีกชั้น
 
 ทั้งสองไฟล์เป็น **UAT ชุดเดียวกัน** และใช้ BaseWorld/meta fingerprint เดียวกัน ไม่ใช้ ZIP ของ run เก่าปะปน
+
+ชุด `01e6564154604c78979d07bc55d669d6` และผลตรวจ 08:22 ด้านล่างเป็นประวัติรุ่นก่อนเพิ่ม SSO/ภาษา อย่าใช้ ZIP รุ่นนั้นแทนชุดล่าสุดหากต้องการการแก้สองเรื่องนี้
 
 ## อัปโหลดใน Portal
 

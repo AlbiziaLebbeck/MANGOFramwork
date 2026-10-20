@@ -18,6 +18,8 @@ export interface Variant {
   availableQuantity: number | null;
   options: Record<string, string>;
 }
+import { locale } from './i18n';
+
 export interface Product {
   id: string;
   slug: string;
@@ -203,11 +205,14 @@ export type Screen =
   'gallery' | 'product' | 'cart' | 'checkout' | 'payment' | 'history' | 'inventory' | 'login' | 'admin';
 export const emptyCart: Cart = { version: 0, lines: [], subtotalMinor: 0 };
 export const money = (minor: number) =>
-  new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 2 }).format(
-    minor / 100,
-  );
+  new Intl.NumberFormat(locale(), {
+    style: 'currency',
+    currency: 'THB',
+    currencyDisplay: 'narrowSymbol',
+    minimumFractionDigits: 2,
+  }).format(minor / 100);
 export const date = (iso: string) =>
-  new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date(iso));
+  new Intl.DateTimeFormat(locale(), { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date(iso));
 export const isPhysical = (kind: string) => kind.toLowerCase() === 'physical';
 export const hasOpenUnpaidOrder = (
   order: Pick<Order, 'state' | 'paymentState' | 'expiresAt'> | null,

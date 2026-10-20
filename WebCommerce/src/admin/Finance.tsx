@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useState } from 'react';
 import { ClipboardCheck, FileText, Search } from 'lucide-react';
 import { useCommerce } from '../store';
@@ -20,30 +21,30 @@ export default function Finance() {
   return (
     <div className={`admin-columns ${detail ? 'has-detail' : ''}`}>
       <section className="admin-queue">
-        <h1>เคสการเงิน</h1>
+        <h1>{t('เคสการเงิน')}</h1>
         {state.caseOrderId ? (
           <div className="admin-filter-context">
-            <span>เคสของคำสั่งซื้อที่เลือก</span>
+            <span>{t('เคสของคำสั่งซื้อที่เลือก')}</span>
             <button
               className="text-button"
               disabled={busy}
               onClick={() => run(() => admin.selectTab('finance'))}
             >
-              ดูเคสทั้งหมด
+              {t('ดูเคสทั้งหมด')}{' '}
             </button>
           </div>
         ) : null}
         <div className="admin-counts">
-          <State value="Open" label={`รอตรวจสอบ ${state.summary?.openCases ?? '—'}`} />
+          <State value="Open" label={t('รอตรวจสอบ {0}', [state.summary?.openCases ?? '—'])} />
           <span>
             <FileText size={18} />
-            รอไฟล์รายงาน {state.summary?.waitingFiles ?? 'ยังไม่เปิดบริการ'}
+            {t('รอไฟล์รายงาน')} {state.summary?.waitingFiles ?? t('ยังไม่เปิดบริการ')}
           </span>
         </div>
         <div className="admin-toolbar">
           <SearchField value={search} onChange={setSearch} />
           <select
-            aria-label="สถานะเคส"
+            aria-label={t('สถานะเคส')}
             value={state.caseState}
             disabled={busy}
             onChange={(e) => {
@@ -52,18 +53,18 @@ export default function Finance() {
               run(() => admin.refresh());
             }}
           >
-            <option value="Open">รอตรวจสอบ</option>
-            <option value="Resolved">ดำเนินการแล้ว</option>
-            <option value="">ทั้งหมด</option>
+            <option value="Open">{t('รอตรวจสอบ')}</option>
+            <option value="Resolved">{t('ดำเนินการแล้ว')}</option>
+            <option value="">{t('ทั้งหมด')}</option>
           </select>
           <Refresh />
         </div>
         <div className="admin-table finance-table">
           <div className="admin-table-head case-row">
-            <span>คำสั่งซื้อ</span>
-            <span>ประเภทเคส</span>
-            <span>ยอดเงิน</span>
-            <span>สถานะ</span>
+            <span>{t('คำสั่งซื้อ')}</span>
+            <span>{t('ประเภทเคส')}</span>
+            <span>{t('ยอดเงิน')}</span>
+            <span>{t('สถานะ')}</span>
           </div>
           {items.map((item) => (
             <button
@@ -71,23 +72,27 @@ export default function Finance() {
               key={item.id}
               onClick={() => run(() => admin.chooseCase(item.id))}
             >
-              <span>{item.orderNumber ?? 'ยังไม่จับคู่'}</span>
+              <span>{item.orderNumber ?? t('ยังไม่จับคู่')}</span>
               <span>{caseLabel(item.kind)}</span>
               <span>{item.amountMinor === null ? '—' : exactMoney(item.amountMinor)}</span>
-              <State value={item.state} label={item.state === 'Open' ? 'รอตรวจสอบ' : 'ดำเนินการแล้ว'} />
+              <State value={item.state} label={item.state === 'Open' ? t('รอตรวจสอบ') : t('ดำเนินการแล้ว')} />
               <RowEnd />
             </button>
           ))}
-          {state.loaded && !items.length ? <Empty>ไม่พบเคสตามเงื่อนไข</Empty> : null}
+          {state.loaded && !items.length ? <Empty>{t('ไม่พบเคสตามเงื่อนไข')}</Empty> : null}
         </div>
         {state.caseCursor ? (
           <button className="text-button" disabled={busy} onClick={() => run(() => admin.refresh(true))}>
-            ดูเคสเพิ่มเติม
+            {t('ดูเคสเพิ่มเติม')}{' '}
           </button>
         ) : null}
       </section>
       <aside className="admin-inspector">
-        {detail ? <CaseInspector key={detail.case.id} /> : <Empty>เลือกเคสเพื่อดูหลักฐานและดำเนินการ</Empty>}
+        {detail ? (
+          <CaseInspector key={detail.case.id} />
+        ) : (
+          <Empty>{t('เลือกเคสเพื่อดูหลักฐานและดำเนินการ')}</Empty>
+        )}
       </aside>
     </div>
   );
@@ -106,15 +111,19 @@ function CaseInspector() {
     });
   return (
     <>
-      <Back label="คิวเคสการเงิน" />
+      <Back label={t('คิวเคสการเงิน')} />
       <div className="admin-detail-heading">
         <h2>{caseLabel(row.kind)}</h2>
-        <State value={row.state} label={row.state === 'Open' ? 'รอตรวจสอบ' : 'ดำเนินการแล้ว'} />
+        <State value={row.state} label={row.state === 'Open' ? t('รอตรวจสอบ') : t('ดำเนินการแล้ว')} />
       </div>
-      <p className="admin-order-number">คำสั่งซื้อ {row.orderNumber ?? 'ยังไม่จับคู่'}</p>
-      <p className="muted">สร้างเคส {stamp(row.createdAt)}</p>
+      <p className="admin-order-number">
+        {t('คำสั่งซื้อ')} {row.orderNumber ?? t('ยังไม่จับคู่')}
+      </p>
+      <p className="muted">
+        {t('สร้างเคส')} {stamp(row.createdAt)}
+      </p>
       <div className="admin-case-amount">
-        <span>ยอดเงินที่เกี่ยวข้อง</span>
+        <span>{t('ยอดเงินที่เกี่ยวข้อง')}</span>
         <strong>{row.amountMinor === null ? '—' : exactMoney(row.amountMinor)}</strong>
       </div>
       {detail.manualRefund ? (
@@ -127,50 +136,52 @@ function CaseInspector() {
         row.kind,
       ) ? (
         <button className="button secondary" disabled={busy} onClick={() => run(() => admin.inspectGoods())}>
-          ตรวจสินค้าและสิทธิ์หลังคืนเงิน
+          {t('ตรวจสินค้าและสิทธิ์หลังคืนเงิน')}{' '}
         </button>
       ) : null}
       {goods ? <GoodsInspector key={`${goods.caseId}:${goods.caseVersion}`} /> : null}
       <section>
-        <h3>หลักฐานรับเงิน</h3>
+        <h3>{t('หลักฐานรับเงิน')}</h3>
         {bank ? (
           <dl className="admin-evidence">
-            <Fact label="อ้างอิงการรับเงิน">{bank.instructionId}</Fact>
+            <Fact label={t('อ้างอิงการรับเงิน')}>{bank.instructionId}</Fact>
             <Fact label="QR ID">{bank.qrId}</Fact>
-            <Fact label="การจัดสรร">
+            <Fact label={t('การจัดสรร')}>
               {bank.primary
-                ? 'ยอดหลักของคำสั่งซื้อ'
+                ? t('ยอดหลักของคำสั่งซื้อ')
                 : bank.allocatedOrderId
-                  ? 'ยอดจัดสรรเพิ่มเติม'
-                  : 'ยังไม่จัดสรรยอดนี้'}
+                  ? t('ยอดจัดสรรเพิ่มเติม')
+                  : t('ยังไม่จัดสรรยอดนี้')}
             </Fact>
-            <Fact label="เวลาเงินเข้าต้นทาง">
+            <Fact label={t('เวลาเงินเข้าต้นทาง')}>
               {bank.timeSource === 'ReportIsoPayment' && bank.originalCreditAt
                 ? stamp(bank.originalCreditAt)
-                : 'รอยืนยันจากรายงาน'}
+                : t('รอยืนยันจากรายงาน')}
             </Fact>
-            <Fact label="สถานะ">{bank.voided ? 'ธนาคารยืนยันการยกเลิกแล้ว' : 'พบรายการรับเงิน'}</Fact>
+            <Fact label={t('สถานะ')}>
+              {bank.voided ? t('ธนาคารยืนยันการยกเลิกแล้ว') : t('พบรายการรับเงิน')}
+            </Fact>
           </dl>
         ) : (
-          <p className="muted">ยังไม่มีรายการรับเงินที่ยืนยันและจับคู่ได้</p>
+          <p className="muted">{t('ยังไม่มีรายการรับเงินที่ยืนยันและจับคู่ได้')}</p>
         )}
       </section>
       <section>
-        <h3>ลำดับเหตุการณ์</h3>
+        <h3>{t('ลำดับเหตุการณ์')}</h3>
         <ol className="admin-timeline">
           <li>
-            <strong>สร้างเคสการเงิน</strong>
+            <strong>{t('สร้างเคสการเงิน')}</strong>
             <small>{stamp(row.createdAt)}</small>
           </li>
           {row.assignee ? (
             <li>
-              <strong>ผู้รับผิดชอบ</strong>
+              <strong>{t('ผู้รับผิดชอบ')}</strong>
               <small>{row.assignee}</small>
             </li>
           ) : null}
           {row.resolvedAt ? (
             <li>
-              <strong>ดำเนินการแล้ว</strong>
+              <strong>{t('ดำเนินการแล้ว')}</strong>
               <small>{stamp(row.resolvedAt)}</small>
             </li>
           ) : null}
@@ -188,13 +199,13 @@ function CaseInspector() {
         </ol>
       </section>
       <section>
-        <Field label="เหตุผล / บันทึก">
+        <Field label={t('เหตุผล / บันทึก')}>
           <textarea
             maxLength={2000}
             rows={3}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="ระบุเหตุผลหรือบันทึกเพิ่มเติม"
+            placeholder={t('ระบุเหตุผลหรือบันทึกเพิ่มเติม')}
           />
         </Field>
         <div className="admin-character-count">{reason.length}/2000</div>
@@ -205,12 +216,12 @@ function CaseInspector() {
             onClick={() => action('note')}
           >
             <FileText size={19} />
-            บันทึกหมายเหตุ
+            {t('บันทึกหมายเหตุ')}{' '}
           </button>
           {row.state === 'Open' ? (
             <button className="text-button" disabled={busy || !reason.trim()} onClick={() => action('claim')}>
               <ClipboardCheck size={19} />
-              รับผิดชอบเคส
+              {t('รับผิดชอบเคส')}{' '}
             </button>
           ) : null}
         </div>
@@ -222,7 +233,7 @@ function CaseInspector() {
           onClick={() => bank && run(() => admin.inspectVoid(bank.id))}
         >
           <Search size={19} />
-          ตรวจเงื่อนไขคืนเงิน
+          {t('ตรวจเงื่อนไขคืนเงิน')}{' '}
         </button>
         <button
           className="button secondary"
@@ -230,7 +241,7 @@ function CaseInspector() {
           onClick={() => run(() => admin.orderFromCase())}
         >
           <FileText size={19} />
-          ดูคำสั่งซื้อ
+          {t('ดูคำสั่งซื้อ')}{' '}
         </button>
       </div>
       {review ? <VoidInspector key={review.bankTransactionId} /> : null}
@@ -238,16 +249,16 @@ function CaseInspector() {
       <ManualCreate />
       {row.state === 'Open' && ['LateOrClosedOrder', 'StockReview'].includes(row.kind) ? (
         <section className="admin-resolution">
-          <h3>รับยอดชำระล่าช้า</h3>
+          <h3>{t('รับยอดชำระล่าช้า')}</h3>
           <p className="muted">
-            ตรวจยืนยันความประสงค์ซื้อและยอดอ้างอิง ระบบจะตรวจสต็อกปัจจุบันอีกครั้งก่อนจัดสรรเงิน
+            {t('ตรวจยืนยันความประสงค์ซื้อและยอดอ้างอิง ระบบจะตรวจสต็อกปัจจุบันอีกครั้งก่อนจัดสรรเงิน')}{' '}
           </p>
           <button
             className="button secondary"
             disabled={busy || !reason.trim()}
             onClick={() => action('accept-late-payment')}
           >
-            ยืนยันรับยอดและดำเนินการซื้อ
+            {t('ยืนยันรับยอดและดำเนินการซื้อ')}{' '}
           </button>
         </section>
       ) : null}
@@ -257,7 +268,7 @@ function CaseInspector() {
           disabled={busy || !reason.trim()}
           onClick={() => action('resolve-voided-credit')}
         >
-          ปิดเคสยอดที่คืนเงินแล้ว
+          {t('ปิดเคสยอดที่คืนเงินแล้ว')}{' '}
         </button>
       ) : null}
       {row.state === 'Open' &&
@@ -269,7 +280,7 @@ function CaseInspector() {
           disabled={busy || !reason.trim()}
           onClick={() => action('resolve-manual-refunded-credit')}
         >
-          ปิดเคสยอดที่คืนภายนอกครบแล้ว
+          {t('ปิดเคสยอดที่คืนภายนอกครบแล้ว')}{' '}
         </button>
       ) : null}
       {row.state === 'Open' && ['InvalidNotice', 'NotificationPayloadChanged'].includes(row.kind) ? (
@@ -278,7 +289,7 @@ function CaseInspector() {
           disabled={busy || !reason.trim()}
           onClick={() => action('dismiss-metadata')}
         >
-          ปิดเคสข้อมูลแจ้งเตือน
+          {t('ปิดเคสข้อมูลแจ้งเตือน')}{' '}
         </button>
       ) : null}
       {row.state === 'Resolved' && row.orderId ? (
@@ -287,7 +298,7 @@ function CaseInspector() {
           disabled={busy || !reason.trim()}
           onClick={() => action('resume-paid-order')}
         >
-          ตรวจและปลดพักคำสั่งซื้อ
+          {t('ตรวจและปลดพักคำสั่งซื้อ')}{' '}
         </button>
       ) : null}
     </>
@@ -313,24 +324,24 @@ export function VoidInspector() {
   if (!review) return null;
   return (
     <section className="admin-void-review">
-      <h3>ตรวจเงื่อนไขคืนเงิน</h3>
+      <h3>{t('ตรวจเงื่อนไขคืนเงิน')}</h3>
       <dl>
-        <Fact label="ยอดคืนเต็มจำนวน">{exactMoney(review.amountMinor)}</Fact>
-        <Fact label="ผลต่อสินค้า">
+        <Fact label={t('ยอดคืนเต็มจำนวน')}>{exactMoney(review.amountMinor)}</Fact>
+        <Fact label={t('ผลต่อสินค้า')}>
           {review.affectsOrderPayment
-            ? 'ยกเลิกยอดหลักและเพิกถอนสิทธิ์ของคำสั่งซื้อ'
-            : 'คืนเฉพาะยอดนี้ · คงยอดหลักและสิทธิ์สินค้า'}
+            ? t('ยกเลิกยอดหลักและเพิกถอนสิทธิ์ของคำสั่งซื้อ')
+            : t('คืนเฉพาะยอดนี้ · คงยอดหลักและสิทธิ์สินค้า')}
         </Fact>
-        <Fact label="เงื่อนไข">
-          {voidMessages[review.eligibility.code] ?? 'ต้องให้ฝ่ายการเงินตรวจสอบก่อน'}
+        <Fact label={t('เงื่อนไข')}>
+          {voidMessages[review.eligibility.code] ?? t('ต้องให้ฝ่ายการเงินตรวจสอบก่อน')}
         </Fact>
         {review.eligibility.windowEndsAt ? (
-          <Fact label="สิ้นสุดช่วงเวลา">{stamp(review.eligibility.windowEndsAt)}</Fact>
+          <Fact label={t('สิ้นสุดช่วงเวลา')}>{stamp(review.eligibility.windowEndsAt)}</Fact>
         ) : null}
       </dl>
       {review.eligibility.eligible ? (
         <>
-          <Field label="เหตุผลการคืนเงิน">
+          <Field label={t('เหตุผลการคืนเงิน')}>
             <textarea
               maxLength={500}
               value={reason}
@@ -351,15 +362,15 @@ export function VoidInspector() {
                   setConfirm(false);
                 }}
               />
-              ตรวจการส่งมอบ / ดาวน์โหลด / ใช้งาน และนโยบายคืนสินค้าที่อนุมัติแล้ว
+              {t('ตรวจการส่งมอบ / ดาวน์โหลด / ใช้งาน และนโยบายคืนสินค้าที่อนุมัติแล้ว')}{' '}
             </label>
           ) : null}
           {review.deliveryReviewRequired && !review.fulfilledPolicyApproved ? (
-            <p className="message warning">ยังไม่มีนโยบายคืนเงินหลังส่งมอบที่อนุมัติ</p>
+            <p className="message warning">{t('ยังไม่มีนโยบายคืนเงินหลังส่งมอบที่อนุมัติ')}</p>
           ) : null}
           <label className="admin-check">
             <input type="checkbox" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} />
-            ยืนยันคืนยอดนี้เต็มจำนวน {exactMoney(review.amountMinor)}
+            {t('ยืนยันคืนยอดนี้เต็มจำนวน')} {exactMoney(review.amountMinor)}
           </label>
           <button
             className="button primary"
@@ -376,7 +387,7 @@ export function VoidInspector() {
               })
             }
           >
-            ยืนยันคืนเงินเต็มจำนวน
+            {t('ยืนยันคืนเงินเต็มจำนวน')}{' '}
           </button>
         </>
       ) : null}
@@ -387,22 +398,26 @@ export function VoidInspector() {
             value={operation.state}
             label={
               operation.state === 'Confirmed'
-                ? 'ธนาคารยืนยันยกเลิก'
+                ? t('ธนาคารยืนยันยกเลิก')
                 : operation.state === 'Unknown'
-                  ? 'ยังไม่ทราบผล'
+                  ? t('ยังไม่ทราบผล')
                   : operation.state === 'Requested'
-                    ? 'รอส่งคำขอ'
-                    : 'ธนาคารปฏิเสธ / ไม่ได้ส่ง'
+                    ? t('รอส่งคำขอ')
+                    : t('ธนาคารปฏิเสธ / ไม่ได้ส่ง')
             }
           />
-          {operation.resultCode ? <small>รหัสผล {operation.resultCode}</small> : null}
+          {operation.resultCode ? (
+            <small>
+              {t('รหัสผล')} {operation.resultCode}
+            </small>
+          ) : null}
           {operation.state === 'Unknown' ? (
             <button
               className="button secondary"
               disabled={busy || operation.enquiriesRemaining < 1}
               onClick={() => run(() => admin.enquireVoid(operation))}
             >
-              ตรวจผลยกเลิก · เหลือ {operation.enquiriesRemaining} ครั้ง
+              {t('ตรวจผลยกเลิก · เหลือ')} {operation.enquiriesRemaining} {t('ครั้ง')}{' '}
             </button>
           ) : null}
         </div>
@@ -413,7 +428,7 @@ export function VoidInspector() {
         disabled={busy}
         onClick={() => run(() => admin.inspectVoid(review.bankTransactionId))}
       >
-        อัปเดตผลจากหลังบ้าน
+        {t('อัปเดตผลจากหลังบ้าน')}{' '}
       </button>
     </section>
   );

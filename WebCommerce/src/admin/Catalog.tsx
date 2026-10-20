@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useState } from 'react';
 import { Box, Plus, Save, Upload } from 'lucide-react';
 import { useCommerce } from '../store';
@@ -24,17 +25,17 @@ export default function Catalog() {
   return (
     <div className={`admin-columns ${selected ? 'has-detail' : ''}`}>
       <section className="admin-queue">
-        <h1>สินค้า</h1>
+        <h1>{t('สินค้า')}</h1>
         <div className="admin-toolbar">
           <SearchField value={search} onChange={setSearch} />
           <select
-            aria-label="การเผยแพร่สินค้า"
+            aria-label={t('การเผยแพร่สินค้า')}
             value={publication}
             onChange={(e) => setPublication(e.target.value)}
           >
-            <option value="">ทั้งหมด</option>
-            <option value="published">เผยแพร่</option>
-            <option value="draft">ฉบับร่าง</option>
+            <option value="">{t('ทั้งหมด')}</option>
+            <option value="published">{t('เผยแพร่')}</option>
+            <option value="draft">{t('ฉบับร่าง')}</option>
           </select>
           <button
             className="button primary"
@@ -42,17 +43,17 @@ export default function Catalog() {
             onClick={() => admin.patch({ creating: true, productId: null })}
           >
             <Plus size={21} />
-            เพิ่มสินค้า
+            {t('เพิ่มสินค้า')}{' '}
           </button>
           <Refresh />
         </div>
         <div className="admin-table">
           <div className="admin-table-head catalog-row">
-            <span>สินค้า</span>
-            <span>ประเภท</span>
-            <span>ราคา</span>
-            <span>คงเหลือ</span>
-            <span>เผยแพร่</span>
+            <span>{t('สินค้า')}</span>
+            <span>{t('ประเภท')}</span>
+            <span>{t('ราคา')}</span>
+            <span>{t('คงเหลือ')}</span>
+            <span>{t('เผยแพร่')}</span>
           </div>
           {rows.map((row) => (
             <button
@@ -61,25 +62,25 @@ export default function Catalog() {
               onClick={() => admin.patch({ productId: row.product.id, creating: false })}
             >
               <span>{row.product.name}</span>
-              <span>{physical(row.product.kind) ? 'สินค้าจริง' : 'สินค้าดิจิทัล'}</span>
+              <span>{physical(row.product.kind) ? t('สินค้าจริง') : t('สินค้าดิจิทัล')}</span>
               <span>{row.variants[0] ? exactMoney(row.variants[0].priceMinor) : '—'}</span>
               <span>
                 {row.variants.some((v) => !v.trackStock)
-                  ? 'ไม่จำกัด'
+                  ? t('ไม่จำกัด')
                   : row.variants.reduce((sum, v) => sum + v.onHand - v.reserved, 0)}
               </span>
               <State
                 value={row.product.published ? 'Ready' : 'Draft'}
-                label={row.product.published ? 'เผยแพร่' : 'ฉบับร่าง'}
+                label={row.product.published ? t('เผยแพร่') : t('ฉบับร่าง')}
               />
               <RowEnd />
             </button>
           ))}
-          {state.loaded && !rows.length ? <Empty>ไม่พบสินค้าตามเงื่อนไข</Empty> : null}
+          {state.loaded && !rows.length ? <Empty>{t('ไม่พบสินค้าตามเงื่อนไข')}</Empty> : null}
         </div>
         {state.productCursor ? (
           <button className="text-button" disabled={busy} onClick={() => run(() => admin.refresh(true))}>
-            ดูสินค้าเพิ่มเติม
+            {t('ดูสินค้าเพิ่มเติม')}{' '}
           </button>
         ) : null}
       </section>
@@ -90,7 +91,7 @@ export default function Catalog() {
             entry={entry}
           />
         ) : (
-          <Empty>เลือกสินค้าเพื่อแก้ไข หรือเพิ่มสินค้าใหม่</Empty>
+          <Empty>{t('เลือกสินค้าเพื่อแก้ไข หรือเพิ่มสินค้าใหม่')}</Empty>
         )}
       </aside>
     </div>
@@ -120,10 +121,10 @@ function CatalogInspector({ entry }: { entry?: CatalogEntry }) {
     <>
       <Back />
       <div className="admin-detail-heading">
-        <h2>{product ? 'แก้ไขสินค้า' : 'เพิ่มสินค้า'}</h2>
+        <h2>{product ? t('แก้ไขสินค้า') : t('เพิ่มสินค้า')}</h2>
         <State
           value={product?.published ? 'Ready' : 'Draft'}
-          label={product?.published ? 'เผยแพร่' : 'ฉบับร่าง'}
+          label={product?.published ? t('เผยแพร่') : t('ฉบับร่าง')}
         />
       </div>
       <form
@@ -132,7 +133,7 @@ function CatalogInspector({ entry }: { entry?: CatalogEntry }) {
           run(() => admin.saveProduct(form));
         }}
       >
-        <Field label="ชื่อสินค้า">
+        <Field label={t('ชื่อสินค้า')}>
           <input
             required
             maxLength={200}
@@ -141,7 +142,7 @@ function CatalogInspector({ entry }: { entry?: CatalogEntry }) {
           />
         </Field>
         {!product ? (
-          <Field label="รหัส URL สินค้า">
+          <Field label={t('รหัส URL สินค้า')}>
             <input
               required
               pattern={'[a-z0-9][a-z0-9\\-]{1,79}'}
@@ -151,13 +152,13 @@ function CatalogInspector({ entry }: { entry?: CatalogEntry }) {
             />
           </Field>
         ) : null}
-        <Field label="ประเภทสินค้า">
+        <Field label={t('ประเภทสินค้า')}>
           <select value={form.kind} disabled={!!product} onChange={(e) => update('kind', e.target.value)}>
-            <option value="physical">สินค้าจริง</option>
-            <option value="digital">สินค้าดิจิทัล</option>
+            <option value="physical">{t('สินค้าจริง')}</option>
+            <option value="digital">{t('สินค้าดิจิทัล')}</option>
           </select>
         </Field>
-        <Field label="รายละเอียด">
+        <Field label={t('รายละเอียด')}>
           <textarea
             rows={3}
             maxLength={10000}
@@ -175,8 +176,8 @@ function CatalogInspector({ entry }: { entry?: CatalogEntry }) {
           />
         </Field>
         <details className="admin-config">
-          <summary>ภาพสินค้าและการแสดงผล 3D</summary>
-          <Field label="ที่อยู่ภาพสินค้า">
+          <summary>{t('ภาพสินค้าและการแสดงผล 3D')}</summary>
+          <Field label={t('ที่อยู่ภาพสินค้า')}>
             <input
               maxLength={2000}
               value={form.thumbnailUrl}
@@ -186,10 +187,10 @@ function CatalogInspector({ entry }: { entry?: CatalogEntry }) {
           <div className="admin-pair">
             {(
               [
-                { key: 'scale', label: 'ขนาดโมเดล', min: 0.01, max: 100, step: 0.01 },
-                { key: 'initialRotation', label: 'มุมเริ่มต้น', min: -360, max: 360, step: 1 },
-                { key: 'minZoom', label: 'ระยะซูมใกล้สุด', min: 0.01, max: 100, step: 0.1 },
-                { key: 'maxZoom', label: 'ระยะซูมไกลสุด', min: 0.01, max: 100, step: 0.1 },
+                { key: 'scale', label: t('ขนาดโมเดล'), min: 0.01, max: 100, step: 0.01 },
+                { key: 'initialRotation', label: t('มุมเริ่มต้น'), min: -360, max: 360, step: 1 },
+                { key: 'minZoom', label: t('ระยะซูมใกล้สุด'), min: 0.01, max: 100, step: 0.1 },
+                { key: 'maxZoom', label: t('ระยะซูมไกลสุด'), min: 0.01, max: 100, step: 0.1 },
               ] as const
             ).map((field) => (
               <Field label={field.label} key={field.key}>
@@ -209,7 +210,7 @@ function CatalogInspector({ entry }: { entry?: CatalogEntry }) {
         <div className="admin-actions">
           <button className="button primary" disabled={busy}>
             <Save size={18} />
-            บันทึกการแก้ไข
+            {t('บันทึกการแก้ไข')}{' '}
           </button>
           {product ? (
             <button
@@ -218,7 +219,7 @@ function CatalogInspector({ entry }: { entry?: CatalogEntry }) {
               disabled={busy}
               onClick={() => run(() => admin.publication())}
             >
-              {product.published ? 'พักเผยแพร่สินค้า' : 'เผยแพร่สินค้า'}
+              {product.published ? t('พักเผยแพร่สินค้า') : t('เผยแพร่สินค้า')}
             </button>
           ) : null}
         </div>
@@ -226,7 +227,7 @@ function CatalogInspector({ entry }: { entry?: CatalogEntry }) {
       {entry ? (
         <Variants entry={entry} />
       ) : (
-        <p className="muted">บันทึกสินค้าฉบับร่างก่อนเพิ่ม SKU ราคา และการส่งมอบ</p>
+        <p className="muted">{t('บันทึกสินค้าฉบับร่างก่อนเพิ่ม SKU ราคา และการส่งมอบ')}</p>
       )}
     </>
   );
@@ -236,15 +237,15 @@ function Variants({ entry }: { entry: CatalogEntry }) {
   const variant = entry.variants.find((x) => x.id === id);
   return (
     <section>
-      <h3>รุ่นสินค้า / SKU</h3>
-      <Field label="เลือกรุ่นสินค้า">
+      <h3>{t('รุ่นสินค้า / SKU')}</h3>
+      <Field label={t('เลือกรุ่นสินค้า')}>
         <select value={id} onChange={(e) => setId(e.target.value)}>
           {entry.variants.map((v) => (
             <option key={v.id} value={v.id}>
               {v.sku} · {v.name}
             </option>
           ))}
-          <option value="">เพิ่มรุ่นสินค้า</option>
+          <option value="">{t('เพิ่มรุ่นสินค้า')}</option>
         </select>
       </Field>
       <VariantForm key={id || 'new'} entry={entry} variant={variant} />
@@ -272,7 +273,7 @@ function VariantForm({ entry, variant }: { entry: CatalogEntry; variant?: AdminV
       if (!values || Array.isArray(values) || Object.values(values).some((v) => typeof v !== 'string'))
         throw new Error();
     } catch {
-      setError('ตรวจราคาเป็นบาททศนิยมไม่เกิน 2 ตำแหน่ง และตัวเลือกเป็นข้อมูลข้อความ');
+      setError(t('ตรวจราคาเป็นบาททศนิยมไม่เกิน 2 ตำแหน่ง และตัวเลือกเป็นข้อมูลข้อความ'));
       return;
     }
     setError('');
@@ -301,11 +302,11 @@ function VariantForm({ entry, variant }: { entry: CatalogEntry; variant?: AdminV
         <Field label="SKU">
           <input required maxLength={100} value={sku} onChange={(e) => setSku(e.target.value)} />
         </Field>
-        <Field label="ชื่อรุ่น">
+        <Field label={t('ชื่อรุ่น')}>
           <input required maxLength={200} value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <div className="admin-pair">
-          <Field label="ราคา (บาท)">
+          <Field label={t('ราคา (บาท)')}>
             <input
               required
               inputMode="decimal"
@@ -314,34 +315,34 @@ function VariantForm({ entry, variant }: { entry: CatalogEntry; variant?: AdminV
               onChange={(e) => setPrice(e.target.value)}
             />
           </Field>
-          <Field label="จำนวนพร้อมขาย">
+          <Field label={t('จำนวนพร้อมขาย')}>
             <input
               readOnly
-              value={variant?.trackStock ? String(variant.onHand - variant.reserved) : 'ไม่จำกัด'}
+              value={variant?.trackStock ? String(variant.onHand - variant.reserved) : t('ไม่จำกัด')}
             />
           </Field>
         </div>
         <label className="admin-check">
           <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
-          เปิดขายรุ่นนี้
+          {t('เปิดขายรุ่นนี้')}{' '}
         </label>
         {!isPhysical ? (
           <>
             <label className="admin-check">
               <input type="checkbox" checked={track} onChange={(e) => setTrack(e.target.checked)} />
-              จำกัดจำนวนสินค้าดิจิทัล
+              {t('จำกัดจำนวนสินค้าดิจิทัล')}{' '}
             </label>
-            <Field label="การส่งมอบดิจิทัล">
+            <Field label={t('การส่งมอบดิจิทัล')}>
               <select value={kind} onChange={(e) => setKind(e.target.value)}>
-                <option value="inventoryItem">ใช้สินค้าในเมตาเวิร์ส</option>
-                <option value="download">ดาวน์โหลดไฟล์ส่วนตัว</option>
+                <option value="inventoryItem">{t('ใช้สินค้าในเมตาเวิร์ส')}</option>
+                <option value="download">{t('ดาวน์โหลดไฟล์ส่วนตัว')}</option>
               </select>
             </Field>
             {kind.toLowerCase() === 'download' ? (
               <>
-                <Field label="ไฟล์สำหรับผู้ซื้อ">
+                <Field label={t('ไฟล์สำหรับผู้ซื้อ')}>
                   <select value={asset} onChange={(e) => setAsset(e.target.value)}>
-                    <option value="">เลือกไฟล์ที่จัดเก็บแล้ว</option>
+                    <option value="">{t('เลือกไฟล์ที่จัดเก็บแล้ว')}</option>
                     {assets
                       .filter((x) => x.ready)
                       .map((x) => (
@@ -351,7 +352,7 @@ function VariantForm({ entry, variant }: { entry: CatalogEntry; variant?: AdminV
                       ))}
                   </select>
                 </Field>
-                <Field label="เพิ่มไฟล์ส่วนตัว">
+                <Field label={t('เพิ่มไฟล์ส่วนตัว')}>
                   <input
                     type="file"
                     disabled={busy}
@@ -371,8 +372,8 @@ function VariantForm({ entry, variant }: { entry: CatalogEntry; variant?: AdminV
           </>
         ) : null}
         <details className="admin-config">
-          <summary>ตัวเลือกของรุ่นสินค้า</summary>
-          <Field label="ตัวเลือก JSON">
+          <summary>{t('ตัวเลือกของรุ่นสินค้า')}</summary>
+          <Field label={t('ตัวเลือก JSON')}>
             <textarea
               rows={3}
               value={options}
@@ -388,7 +389,7 @@ function VariantForm({ entry, variant }: { entry: CatalogEntry; variant?: AdminV
         ) : null}
         <button className="button secondary" disabled={busy}>
           <Save size={18} />
-          บันทึกรุ่นสินค้า
+          {t('บันทึกรุ่นสินค้า')}{' '}
         </button>
       </form>
       {variant && variant.trackStock ? <Stock variant={variant} /> : null}
@@ -403,12 +404,12 @@ function Stock({ variant }: { variant: AdminVariant }) {
     <details className="admin-config">
       <summary>
         <Box size={18} />
-        ปรับสต็อก
+        {t('ปรับสต็อก')}{' '}
       </summary>
       <dl>
-        <Fact label="คงเหลือทั้งหมด">{variant.onHand}</Fact>
-        <Fact label="อยู่ระหว่างจอง">{variant.reserved}</Fact>
-        <Fact label="พร้อมขาย">{variant.onHand - variant.reserved}</Fact>
+        <Fact label={t('คงเหลือทั้งหมด')}>{variant.onHand}</Fact>
+        <Fact label={t('อยู่ระหว่างจอง')}>{variant.reserved}</Fact>
+        <Fact label={t('พร้อมขาย')}>{variant.onHand - variant.reserved}</Fact>
       </dl>
       <form
         onSubmit={(e) => {
@@ -422,7 +423,7 @@ function Stock({ variant }: { variant: AdminVariant }) {
           });
         }}
       >
-        <Field label="เพิ่ม / ลดจำนวน">
+        <Field label={t('เพิ่ม / ลดจำนวน')}>
           <input
             type="number"
             step="1"
@@ -433,7 +434,7 @@ function Stock({ variant }: { variant: AdminVariant }) {
             onChange={(e) => setDelta(e.target.value)}
           />
         </Field>
-        <Field label="เหตุผลการปรับสต็อก">
+        <Field label={t('เหตุผลการปรับสต็อก')}>
           <textarea
             required
             maxLength={500}
@@ -446,7 +447,7 @@ function Stock({ variant }: { variant: AdminVariant }) {
           className="button secondary"
           disabled={busy || !delta || Number(delta) === 0 || !reason.trim()}
         >
-          ยืนยันปรับสต็อก
+          {t('ยืนยันปรับสต็อก')}{' '}
         </button>
       </form>
     </details>

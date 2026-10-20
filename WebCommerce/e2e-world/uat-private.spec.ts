@@ -15,6 +15,7 @@ test(`${portalMode ? 'private Portal package' : publicMode ? 'public HTTPS/WSS' 
   const evidence = resolve(process.env.TTB_UAT_QA_OUTPUT ?? '../.artifacts/uat-world/private-browser');
   await mkdir(evidence, { recursive: true });
   const errors: string[] = [], messages: string[] = [], mutations: string[] = [], external: string[] = [], expectedAnonymousIdentityResponses: number[] = [];
+  const authenticationPosts: string[] = [];
   let clientFrames = 0, serverFrames = 0;
   const nativeWebSocketUrls: string[] = [];
   if (publicMode) page.on('websocket', socket => {
@@ -27,7 +28,9 @@ test(`${portalMode ? 'private Portal package' : publicMode ? 'public HTTPS/WSS' 
   page.on('response', response => { if (response.url() === 'https://api.mangosgo.com/api/v1/users/me' && response.status() === 401) expectedAnonymousIdentityResponses.push(401); });
   page.on('console', message => {
     messages.push(message.text());
-    if (message.type() === 'error' && !(message.location().url === 'https://api.mangosgo.com/api/v1/users/me' && /401/.test(message.text()))) errors.push(message.text().slice(0, 800));
+    const expectedAnonymous = /401/.test(message.text()) &&
+      [ 'https://api.mangosgo.com/api/v1/users/me', 'https://ttb-api-test.mangosgo.com/ttb-commerce-test/v1/session' ].includes(message.location().url);
+    if (message.type() === 'error' && !expectedAnonymous) errors.push(message.text().slice(0, 800));
   });
   await page.route('**/*', async route => {
     const request = route.request(), url = new URL(request.url());
@@ -41,7 +44,9 @@ test(`${portalMode ? 'private Portal package' : publicMode ? 'public HTTPS/WSS' 
       await route.fulfill({ path: file, contentType: types[extname(file)] ?? 'application/octet-stream', headers: { 'cache-control': 'no-store' } }); return;
     }
     if (url.hostname !== 'ttb-api-test.mangosgo.com') { external.push(url.origin + url.pathname); await route.abort(); return; }
-    if (!['GET', 'HEAD'].includes(request.method())) { mutations.push(url.pathname); await route.abort(); return; }
+    const sessionExchange = request.method() === 'POST' && url.pathname === '/ttb-commerce-test/v1/session';
+    if (sessionExchange) authenticationPosts.push(url.pathname);
+    if (!['GET', 'HEAD'].includes(request.method()) && !sessionExchange) { mutations.push(url.pathname); await route.abort(); return; }
     if (publicMode || portalMode) { await route.continue(); return; }
     const port = url.pathname.startsWith('/ttb-commerce-test/v1/') ? 18742 : 18589;
     const response = await route.fetch({ url: `http://127.0.0.1:${port}${url.pathname}${url.search}`, headers: { ...request.headers(), host: 'ttb-api-test.mangosgo.com' }, timeout: 120000 });
@@ -84,12 +89,33 @@ test(`${portalMode ? 'private Portal package' : publicMode ? 'public HTTPS/WSS' 
   // Walk to a clear line of sight using the real player controller: an avatar capsule can cover the lamp raycast at the random arrival position.
   await page.keyboard.down('KeyD'); await page.waitForTimeout(700); await page.keyboard.up('KeyD');
   await page.screenshot({ path: resolve(evidence, 'uat-world.png') });
-  await clickRenderedProduct(page, 'lamp');
+  const projectionRecovery: string[] = [];
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await clickRenderedProduct(page, 'lamp');
+      await expect(page.locator('.product-detail h1')).toBeVisible({ timeout: 3000 });
+      const selected = await page.locator('.product-detail h1').innerText();
+      if (selected === 'Orbit Lamp') break;
+      projectionRecovery.push(selected);
+    } catch (error) {
+      projectionRecovery.push(error instanceof Error ? error.message.slice(0, 200) : 'Projection unavailable');
+    }
+    if (attempt === 2) throw new Error('Could not expose the lamp through native movement: ' + JSON.stringify(projectionRecovery));
+    const close = page.getByRole('button', { name: 'ปิดหน้าต่าง', exact: true });
+    if (await close.isVisible()) await close.click();
+    await page.keyboard.down('KeyA'); await page.waitForTimeout(700 * (attempt + 1)); await page.keyboard.up('KeyA');
+    await page.screenshot({ path: resolve(evidence, `uat-camera-reposition-${attempt + 1}.png`) });
+  }
   await expect(page.getByRole('heading', { name: 'Orbit Lamp', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'ซูมเข้า', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'หมุนโมเดล', exact: true }).click();
   await page.getByRole('button', { name: 'ซูมเข้า', exact: true }).click();
   await page.screenshot({ path: resolve(evidence, 'uat-product-desktop.png') });
+  await page.getByRole('combobox', { name: 'เปลี่ยนภาษา', exact: true }).selectOption('en');
+  await expect(page.getByRole('button', { name: 'Zoom in', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Add to cart', exact: true })).toBeVisible();
+  await page.screenshot({ path: resolve(evidence, 'uat-product-desktop-en.png') });
+  await page.getByRole('combobox', { name: 'Language', exact: true }).selectOption('th');
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole('heading', { name: 'Orbit Lamp', exact: true })).toBeInViewport();
   await expect(page.getByRole('button', { name: 'ปิดหน้าต่าง', exact: true })).toBeInViewport();
@@ -108,9 +134,14 @@ test(`${portalMode ? 'private Portal package' : publicMode ? 'public HTTPS/WSS' 
   await expect.poll(async () => { const pixels = await previewPixels(); return pixels.orange > 100 && pixels.light > 1000; }, { timeout: 10000 }).toBe(true);
   const mobilePreviewPixels = await previewPixels();
   await page.screenshot({ path: resolve(evidence, 'uat-product-mobile.png') });
+  await page.getByRole('combobox', { name: 'เปลี่ยนภาษา', exact: true }).selectOption('en');
+  await expect(page.getByRole('button', { name: 'Zoom in', exact: true })).toBeInViewport();
+  expect(await page.locator('.commerce-dialog').evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+  await page.screenshot({ path: resolve(evidence, 'uat-product-mobile-en.png') });
+  await page.getByRole('combobox', { name: 'Language', exact: true }).selectOption('th');
   await page.getByRole('button', { name: 'เพิ่มลงตะกร้า', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'เข้าสู่ระบบเพื่อสั่งซื้อ', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'เชื่อมต่อบัญชี MANGOs', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'เข้าสู่ระบบ MANGOs', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'เข้าสู่ระบบ MANGOs', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'เข้าสู่ระบบทดสอบ Local', exact: true })).toHaveCount(0);
   await expect(page.getByText('เครื่องมือทดสอบ Local', { exact: true })).toHaveCount(0);
   await page.screenshot({ path: resolve(evidence, 'uat-commerce-signin.png') });
@@ -125,5 +156,5 @@ test(`${portalMode ? 'private Portal package' : publicMode ? 'public HTTPS/WSS' 
     httpTransportRelayedThroughPrivateSsh: !publicMode && !portalMode, staticClientServedFromLocalFinalPackage: portalMode,
     webSocketFramesUnmodified: true, webSocketTransportIntercepted: !publicMode, nativeWebSocketUrls, portalNativeSlugAndVersionRouting: portalMode,
     serviceWorkersBlockedForFreshAssetQa: true, publicTlsAccepted: publicMode, mangosAuthenticationTested: false,
-    paymentOrGrantCreated: false, expectedAnonymousIdentityResponses, mobilePreviewPixels, mutations, external, errors }, null, 2));
+    paymentOrGrantCreated: false, expectedAnonymousIdentityResponses, authenticationPosts, projectionRecovery, mobilePreviewPixels, mutations, external, errors }, null, 2));
 });

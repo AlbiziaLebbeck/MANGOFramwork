@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useEffect } from 'react';
 import { useCommerce } from '../store';
 import { Empty, MockNotice } from '../components/Ui';
@@ -17,7 +18,7 @@ export default function Admin() {
   useEffect(() => {
     run(() => admin.start());
   }, [signature]);
-  if (!canAdmin(session)) return <Empty>บัญชีนี้ไม่มีสิทธิ์จัดการร้านค้า</Empty>;
+  if (!canAdmin(session)) return <Empty>{t('บัญชีนี้ไม่มีสิทธิ์จัดการร้านค้า')}</Empty>;
   return (
     <main className="admin-panel">
       <MockNotice />

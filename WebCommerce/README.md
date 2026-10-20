@@ -14,6 +14,10 @@ From this directory: `pnpm install --frozen-lockfile`, `pnpm run build`, `pnpm r
 
 ## Host contract
 
+The shopper UI has a persistent Thai/English selector (`src/i18n.ts`, `i18n-messages.ts`). It translates presentation text and Bangkok date/THB formatting without reloading or changing buyer inputs, order/quote state, QR payloads, user-authored content or issued PDFs. The root React component subscribes to the locale; stored notices are translated at render time.
+
+Startup and native login notifications now resolve an existing commerce session and automatically exchange an existing MANGOs HttpOnly cookie when necessary. The backend still verifies `/users/me`; no identity is imported from Unity. Checks share one in-flight request, limit anonymous exchanges, honor explicit signout and discard stale account responses. Local/Mock test identities remain explicit. See `Documentation/TTB_SSO_AND_LANGUAGE_TH.md`; `pnpm exec playwright test --config playwright.session-i18n.config.ts` verifies the fixture SSO flow and real Local/Mock language/purchase/receipt flow. Set `TTB_UI_EVIDENCE` for screenshots/reports outside the repository.
+
 Publish the complete `dist` directory together (JS/CSS/products/fonts/license). A host supplies public `window.MANGOS_TTB_CONFIG` before the script: `apiBase` is one of the exact configured TTB API hosts/prefixes or same-origin; `assetBase` points to the published overlay directory. No bank/game secrets or shopper identity belong here. Call `window.MangoTtb.attachUnity(unityInstance)` after Unity initialization. The Unity receiver object is `MangoTtbCommerceBridge`, method `OnBrowserMessage`. Messages are version1.
 
 - Unity→HTML: host.ready, product.open(productId or modelKey), preview.ready/error(requestId), session.changed/end. These never carry authoritative Paid/role flags.

@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { message, type TranslationMessage } from './i18n';
 import { CommerceApi, ApiError, StaleSessionError, errorMessage, resolveApiBase } from './api';
 import { bridge, type HostEvent } from './bridge';
 import {
@@ -27,6 +28,7 @@ export interface CommerceState {
   catalogCursor: string | null;
   selected: Product | null;
   session: Session;
+  sessionSyncing: boolean;
   cart: Cart;
   checkoutOptions: CheckoutOptions | null;
   quote: Quote | null;
@@ -40,7 +42,7 @@ export interface CommerceState {
   inventoryCursor: string | null;
   busy: boolean;
   error: string | null;
-  notice: string | null;
+  notice: string | TranslationMessage | null;
   hostAttached: boolean;
   previewReady: boolean;
   gameReady: boolean;
@@ -55,6 +57,10 @@ export class CommerceStore {
   private busyCount = 0;
   private sessionGeneration = 0;
   private sessionRequest = 0;
+  private sessionSync: Promise<void> | null = null;
+  private sessionSyncRequest = 0;
+  private automaticSignInAllowed = true;
+  private nextAutomaticSignInAt = 0;
   private inspection = 0;
   private actionKeys = new Map<string, string>();
   private afterLoginScreen: Screen = 'gallery';
@@ -65,6 +71,7 @@ export class CommerceStore {
     catalogCursor: null,
     selected: null,
     session: { authenticated: false },
+    sessionSyncing: false,
     cart: emptyCart,
     checkoutOptions: null,
     quote: null,
@@ -148,14 +155,14 @@ export class CommerceStore {
   async bootstrap() {
     const initialInspection = this.inspection;
     await this.run(async () => {
-      const [config, catalog, session] = await Promise.all([
-        this.api.request<StorefrontConfig>('/storefront/config', 'GET', undefined, false),
+      const configuration = this.api.request<StorefrontConfig>('/storefront/config', 'GET', undefined, false);
+      const [config, catalog] = await Promise.all([
+        configuration,
         this.api.request<Page<Product>>('/catalog/products?limit=24', 'GET', undefined, false),
-        this.api.request<Session>('/session', 'GET', undefined, false),
+        this.refreshSession(configuration),
       ]);
       this.patch({ config, products: catalog.items, catalogCursor: catalog.nextCursor });
-      this.applySession(session);
-      if (session.authenticated) {
+      if (this.state.session.authenticated) {
         await this.loadCart();
         const saved = this.readStorage('order');
         if (initialInspection === this.inspection && saved && /^[-a-f0-9]{36}$/i.test(saved))
@@ -164,14 +171,75 @@ export class CommerceStore {
       }
     });
   }
-  async refreshSession() {
+  refreshSession(configuration?: Promise<StorefrontConfig>): Promise<void> {
+    if (!this.automaticSignInAllowed) return Promise.resolve();
+    if (this.sessionSync)
+      return this.sessionSyncRequest === this.sessionRequest
+        ? this.sessionSync
+        : this.sessionSync.then(() => this.refreshSession());
     const sequence = ++this.sessionRequest;
-    try {
-      const session = await this.api.request<Session>('/session', 'GET', undefined, false);
-      if (sequence === this.sessionRequest) this.applySession(session);
-    } catch {
-      /* retain visible state during a temporary network outage; owned API still authorizes every request */
-    }
+    this.sessionSyncRequest = sequence;
+    this.patch({ sessionSyncing: true });
+    const pending = (async () => {
+      try {
+        const previousOwner = this.state.session.user?.id;
+        const previousRoles = [...(this.state.session.user?.roles ?? [])].sort().join(',');
+        let session = await this.api.request<Session>('/session', 'GET', undefined, false);
+        if (sequence !== this.sessionRequest) return;
+        if (!session.authenticated) {
+          // POST exchanges the existing HttpOnly MANGOs cookie. Only the
+          // backend's /users/me verification establishes shopper identity.
+          this.applySession(session);
+          const config = configuration ? await configuration : this.state.config;
+          if (sequence !== this.sessionRequest) return;
+          const localSimulation = config?.environment === 'Local' && config.mockSimulation;
+          if (
+            this.automaticSignInAllowed &&
+            !localSimulation &&
+            (previousOwner || Date.now() >= this.nextAutomaticSignInAt)
+          ) {
+            this.nextAutomaticSignInAt = Date.now() + 60000;
+            try {
+              session = await this.api.request<Session>('/session', 'POST', undefined, false);
+            } catch (error) {
+              if (!(error instanceof ApiError && error.status === 401)) throw error;
+            }
+          }
+        }
+        if (sequence !== this.sessionRequest) return;
+        this.applySession(session);
+        if (
+          session.authenticated &&
+          (previousOwner !== session.user?.id ||
+            previousRoles !== [...(session.user?.roles ?? [])].sort().join(','))
+        ) {
+          await this.loadCart();
+          if (sequence === this.sessionRequest && this.state.screen === 'login')
+            this.navigate(this.afterLoginScreen);
+        }
+      } catch {
+        // A guest remains a guest. A failed GET retains a valid visible
+        // session; known-invalid credentials above have already cleared it.
+      }
+    })();
+    const completed = pending.finally(() => {
+      if (this.sessionSync === completed) {
+        this.sessionSync = null;
+        this.patch({ sessionSyncing: false });
+      }
+    });
+    this.sessionSync = completed;
+    return completed;
+  }
+  reconnectSession() {
+    this.automaticSignInAllowed = true;
+    this.nextAutomaticSignInAt = 0;
+    return this.refreshSession();
+  }
+  endSession() {
+    this.sessionRequest++;
+    this.automaticSignInAllowed = false;
+    this.applySession({ authenticated: false });
   }
   private owner() {
     return this.state.session.user?.id ?? '';
@@ -218,6 +286,7 @@ export class CommerceStore {
   }
   async signIn() {
     await this.run(async () => {
+      this.automaticSignInAllowed = true;
       try {
         this.sessionRequest++;
         this.applySession(await this.api.request<Session>('/session', 'POST', undefined, false));
@@ -235,8 +304,15 @@ export class CommerceStore {
   }
   async signOut() {
     await this.run(async () => {
-      await this.api.request('/session/logout', 'POST');
       this.sessionRequest++;
+      const previouslyAllowed = this.automaticSignInAllowed;
+      this.automaticSignInAllowed = false;
+      try {
+        await this.api.request('/session/logout', 'POST');
+      } catch (error) {
+        this.automaticSignInAllowed = previouslyAllowed;
+        throw error;
+      }
       this.applySession({ authenticated: false });
       this.patch({ screen: 'gallery', selected: null, notice: 'ออกจากระบบซื้อสินค้าแล้ว' });
     });
@@ -313,7 +389,7 @@ export class CommerceStore {
     }
     const current = this.state.cart.lines.find((l) => l.variantId === variantId)?.quantity ?? 0;
     await this.setQuantity(variantId, Math.min(99, current + quantity));
-    if (!this.state.error) this.patch({ notice: `เพิ่ม ${product.name} ลงตะกร้าแล้ว` });
+    if (!this.state.error) this.patch({ notice: message('เพิ่ม {0} ลงตะกร้าแล้ว', [product.name]) });
   }
   async checkout() {
     await this.run(async () => {

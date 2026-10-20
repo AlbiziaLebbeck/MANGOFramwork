@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { ArrowLeft } from 'lucide-react';
 import { commerce, useCommerce } from '../store';
 import { admin, useAdmin } from './store';
@@ -8,7 +9,7 @@ export function AdminNavigation() {
   const { tab } = useAdmin();
   return (
     <>
-      <nav aria-label="เมนูจัดการร้านค้า">
+      <nav aria-label={t('เมนูจัดการร้านค้า')}>
         {adminTabs
           .filter((t) => allowed(session, t.role))
           .map((item) => (
@@ -17,13 +18,13 @@ export function AdminNavigation() {
               aria-current={item.id === tab ? 'page' : undefined}
               onClick={() => run(() => admin.selectTab(item.id))}
             >
-              {item.label}
+              {t(item.label)}
             </button>
           ))}
       </nav>
       <button className="text-button admin-return" onClick={() => commerce.close()}>
         <ArrowLeft size={20} />
-        กลับหน้าร้าน
+        {t('กลับหน้าร้าน')}{' '}
       </button>
     </>
   );

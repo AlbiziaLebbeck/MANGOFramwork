@@ -11,12 +11,12 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 872a0f03305b0a449a661a6d7b4c81b1, type: 3}
   m_Name: MangosAuthConfig
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   authenticationMode: 0
   requestTimeoutSeconds: 20
   apiBaseUrl: https://api.mangosgo.com/api/v1
   apiOrigin: https://api.mangosgo.com
   webBaseUrl: https://mangosgo.com
-  metaverseName:
-  oauthClientId:
-  oauthRedirectUrl:
+  metaverseName: TTB Payment
+  oauthClientId: eab74e3d-ce69-4847-9c08-9e33d3b11492
+  oauthRedirectUrl: https://plus.mangosgo.com/ttb-uat/

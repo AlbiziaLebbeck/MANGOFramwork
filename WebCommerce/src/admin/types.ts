@@ -1,4 +1,5 @@
 import type { CommerceDocument, Fulfillment, Order, Preview, Session } from '../types';
+import { t, locale } from '../i18n';
 export type AdminTab = 'catalog' | 'orders' | 'finance' | 'reports' | 'issuer';
 export const adminTabs: { id: AdminTab; label: string; role: string }[] = [
   { id: 'catalog', label: 'สินค้า', role: 'admin' },
@@ -272,7 +273,7 @@ export const exactMoney = (minor: string | number) => {
   const value = BigInt(minor),
     negative = value < 0n,
     absolute = negative ? -value : value;
-  return `${negative ? '-' : ''}฿${(absolute / 100n).toLocaleString('th-TH')}.${(absolute % 100n).toString().padStart(2, '0')}`;
+  return `${negative ? '-' : ''}฿${(absolute / 100n).toLocaleString(locale())}.${(absolute % 100n).toString().padStart(2, '0')}`;
 };
 export const minorInput = (baht: string) => {
   if (!/^\d{1,10}(\.\d{1,2})?$/.test(baht)) throw new Error('invalid_amount');
@@ -304,7 +305,7 @@ export const caseLabels: Record<string, string> = {
   ManualRefundFulfillmentReview: 'ตรวจสินค้าหลังคืนเงินภายนอก',
   ManualRefundBankVoidConflict: 'หลักฐานคืนเงินภายนอกและธนาคารขัดแย้ง',
 };
-export const caseLabel = (kind: string) => caseLabels[kind] ?? kind;
+export const caseLabel = (kind: string) => t(caseLabels[kind] ?? kind);
 export const deliveryLabels: Record<string, string> = {
   Pending: 'รอจัดเตรียม',
   Preparing: 'กำลังจัดเตรียม',

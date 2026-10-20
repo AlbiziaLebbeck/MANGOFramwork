@@ -33,6 +33,7 @@
 | P6-06 | P6/P8 | Linux/WebGL UAT hosting และ world portrait QA | DONE | Paired UAT build73b78e1e74064bf58a4b58504bb26e57/218artifacts, privateNTdeployจริง, browser1/1ผ่าน31.1sรวมnativepreview/mobile pixels/คืนHUD; 18Unitysources/9protectedrootfilesตรง. ไม่รวมpublicTLS/MANGOslogin/bankapp |
 | P6-07 | P6/P8 | Operator-only HTTPS/WSS UAT preview | DONE | ผู้ใช้อนุญาต58.11.26.155/32แล้ว; Ingressสร้างครั้งเดียว/observeผ่าน, public browser1/1ผ่าน28.0s ใช้HTTPS/WSSจริง, desktop/mobile3DและคืนHUDผ่าน, outside-IP/forgedXFF6/6ถูก403; callback/metrics/เงินจริงยังปิด |
 | P6-08 | P6/P8 | ฉาก BaseWorld ใน Editor จริงและแพ็กเกจ Deployment Portal | DONE | ติดตั้ง root BaseWorld ผ่าน Editor; GUID/WorldManager/Build Settings คงเดิม; Build Center/slug routing12casesผ่าน, Linux IL2CPP+WebGL run01e6564154604c78979d07bc55d669d6สำเร็จ, shipping ZIPตรงPortalcontract, private nativeQA1/1ผ่าน31.5s. ยังไม่เผยแพร่Portal/ผูกgameidentityให้slugใหม่/publicTLS/loginจริง/bank |
+| P6-09 | P6/P8 | เชื่อม Launcher SSO อัตโนมัติและไทย–อังกฤษ | DONE | auto verified-cookie exchange, concurrency/stale/account-switch/signout guards; 562 messages/locale persistence; types+unit33/33, browserSSOfixture/realLocalpurchase2/2, regression11/11 และ paired Portal build a572d58dd99246d2bbf5dcdc349bcd6e ผ่าน. Source/Buildพร้อมส่ง; realMANGOsaccountบนpublishedslug/เงินจริงยังต้องตรวจรับ |
 | P7-01 | P7 | SFTP/PGP report parser/archive/reconciliation | DONE | full159/159; encrypted archive/replay/revision/C-D-V/LOST/daily comparison; private UATขึ้นจริง transportปิดรอbankprofile |
 | P7-02 | P7 | Void/Enquiry Void และ Void slip | DONE | full182/182; mobileVoid1/1+shopper3/3; actualThaiVoidPDF Windows/Linux; privateUATขึ้นและVoidจริงปิด |
 | P7-03 | P7 | Admin/finance cases/roles/audit | DONE | full205/205; browser8/8; two-officer manual attestation/private evidence, explicit goods units/stock; privateUAT20261019-p7-finance |
@@ -43,7 +44,17 @@
 
 ไม่ถือว่า DONE เพียงเพราะเขียนโค้ดแล้ว และไม่ถือว่าทดสอบ mock ผ่านเท่ากับธนาคารรับรอง. 
 
-## ล่าสุด 20 ตุลาคม 2026 เวลา 08:22 น.ไทย — BaseWorld และ Portal
+## ล่าสุด 20 ตุลาคม 2026 — SSO และภาษา
+
+- Push snapshot ก่อนแก้ขึ้น GitHub branch `MANGOxTTB` แล้ว commit `ec64c555c354758136bf7aabdc66a53c04546a86` ตามคำสั่งผู้ใช้ รวม source, assets, backend, infrastructure และเอกสาร โดยไม่มี Build/private-key/token/runtime storage
+- รับ Auth public settings ใหม่ของผู้ใช้และคงโหมด Auto บน plus จึงใช้ FirstPartyCookieSso; OAuth client UUID ไม่ใช่ TTB Merchant ID แก้ storefront GET-session-only ให้แลก verified MANGOs cookie ผ่าน POST/session อัตโนมัติและเริ่มใหม่เมื่อ host ready/login notification ไม่เชื่อ identity จาก Unity
+- เก็บ single in-flight exchange, anonymous cooldown, explicit Local test identity, stale-response/account-switch/signout guards เพิ่มภาษาไทย–อังกฤษ 562 messages, persistent preference/Bangkok date/THB และไม่ reload หรือเปลี่ยน buyer/cart/quote/QR/document snapshot
+- Unit33/33/types/PWApolicy3/3ผ่าน; dedicated browser2/2ผ่าน13.9sรวม identity fixture (ไม่ใช่บัญชีจริง) และ real Local/Mock1บาท/สลับภาษา/receiptPDF; original11/11 regressionผ่าน2.2m ผลหุ่นทดสอบรอบแรกที่ชื่อสินค้าไม่ตรง/คาด paid-screen resume ไม่ตรงพฤติกรรมเดิมเก็บแยกและไม่ใช้แทน final
+- Paired Linux/WebGL build `a572d58dd99246d2bbf5dcdc349bcd6e` / buildId `20261020-021652-542bc6` สำเร็จ โปรไฟล์UatและAuthassetใหม่รวมในแพ็กเกจ คู่มือ Portal ชี้ ZIP รุ่นใหม่แล้ว ยังไม่เผยแพร่ทับ slug ของผู้ใช้ และ payment/callback/KKU/Production ไม่ถูกเปิดหรือแก้
+- Native private shipping QA1/1ผ่าน33.6sรวมThai/Englishdesktop+mobile/nativepreview/คืนHUD, anonymousPOST/sessionแยกจากfinancialmutationsและไม่สร้างบัญชีใหม่ ปิดtunnel/Job/Pod/Policyครบ UAT9พร้อม, userrowsเดิม1shopper/3sessionsคงเดิมและfinance16กลุ่ม0; KKU/Portal/sharedServiceตรงbaseline Nativeattemptแรกเลือกผิดจากlampพ้นภาพเมื่อspawnสุ่ม เก็บfailureแยกและแก้เฉพาะharnessให้เดิน/ตรวจชื่อจริงก่อนรับรอง ไม่แก้Appเพื่อหลบผลล้มเหลว
+- ตรวจ config ที่มีผลจริงของ UAT แล้วยังไม่มี TTB MerchantId/iss/beneficiary, approvals และ callback credentials; private RSA เตรียมแล้ว การวาด QR ไม่ใช้ JWT/remote API แต่ checkout จงใจผูกกับการยืนยันผลพร้อม ดู `TTB_REAL_PAYMENT_READINESS_TH.md` และ `TTB_SSO_AND_LANGUAGE_TH.md`
+
+## รอบก่อน 20 ตุลาคม 2026 เวลา 08:22 น.ไทย — BaseWorld และ Portal
 
 - แก้สาเหตุที่ผู้ใช้เปิด BaseWorld แล้วไม่เห็นร้านค้า: รุ่นก่อนสร้างเฉพาะ prepared scene ในสำเนา Build รอบนี้ติดตั้งร้านค้า/bridge ใน `Assets/_Project/Scenes/BaseWorld.unity` ของจริงผ่าน Editor แล้ว ไม่ save-as; scene meta, WorldManager prefab และ Build Settings ตรงสำรอง เพิ่ม optional TTB profile ใน Build Center และ routing ตาม URL slug/version ไม่ใช้ KKU systemtester path
 - Linux IL2CPP `.x86_64` + WebGL final run `01e6564154604c78979d07bc55d669d6` build สำเร็จทั้งคู่/protected6hashesตรง, Server ZIP61,880,325bytesและClient ZIP35,115,031bytes มี shipping structure/PWA manifestครบและไม่รวม UnityDoNotShip/backup folder. ผล build ก่อนหน้าที่ compilation fail/แพ็ก debug ใหญ่เกินเป็นประวัติ ไม่ใช่ชุดส่งมอบ
