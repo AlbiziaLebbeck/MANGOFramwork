@@ -6,6 +6,9 @@ import { tmpdir } from 'node:os';
 test('UAT bank-only instructions remain readable in Thai and English and cannot bypass closed checkout', async ({ page }) => {
   const errors: string[] = [], payments: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => {
+    if (message.type() === 'error' || message.type() === 'warning') errors.push(message.text());
+  });
   page.on('request', request => {
     if ((request.method() === 'POST' && /\/orders$|\/qr$|\/verify$/.test(request.url())) || /tau2904|ttbbank/.test(request.url())) payments.push(request.url());
   });
