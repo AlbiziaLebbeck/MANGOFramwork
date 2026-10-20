@@ -22,4 +22,4 @@ foreach($experience in $targets){
   & node (Join-Path $PSScriptRoot 'package-pwa.mjs') $output
   if($LASTEXITCODE -ne 0){throw 'Local PWA packaging failed.'}
 }
-Write-Output 'Updated only Local HTML/React/PWA files; the tested native protocol and binaries were retained.'
+Write-Output 'Updated Local HTML/React/PWA and public WebGL compression/hash URLs; decoded native content and protocol were retained. Restart the owned local static preview to load its current .br header handling.'

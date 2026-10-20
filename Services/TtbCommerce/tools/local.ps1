@@ -48,8 +48,10 @@ try{
   $localRuntime=Join-Path $repositoryRoot ('.tools/local/runtime-'+[DateTime]::UtcNow.ToString('yyyyMMddHHmmss',[Globalization.CultureInfo]::InvariantCulture)+'-'+[Guid]::NewGuid().ToString('N').Substring(0,8))
   & (Join-Path $PSScriptRoot 'dotnet.ps1') publish src/TtbCommerce.Api --no-restore -o $localRuntime
   if($LASTEXITCODE -ne 0){throw 'Local runtime publish failed.'}
-  & dotnet (Join-Path $localRuntime 'TtbCommerce.Api.dll') --contentRoot $localRuntime --migrate --seed-demo
-  if($LASTEXITCODE -ne 0){throw 'Local migrations or explicit demo seeding failed.'}
+  & dotnet (Join-Path $localRuntime 'TtbCommerce.Api.dll') --contentRoot $localRuntime --migrate
+  if($LASTEXITCODE -ne 0){throw 'Local migrations failed.'}
+  & dotnet (Join-Path $localRuntime 'TtbCommerce.Api.dll') --contentRoot $localRuntime --seed-demo
+  if($LASTEXITCODE -ne 0){throw 'Local explicit demo seeding failed.'}
   $start=[Diagnostics.ProcessStartInfo]::new((Get-Command dotnet -ErrorAction Stop).Source)
   foreach($argument in @((Join-Path $localRuntime 'TtbCommerce.Api.dll'),'--contentRoot',$localRuntime)){$start.ArgumentList.Add($argument)}
   $start.UseShellExecute=$false;$start.CreateNoWindow=$true;$start.RedirectStandardOutput=$true;$start.RedirectStandardError=$true

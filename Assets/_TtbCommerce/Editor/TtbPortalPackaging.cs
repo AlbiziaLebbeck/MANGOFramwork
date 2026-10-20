@@ -20,7 +20,7 @@ namespace Mangos.Ttb.Commerce.Editor
                 throw new InvalidOperationException("Select the TTB game host/path before building. The existing KKU systemtester default is not a TTB destination.");
             foreach (var path in new[] { "commerce/mango-ttb.js", "commerce/mango-ttb.css", "ttb-viewport.css", "TemplateData/style.css", "index.html" })
                 if (!File.Exists("Assets/WebGLTemplates/MANGOsTTB/" + path))
-                    throw new FileNotFoundException("Prepare the TTB overlay with Tools/TTB/prepare-overlay.ps1 first: " + path);
+                    throw new FileNotFoundException("TTB UI preparation is incomplete. Build again from MANGOs Framework > TTB > Build TTB UAT (Server + Client): " + path);
         }
 
         public static string ApiBase(string environment) => environment == "Uat"
@@ -37,7 +37,7 @@ namespace Mangos.Ttb.Commerce.Editor
                 "window.MANGOS_TTB_CONFIG=Object.freeze(" + Newtonsoft.Json.JsonConvert.SerializeObject(config) + ");\n");
             // Package the same reviewed update/cache policy as the isolated world builds.
             var script = Path.GetFullPath("Tools/TTB/package-pwa.mjs");
-            var start = new ProcessStartInfo(Environment.GetEnvironmentVariable("MANGOS_NODE_PATH") ?? "node",
+            var start = new ProcessStartInfo(TtbEditorBuildPreparation.NodeExecutable(),
                 "\"" + script + "\" \"" + Path.GetFullPath(output) + "\"") {
                 UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true,
                 WorkingDirectory = Path.GetFullPath(".") };

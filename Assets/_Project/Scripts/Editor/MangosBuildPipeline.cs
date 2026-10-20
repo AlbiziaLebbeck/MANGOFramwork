@@ -41,6 +41,12 @@ public static class MangosBuildPipeline
     public static void Start(MangosBuildProfile profile, params string[] targets)
     {
         if (IsRunning) throw new InvalidOperationException("A build job is already active.");
+        // The editor buttons own the complete TTB build flow; generated HTML must never be a manual prerequisite.
+        if (!Application.isBatchMode && Mangos.Ttb.Commerce.Editor.TtbPortalPackaging.Enabled(profile))
+        {
+            if (!UnityEditor.SceneManagement.EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            Mangos.Ttb.Commerce.Editor.TtbEditorBuildPreparation.Prepare(profile);
+        }
         Preflight(profile, targets);
         var id = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture) + "-" + Guid.NewGuid().ToString("N").Substring(0, 6);
         var job = new Job {

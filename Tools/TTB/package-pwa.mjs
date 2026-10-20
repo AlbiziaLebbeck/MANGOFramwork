@@ -2,6 +2,7 @@ import { readFile,writeFile,readdir,mkdir,stat } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { resolve,relative,sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { optimizeWebgl } from './optimize-webgl.mjs';
 const repository=resolve(import.meta.dirname,'../..');
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 const versionedAssets=new Set(['mango-ttb.js','mango-ttb.css','commerce/mango-ttb.js','commerce/mango-ttb.css','ttb-commerce-config.js','mango-ttb-pwa-boot.js','ttb-viewport.css','TemplateData/style.css']);
@@ -15,6 +16,7 @@ function versionEntryAssets(html,release){
 }
 export async function packagePwa(directory){
   const root=resolve(directory);if(!root.startsWith(repository+sep))throw new Error('PWA output must stay inside the project workspace');
+  await optimizeWebgl(root);
   const indexPath=resolve(root,'index.html');let html=await readFile(indexPath,'utf8');
   html=html.replace(/<meta name="mango-ttb-release" content="[a-f0-9]{64}">/g,'');
   html=versionEntryAssets(html,null);

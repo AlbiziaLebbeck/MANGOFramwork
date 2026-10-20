@@ -16,12 +16,14 @@
 #mango-ttb-root .muted{color:var(--mc-muted);font-size:14px}
 #mango-ttb-root .danger{color:var(--mc-danger)}
 #mango-ttb-root .text-center{text-align:center}
-#mango-ttb-root .commerce-header{position:absolute;inset:0 0 auto;height:64px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 3.2%;border-bottom:1px solid #ebeeec;pointer-events:auto;gap:24px;z-index:2}
+#mango-ttb-root .commerce-header{position:absolute;inset:0 0 auto;height:64px;background:#fff;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;padding:0 3.2%;border-bottom:1px solid #ebeeec;pointer-events:auto;gap:24px;z-index:2}
 #mango-ttb-root .brand{font:650 29px/1 MangoThai,sans-serif;letter-spacing:-1px;border:0;background:none;padding:0;white-space:nowrap}
 #mango-ttb-root nav{display:flex;align-items:stretch;height:100%;gap:40px}
 #mango-ttb-root nav button{font-size:16px;border:0;border-bottom:3px solid transparent;background:none;padding:4px 0 0;white-space:nowrap}
 #mango-ttb-root nav button[aria-current=page]{font-weight:650;border-bottom-color:var(--mc-primary)}
-#mango-ttb-root .header-actions{display:flex;align-items:center;gap:6px}
+#mango-ttb-root .commerce-header>.brand{justify-self:start}
+#mango-ttb-root .header-actions{display:flex;align-items:center;justify-self:end;gap:6px}
+#mango-ttb-root .admin-header{display:flex;justify-content:space-between}
 #mango-ttb-root .icon-button{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;background:transparent;border-radius:8px;padding:10px;color:var(--mc-ink)}
 #mango-ttb-root .icon-button:hover:not(:disabled){background:#edf1ed}
 #mango-ttb-root .bag-button{position:relative}
@@ -220,6 +222,24 @@
 
 /* Reserve actual DOM chrome instead of painting it over native Unity UI. */
 #mango-ttb-root .commerce-header{height:calc(64px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px)}
+@media(min-width:761px) and (max-width:1050px){
+  #mango-ttb-root .commerce-header{padding-left:14px;padding-right:14px;gap:8px}
+  #mango-ttb-root .commerce-header>.brand{font-size:24px}
+  #mango-ttb-root .commerce-header nav{gap:16px}
+  #mango-ttb-root .commerce-header nav button{font-size:13px}
+  #mango-ttb-root .header-actions{gap:0}
+  #mango-ttb-root .header-actions>.icon-button{width:34px;padding:7px}
+  #mango-ttb-root .language-switch{width:80px}
+}
+@media(max-width:760px){
+  #mango-ttb-root .commerce-header{grid-template-columns:minmax(0,1fr) auto}
+}
+@media(max-width:480px){
+  #mango-ttb-root .commerce-header{padding-left:10px;padding-right:10px;gap:4px}
+  #mango-ttb-root .commerce-header>.brand{font-size:22px}
+  #mango-ttb-root .language-switch{width:72px;font-size:12px}
+  #mango-ttb-root .header-actions>.icon-button{width:32px;padding:6px}
+}
 #mango-ttb-root nav{min-width:0;overflow-x:auto;flex-shrink:1}
 #mango-ttb-root nav button{flex-shrink:0}
 #mango-ttb-root .commerce-dialog-wrap{inset:var(--mangos-commerce-top,64px) 0 var(--mangos-commerce-bottom,0px)}

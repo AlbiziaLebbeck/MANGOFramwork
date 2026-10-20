@@ -9,6 +9,20 @@ public sealed class MangosBuildCenter : EditorWindow
     private Vector2 scroll;
     [MenuItem("MANGOs Framework/Build Center")]
     public static void Open() => GetWindow<MangosBuildCenter>("MANGOs Build Center");
+    [MenuItem("MANGOs Framework/TTB/Build TTB UAT (Server + Client)")]
+    public static void BuildTtbUat()
+    {
+        var window = GetWindow<MangosBuildCenter>("MANGOs Build Center");
+        window.profile = MangosBuildProfile.Load();
+        SetUatDefaults(window.profile);
+        window.StartBuild("Server", "Client");
+    }
+    private static void SetUatDefaults(MangosBuildProfile selected)
+    {
+        selected.commerceEnvironment = "Uat"; selected.deployment = "mangos-ttb-uat";
+        selected.network = new MangosRuntimeConfig { portalRouting = true, serverPort = 7770, serverWss = false,
+            clientHost = "multiplayer-plus.mangosgo.com", clientPort = 443, clientWss = true, clientPath = "/ttb-uat" };
+    }
     private void OnEnable() => profile = MangosBuildProfile.Load();
     private void OnGUI()
     {
@@ -24,11 +38,11 @@ public sealed class MangosBuildCenter : EditorWindow
             profile.network.portalRouting = EditorGUILayout.Toggle("Deployment Portal slug routing", profile.network.portalRouting);
             if (GUILayout.Button("Use Deployment Portal UAT defaults"))
             {
-                profile.commerceEnvironment = "Uat";
-                profile.deployment = "mangos-ttb-uat";
-                profile.network = new MangosRuntimeConfig { portalRouting = true, serverPort = 7770, serverWss = false,
-                    clientHost = "multiplayer-plus.mangosgo.com", clientPort = 443, clientWss = true, clientPath = "/ttb-uat" };
+                SetUatDefaults(profile);
             }
+            EditorGUILayout.HelpBox("Build prepares the latest HTML UI automatically, then packages the Server and Client ZIPs. No terminal commands are needed.", MessageType.Info);
+            using (new EditorGUI.DisabledScope(MangosBuildPipeline.IsRunning))
+                if (profile.commerceEnvironment == "Uat" && GUILayout.Button("Build TTB UAT (Server + Client)", GUILayout.Height(36))) StartBuild("Server", "Client");
             if (profile.network.portalRouting)
                 EditorGUILayout.HelpBox("On plus.mangosgo.com, the Client reads slug/version from its page URL. Upload Server and Client with the same slug/version. Client Path is only the fallback outside that host.", MessageType.Info);
         }
@@ -69,7 +83,15 @@ public sealed class MangosBuildCenter : EditorWindow
         if (!string.IsNullOrEmpty(MangosBuildPipeline.LastResult)) EditorGUILayout.HelpBox(MangosBuildPipeline.LastResult, MessageType.Info);
         EditorGUILayout.EndScrollView();
     }
-    private void StartBuild(params string[] targets) => Run(() => { profile.Save(); MangosBuildPipeline.Start(profile, targets); });
+    private void StartBuild(params string[] targets)
+    {
+        try
+        {
+            profile.Save(); MangosBuildPipeline.Start(profile, targets);
+            message = MangosBuildPipeline.IsRunning ? "Building " + string.Join(" + ", targets) + ". Progress and output will appear below." : "Build cancelled.";
+        }
+        catch (Exception error) { message = error.Message; Debug.LogException(error); }
+    }
     private void Run(Action action)
     {
         try { action(); message = "Settings saved. " + MangosBuildPipeline.LastResult; }

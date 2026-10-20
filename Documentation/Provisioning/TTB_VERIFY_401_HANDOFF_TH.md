@@ -4,9 +4,9 @@
 
 สวัสดีครับคุณ @bird
 
-ผมตั้งค่า Merchant PYA และ JWT iss เป็น jwt-key-pya แล้วครับ ได้ลองเรียก Verify Slip จาก ntserver02 เมื่อวันที่20ตุลาคม2026 เวลา10:01:36น. แต่ได้รับ HTTP401 ครับ
+ผมตั้งค่า Merchant PYA และ JWT iss เป็น jwt-key-pya แล้วครับ ได้ลองเรียก Verify Slip จาก ntserver02 ล่าสุดเมื่อวันที่ 20 ตุลาคม 2026 เวลา 14:22:54 น. แต่ยังได้รับ HTTP401 ครับ
 
-Request UID: `63ef695d-d960-44c9-985c-3b2a82a1c64a`
+Request UID: `41982f65-8fcd-4b8e-8f27-ea82f25080be`
 
 Endpoint: `https://uat-dgw.tau2904.com:9643/qrapiservices/verify/verifyqr/PYA`
 

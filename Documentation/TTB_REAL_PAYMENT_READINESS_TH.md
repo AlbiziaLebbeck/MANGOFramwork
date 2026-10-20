@@ -45,3 +45,5 @@ Verify ค้นหา QRที่ยังไม่จ่าย จึงคา
 5. รับ SFTP/SSH fingerprint/PGPและตรวจรายงาน ก่อน Production sign-off; กุญแจ/Secret/DB/acceptanceแยกแม้ Billerเดียวกัน
 
 ดูผลรอบนี้ใน `TTB_BANK_CONFIRMATION_20261020_TH.md`. Firewallเชื่อมได้หรือ decodeภาพได้ไม่แทนผลจ่ายครบวงจร
+
+ทดสอบซ้ำจาก ntserver02 เวลา 14:22:54 น. วันที่ 20 ตุลาคม 2026 ยังได้ HTTP401; Request UID `41982f65-8fcd-4b8e-8f27-ea82f25080be`. มีคำสั่งให้ผู้ดูแลรันเองแล้วใน `TTB_VERIFY_FROM_NTSERVER02_TH.md`. การใช้แอปกรุงไทยทั่วไปสแกน diagnostic UAT แล้วแจ้งไม่พบผู้ให้บริการ สอดคล้องกับข้อจำกัดวงทดสอบที่ TTB ยืนยัน ไม่ใช้ผลนี้สรุปว่า Production พร้อมหรือ QR ผิด

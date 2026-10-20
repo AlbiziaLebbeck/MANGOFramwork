@@ -1,10 +1,11 @@
 import { t } from '../i18n';
+import type { ReactNode } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { commerce, useCommerce } from '../store';
 import { admin, useAdmin } from './store';
 import { adminTabs, allowed } from './types';
 import { run } from './Ui';
-export function AdminNavigation() {
+export function AdminNavigation({ languageSwitch }: { languageSwitch: ReactNode }) {
   const { session } = useCommerce();
   const { tab } = useAdmin();
   return (
@@ -22,10 +23,13 @@ export function AdminNavigation() {
             </button>
           ))}
       </nav>
-      <button className="text-button admin-return" onClick={() => commerce.close()}>
-        <ArrowLeft size={20} />
-        {t('กลับหน้าร้าน')}{' '}
-      </button>
+      <div className="header-actions">
+        {languageSwitch}
+        <button className="text-button admin-return" onClick={() => commerce.close()}>
+          <ArrowLeft size={20} />
+          {t('กลับหน้าร้าน')}{' '}
+        </button>
+      </div>
     </>
   );
 }

@@ -31,8 +31,23 @@ const titles = {
   admin: 'จัดการร้านค้า',
 };
 
-export default function App() {
+function LanguageSwitch() {
   const language = useLanguage();
+  return (
+    <select
+      className="language-switch"
+      aria-label={t('เปลี่ยนภาษา')}
+      value={language}
+      onChange={(event) => setLanguage(event.target.value === 'en' ? 'en' : 'th')}
+    >
+      <option value="th">ไทย</option>
+      <option value="en">English</option>
+    </select>
+  );
+}
+
+export default function App() {
+  useLanguage();
   const state = useCommerce();
   const network = usePwa();
   const { screen, session, cart, busy, error, notice, hostAttached } = state;
@@ -94,7 +109,7 @@ export default function App() {
   }, [notice]);
   return (
     <>
-      <header ref={header} className="commerce-header">
+      <header ref={header} className={`commerce-header${screen === 'admin' ? ' admin-header' : ''}`}>
         <button
           className="brand"
           data-commerce-home
@@ -103,17 +118,8 @@ export default function App() {
         >
           MANGOs
         </button>
-        <select
-          className="language-switch"
-          aria-label={t('เปลี่ยนภาษา')}
-          value={language}
-          onChange={(event) => setLanguage(event.target.value === 'en' ? 'en' : 'th')}
-        >
-          <option value="th">ไทย</option>
-          <option value="en">English</option>
-        </select>
         {screen === 'admin' ? (
-          <AdminNavigation />
+          <AdminNavigation languageSwitch={<LanguageSwitch />} />
         ) : (
           <>
             <nav aria-label={t('เมนูซื้อสินค้า')}>
@@ -137,6 +143,7 @@ export default function App() {
               </button>
             </nav>
             <div className="header-actions">
+              <LanguageSwitch />
               <PwaActions />
               {canAdmin(session) ? (
                 <IconButton

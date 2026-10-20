@@ -10,12 +10,16 @@
 
 **ต้อง Build ใหม่จากsourceหลังแก้รอบนี้** ชุด720bด้านล่างเป็นประวัติก่อนแก้CDN/PWAแล้ว ยังไม่เผยแพร่ชุดใหม่ให้ผู้ใช้โดยอัตโนมัติ
 
-วิธีที่1 — จากUnity:
+วิธีหลัก — คลิกจาก Unity ได้เลย ไม่ต้องรัน PowerShell:
 
 1. บันทึกscene/assetsที่แก้อยู่
-2. เปิดPowerShell7ที่รากโปรเจกต์แล้วรัน `./Tools/TTB/prepare-overlay.ps1 -Environment Uat -Experience world` ทุกครั้งก่อนBuild เพื่อcompileHTML UIจากsourceล่าสุด (ไฟล์generatedไม่ได้อยู่Git)
-3. Unity: `MANGOs Framework > Build Center > Use Deployment Portal UAT defaults`, ตรวจ `TTB commerce=Uat`, เปิด `Deployment Portal slug routing`, แล้ว `Save Profile`
-4. กด`Build Both` รอServer+ClientและZIPสำเร็จ ใช้คู่จาก `Builds/<deployment>/<build-id>/Upload/` ของงานเดียวกัน
+2. คลิก `MANGOs Framework > TTB > Build TTB UAT (Server + Client)` หรือเปิด `MANGOs Framework > Build Center` แล้วกดปุ่ม `Build TTB UAT (Server + Client)`
+3. ปุ่มเตรียม HTML/React UI ล่าสุดให้อัตโนมัติ แล้ว Build Linux Server กับ WebGL Client และสร้าง ZIP ทั้งคู่ หากเตรียม UI ไม่สำเร็จจะหยุดก่อนเริ่ม Build เพื่อไม่ให้ใช้ UI เก่าค้างอยู่
+4. รอผล `Succeeded` แล้วกด `Open Builds Folder` ใช้คู่จาก `Builds/mangos-ttb-uat/<build-id>/Upload/` ของงานเดียวกัน ไฟล์ `Builds/last-successful.json` บอกโฟลเดอร์ล่าสุด
+
+เครื่องนี้มี Node.js และ dependencies พร้อมแล้ว ปุ่มเรียก Node โดยตรง ไม่ต้องเปิด terminal หรือมี PowerShell 7/pnpm อยู่ใน PATH ของ Unity. บันทึก log เตรียม UI ที่ `Library/TTB/overlay-build.log`. ไม่ปิด Editor หรือสร้างสำเนา Library เพิ่มสำหรับวิธีหลักนี้
+
+แพ็กเกจ TTB ใหม่บีบอัด public WebGL เป็น Brotli และใช้ชื่อไฟล์ตาม SHA256 รวมถึงเก็บ cache เฉพาะข้อมูลฉากที่ชื่อเป็น hash. ตรวจ server เดิมของ Portal แล้วรองรับ `.br` พร้อม `Content-Encoding: br` และ MIME ที่ถูกต้อง จึงไม่ต้องแก้ระบบกลางหรือ KKU. ดูผลและข้อจำกัดใน `TTB_LOADING_AND_UI_20261020_TH.md`
 
 วิธีที่2 — คำสั่งเดียวในPowerShell7 (ใช้สำเนาแยก ไม่ปิดEditorที่เปิดอยู่):
 
@@ -42,7 +46,9 @@ APIUATยังจำกัดIPทดสอบเดิม58.11.26.155/32 ห�
 
 เมนู `MANGOs Framework > TTB > Validate project BaseWorld` ตรวจ binding สินค้า ไฟ bridge และเส้นทางฉาก หากนำไปใช้กับ checkout ที่ยังไม่มีร้านค้า มีเมนู `Install gallery in project BaseWorld` โดยต้องบันทึกงานค้างก่อน
 
-## ชุดที่ Build และทดสอบแล้ว
+## ชุดเก่าที่ Build และทดสอบแล้ว (อ้างอิงประวัติเท่านั้น)
+
+รายการโฟลเดอร์เก่าด้านล่างเป็นหลักฐานก่อนแก้ UI/การโหลดล่าสุด บางโฟลเดอร์ถูกลบแล้วตามคำขอคืนพื้นที่ **อย่าใช้เส้นทางเหล่านี้เลือกไฟล์อัปโหลด** ให้ใช้ `Builds/last-successful.json` หลัง Build รอบใหม่และ ZIP ของงานนั้น
 
 โฟลเดอร์ **`Builds/TTB/Portal/720b6fb4df314d22a0fc0258f0fb3824/Release/Upload/`** เป็นชุดก่อนแก้CDN/PWA รวม Auth public settings, SSO, ไทย–อังกฤษ และคำอธิบายUAT. ตรวจพบว่าขึ้นเว็บจริงแล้วตามhash แต่ควรBuildชุดใหม่ด้วยขั้นตอนด้านบนเพื่อรวมการแก้PWA มี:
 
@@ -87,7 +93,7 @@ UAT API ยังจำกัด IP ทดสอบ `58.11.26.155/32` ตาม�
 
 ใน Unity เปิด `MANGOs Framework > Build Center`:
 
-ก่อนกดBuildให้รัน`Tools/TTB/prepare-overlay.ps1 -Environment Uat -Experience world`ตามขั้นตอนใหม่ด้านบน เพื่อไม่ใช้HTMLbundleเก่าที่generatedค้างอยู่
+ปุ่ม Build ของ TTB ใน Editor เตรียม HTML bundle ล่าสุดให้อัตโนมัติแล้ว ไม่ต้องรันคำสั่งก่อนกด Build
 
 1. ตั้ง `TTB commerce = Uat` หรือใช้ `Use Deployment Portal UAT defaults`
 2. เปิด `Deployment Portal slug routing` ตรวจ Server WS `7770` และ Client WSS `443`, host `multiplayer-plus.mangosgo.com` แล้ว Save Profile
