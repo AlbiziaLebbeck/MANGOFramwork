@@ -1,3 +1,5 @@
+using System.Net;
+
 namespace TtbCommerce.Core;
 
 public enum CommerceEnvironment { Local, Uat, Production }
@@ -72,11 +74,25 @@ public sealed class TtbOptions
     public string[] TrustedProxyCidrs { get; set; } = [];
     public bool QrProfileApproved { get; set; }
     public bool GatewayAuthenticationValidated { get; set; }
+    // Explicit UAT bootstrap only: create a real test order/QR so TTB can send
+    // the first authenticated callback. Never substitutes for bank acceptance.
+    public bool UatTestCheckoutEnabled { get; set; }
     public bool CrossBorderApproved { get; set; }
     public string CallbackAuthentication { get; set; } = "Unavailable";
     public string CallbackUsername { get; set; } = "";
     public string CallbackPassword { get; set; } = "";
     public string[] BankSourceIps { get; set; } = ["203.148.142.200", "203.148.143.101", "203.148.143.102", "203.148.143.103", "203.148.143.104", "203.148.143.105"];
+
+    // BankSourceIp is the bank-confirmed callback profile without an
+    // Authorization header. Exact source IP checks still apply in the API;
+    // missing/unknown profiles and empty or invalid source lists stay closed.
+    public bool CallbackProfileReady() => CallbackProfileApproved && BankSourceIps.Length > 0 &&
+        BankSourceIps.All(x => IPAddress.TryParse(x, out _)) && (CallbackAuthentication switch
+        {
+            "BankSourceIp" => true,
+            "Basic" => !string.IsNullOrEmpty(CallbackUsername) && !string.IsNullOrEmpty(CallbackPassword),
+            _ => false
+        });
 
     public IReadOnlyList<string> MissingBankRequirements()
     {
@@ -88,7 +104,7 @@ public sealed class TtbOptions
         if (string.IsNullOrWhiteSpace(PrivateKeyPath)) missing.Add("Ttb.PrivateKeyPath");
         if (TokenSeconds is < 1 or > 1200) missing.Add("Ttb.TokenSeconds");
         if (SenderName.Length > 20 || SenderName.Any(c => c is < ' ' or > '~')) missing.Add("Ttb.SenderName");
-        if (!CallbackProfileApproved || CallbackAuthentication != "Basic" || string.IsNullOrEmpty(CallbackUsername) || string.IsNullOrEmpty(CallbackPassword))
+        if (!CallbackProfileReady())
             missing.Add("Ttb.CallbackAuthenticationProfile");
         if (!QrProfileApproved) missing.Add("Ttb.QrProfileApproval");
         if (!GatewayAuthenticationValidated) missing.Add("Ttb.GatewayAuthenticationValidation");

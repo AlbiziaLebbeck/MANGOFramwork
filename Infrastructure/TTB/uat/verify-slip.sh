@@ -12,7 +12,7 @@ if len(rows) != 1:
 result = json.loads(rows[0])
 if result.get("environment") != "Uat" or result.get("financialRecordsCreated") is not False or result.get("bankRequestCount") != 1:
     sys.exit("Unexpected diagnostic contract.")
-output = {key: result.get(key) for key in ("environment", "merchantId", "billerNo", "issuer", "issuedAt", "checkoutReady", "missingCheckoutRequirements", "probe", "bankRequestCount", "financialRecordsCreated")}
+output = {key: result.get(key) for key in ("environment", "merchantId", "billerNo", "issuer", "issuedAt", "checkoutReady", "missingCheckoutRequirements", "bankAcceptanceComplete", "missingBankAcceptanceRequirements", "probe", "bankRequestCount", "financialRecordsCreated")}
 output["qrId"] = result["qr"]["QrId"]
 output["endpoint"] = "https://uat-dgw.tau2904.com:9643/qrapiservices/verify/verifyqr/PYA"
 print(json.dumps(output, indent=2))

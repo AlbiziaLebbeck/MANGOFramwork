@@ -61,6 +61,8 @@ builder.Services.AddScoped<Numbering>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<QrService>();
 builder.Services.AddScoped<PaymentProcessor>();
+builder.Services.AddSingleton(services => services.GetRequiredService<IConfiguration>().GetSection("BankTests").Get<BankTestOptions>() ?? new());
+builder.Services.AddScoped<BankTestConsoleService>();
 builder.Services.AddSingleton(services => services.GetRequiredService<IConfiguration>().GetSection("Voids").Get<VoidOptions>() ?? new());
 builder.Services.AddScoped<VoidService>();
 builder.Services.AddScoped<FinanceService>();
@@ -132,7 +134,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     }
     if (prepareUatCatalog)
     {
-        if (scope.ServiceProvider.GetRequiredService<BankReadiness>().Missing().Count == 0)
+        if (scope.ServiceProvider.GetRequiredService<BankReadiness>().MissingForCheckout().Count == 0)
             throw new InvalidOperationException("Initial UAT test catalog preparation must run while bank payments are closed.");
         var prepared = await scope.ServiceProvider.GetRequiredService<UatTestCatalog>().PrepareAsync();
         Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new { status = "uat-test-catalog-prepared", prepared.AlreadyPrepared, prepared.ProductIds,
@@ -143,6 +145,7 @@ await using (var scope = app.Services.CreateAsyncScope())
 app.UseExceptionHandler();
 app.UseCallbackTelemetry();
 app.UseUatTransportProbe();
+app.UseBankTestConsoleSocket();
 app.UseForwardedHeaders();
 app.Use(async (context, next) =>
 {
@@ -166,9 +169,10 @@ app.MapGet("/health/live", () => Results.Ok(new { status = "alive", service = "t
 app.MapGet("/health/ready", async (CommerceDb database, BankReadiness bank, ReportOptions reports, OperationsOptions operations, CancellationToken cancellationToken) =>
 {
     var databaseReady = await database.Database.CanConnectAsync(cancellationToken);
-    var bankReady = !operations.RecoveryFreeze && bank.Missing().Count == 0;
+    var bankReady = !operations.RecoveryFreeze && bank.MissingForCheckout().Count == 0;
     // The catalog/account service can be ready while bank provisioning is pending. Checkout separately checks bank availability.
-    return Results.Json(new { status = databaseReady ? "ready" : "unavailable", database = databaseReady, paymentsReady = bankReady, paymentMode = commerce.PaymentMode.ToString(),
+    return Results.Json(new { status = databaseReady ? "ready" : "unavailable", database = databaseReady, paymentsReady = bankReady,
+        bankAcceptanceComplete = bank.Missing().Count == 0, paymentMode = commerce.PaymentMode.ToString(),
         recoveryFrozen = operations.RecoveryFreeze, reportsEnabled = reports.Enabled, reportsReady = !operations.RecoveryFreeze && commerce.Environment != CommerceEnvironment.Local && reports.Enabled && reports.Missing().Count == 0 && File.Exists(reports.PgpPrivateKeyPath) }, statusCode: databaseReady ? 200 : 503);
 });
 app.MapGroup(commerce.PathPrefix).MapSessionEndpoints();
@@ -183,14 +187,17 @@ app.MapGroup(commerce.PathPrefix).MapReportEndpoints();
 app.MapGroup(commerce.PathPrefix).MapVoidEndpoints();
 app.MapGroup(commerce.PathPrefix).MapFinanceEndpoints();
 app.MapGroup(commerce.PathPrefix).MapManualRefundEndpoints();
-app.MapGet(commerce.PathPrefix + "/storefront/config", (BankReadiness bank, PrivateStorageOptions storage, OperationsOptions operations) => Results.Ok(new
+app.MapGet(commerce.PathPrefix + "/storefront/config", (BankReadiness bank, TtbOptions ttb, PrivateStorageOptions storage, OperationsOptions operations) => Results.Ok(new
 {
-    environment = commerce.Environment.ToString(), paymentMode = commerce.PaymentMode.ToString(), paymentsReady = !operations.RecoveryFreeze && bank.Missing().Count == 0,
+    environment = commerce.Environment.ToString(), paymentMode = commerce.PaymentMode.ToString(), paymentsReady = !operations.RecoveryFreeze && bank.MissingForCheckout().Count == 0,
+    bankAcceptanceComplete = bank.Missing().Count == 0, callbackValidated = ttb.CallbackSourceIpValidated,
+    uatTestCheckout = commerce.Environment == CommerceEnvironment.Uat && ttb.UatTestCheckoutEnabled,
     currency = "THB", verificationDelaySeconds = commerce.VerificationDelaySeconds, verificationBudget = commerce.VerificationBudget,
     mockSimulation = commerce.Environment == CommerceEnvironment.Local && commerce.PaymentMode == PaymentMode.Mock,
     gameUseReady = storage.GameServerKey.Length >= 32 && !string.IsNullOrEmpty(storage.GameServerId)
 }));
 app.MapCallbackEndpoints();
+app.MapBankTestConsole();
 app.MapOperationsEndpoints();
 app.Run();
 

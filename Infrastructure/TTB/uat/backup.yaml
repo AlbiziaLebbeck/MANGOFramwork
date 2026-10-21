@@ -67,7 +67,7 @@ data:
     part="/backups/${file}.part"
     trap 'rm -f -- "$part"' EXIT
     {
-      printf 'format=1\nenvironment=Uat\ndatabase=ttb_uat\nminimum_reader_contract=3\n'
+      printf 'format=1\nenvironment=Uat\ndatabase=ttb_uat\nminimum_reader_contract=4\n'
       printf 'snapshot_start='; cat /scratch/snapshot-start.txt
       printf 'dump_complete='; cat /scratch/dump-complete.txt
       printf 'recipient_sha256=%s\n' "$actual"

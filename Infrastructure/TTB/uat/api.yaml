@@ -42,6 +42,8 @@ spec:
             - secretRef:
                 name: ttb-bank
                 optional: true
+            # Accepted non-secret UAT settings override the original closed defaults.
+            - configMapRef: { name: ttb-bank-acceptance, optional: true }
           ports:
             - { name: http, containerPort: 8080 }
           securityContext:

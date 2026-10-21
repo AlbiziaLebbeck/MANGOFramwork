@@ -56,7 +56,7 @@ def main():
         manifest[key] = value
     if manifest.get('format') != '1' or manifest.get('environment') != args.environment:
         raise ValueError('Backup environment/format mismatch.')
-    if manifest.get('minimum_reader_contract') not in {'2', '3'} or manifest.get('recipient_sha256') != args.recipient_sha256:
+    if manifest.get('minimum_reader_contract') not in {'2', '3', '4'} or manifest.get('recipient_sha256') != args.recipient_sha256:
         raise ValueError('Backup reader/recipient mismatch.')
     with (destination / 'database.dump').open('rb') as dump:
         if dump.read(5) != b'PGDMP':

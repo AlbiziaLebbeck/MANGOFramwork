@@ -23,7 +23,7 @@ public sealed class OrderService(CommerceDb db, CartService carts, Numbering num
             await transaction.CommitAsync(cancellationToken);
             return await GetAsync(shopperId, existing.Id, cancellationToken);
         }
-        readiness.AssertReady();
+        readiness.AssertCheckoutReady();
         // Quote locks serialize distinct checkout keys attempting to consume the same quote.
         var quote = (await db.Quotes.FromSqlInterpolated($"SELECT * FROM ttb.\"Quotes\" WHERE \"Id\" = {input.QuoteId} AND \"ShopperId\" = {shopperId} FOR UPDATE").ToListAsync(cancellationToken)).SingleOrDefault() ?? throw Missing();
         if (quote.ConsumedByOrderId is not null) throw new CommerceException(409, "quote_consumed", "This quote has already been used for an order.");

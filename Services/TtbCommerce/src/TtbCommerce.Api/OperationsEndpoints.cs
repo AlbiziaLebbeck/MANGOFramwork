@@ -76,7 +76,7 @@ public static class OperationsEndpoints
             if (signingKey.RotationDueUnixSeconds is { } rotationDue) Gauge("ttb_bank_signing_key_rotation_due_timestamp_seconds", rotationDue);
             Gauge("ttb_reports_enabled", reports.Enabled ? 1 : 0);
             Gauge("ttb_reports_profile_ready", reports.Enabled && reports.Missing().Count == 0 && File.Exists(reports.PgpPrivateKeyPath) ? 1 : 0);
-            output.Append($"# TYPE ttb_build_reader_contract gauge\nttb_build_reader_contract{{environment=\"{commerce.Environment}\",role=\"{commerce.Role}\"}} 3\n");
+            output.Append($"# TYPE ttb_build_reader_contract gauge\nttb_build_reader_contract{{environment=\"{commerce.Environment}\",role=\"{commerce.Role}\"}} 4\n");
             output.Append("# TYPE ttb_bank_circuit_open gauge\n# TYPE ttb_bank_circuit_consecutive_failures gauge\n# TYPE ttb_bank_circuit_cooldown_remaining_seconds gauge\n");
             foreach (var state in circuit.Read())
             {

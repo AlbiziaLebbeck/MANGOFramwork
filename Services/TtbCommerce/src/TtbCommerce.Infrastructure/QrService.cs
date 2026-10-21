@@ -18,7 +18,7 @@ public sealed class QrService(CommerceDb db, Numbering numbering, CommerceOption
             ?? throw new CommerceException(404, "not_found", "The order was not found.");
         if (order.State != OrderState.Open || order.PaymentState != PaymentState.Unpaid)
             throw new CommerceException(409, "order_not_payable", "This order is no longer awaiting payment.");
-        readiness.AssertReady();
+        readiness.AssertCheckoutReady();
         var existing = await db.Attempts.SingleOrDefaultAsync(x => x.OrderId == orderId && x.State == AttemptState.AwaitingPayment, cancellationToken);
         if (existing is not null)
         {

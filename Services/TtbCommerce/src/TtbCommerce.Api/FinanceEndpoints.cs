@@ -41,7 +41,8 @@ public static class FinanceEndpoints
             var reportsConfigured = reports.Enabled && reports.Missing().Count == 0;
             return Results.Ok(new
             {
-                environment = commerce.Environment.ToString(), paymentMode = commerce.PaymentMode.ToString(), paymentsReady = !operations.RecoveryFreeze && bank.Missing().Count == 0,
+                environment = commerce.Environment.ToString(), paymentMode = commerce.PaymentMode.ToString(), paymentsReady = !operations.RecoveryFreeze && bank.MissingForCheckout().Count == 0,
+                bankAcceptanceComplete = bank.Missing().Count == 0,
                 openCases = await db.Cases.CountAsync(x => x.State == "Open", http.RequestAborted),
                 unknownVoids = await db.Voids.CountAsync(x => x.State == "Unknown", http.RequestAborted),
                 reportsState = reportsConfigured ? "Configured" : "Unavailable",

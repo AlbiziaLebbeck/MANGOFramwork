@@ -117,3 +117,14 @@ crashlytics-build.properties
 .env
 .env.*
 !.env.example
+
+# Generated reports and local review previews are archived outside this repository.
+/output/
+/tmp/
+
+# Private bank material is kept locally/encrypted, never committed.
+*.dpapi
+*.pfx
+*.p12
+**/*-PRIVATE.txt
+/Documentation/Provisioning/*-private.pem

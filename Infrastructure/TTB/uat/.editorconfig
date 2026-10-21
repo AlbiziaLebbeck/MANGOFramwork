@@ -1,0 +1,6 @@
+# Thai operator messages must also parse in Windows PowerShell 5.1.
+[open-bank-test-console.ps1]
+charset = utf-8-bom
+
+[get-uat-log.ps1]
+charset = utf-8-bom

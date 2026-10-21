@@ -7,6 +7,10 @@ namespace TtbCommerce.Infrastructure;
 public sealed class CommerceDb(DbContextOptions<CommerceDb> options) : DbContext(options)
 {
     public DbSet<DeploymentIdentity> Deployments => Set<DeploymentIdentity>();
+    public DbSet<BankTestCase> BankTestCases => Set<BankTestCase>();
+    public DbSet<BankTestEvent> BankTestEvents => Set<BankTestEvent>();
+    public DbSet<BankTestReceipt> BankTestReceipts => Set<BankTestReceipt>();
+    public DbSet<BankTestOperation> BankTestOperations => Set<BankTestOperation>();
     public DbSet<Shopper> Shoppers => Set<Shopper>();
     public DbSet<ShopperSession> Sessions => Set<ShopperSession>();
     public DbSet<Product> Products => Set<Product>();
@@ -53,6 +57,20 @@ public sealed class CommerceDb(DbContextOptions<CommerceDb> options) : DbContext
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.HasDefaultSchema("ttb");
+        model.Entity<BankTestCase>().ToTable("BankTestCases", t => t.HasCheckConstraint("CK_BankTestCases_Amount", "\"AmountMinor\" > 0"));
+        model.Entity<BankTestCase>().HasIndex(x => x.QrId).IsUnique();
+        model.Entity<BankTestEvent>().ToTable("BankTestEvents");
+        model.Entity<BankTestEvent>().HasIndex(x => new { x.CaseId, x.Id });
+        model.Entity<BankTestEvent>().HasIndex(x => new { x.Kind, x.Id });
+        model.Entity<BankTestEvent>().HasOne<BankTestCase>().WithMany().HasForeignKey(x => x.CaseId);
+        model.Entity<BankTestEvent>().HasOne<BankTestOperation>().WithMany().HasForeignKey(x => x.OperationId);
+        model.Entity<BankTestReceipt>().ToTable("BankTestReceipts");
+        model.Entity<BankTestReceipt>().HasIndex(x => new { x.MerchantId, x.InstructionId }).IsUnique();
+        model.Entity<BankTestReceipt>().HasOne<BankTestCase>().WithMany().HasForeignKey(x => x.CaseId);
+        model.Entity<BankTestOperation>().ToTable("BankTestOperations");
+        model.Entity<BankTestOperation>().HasIndex(x => x.OperationKey).IsUnique();
+        model.Entity<BankTestOperation>().HasIndex(x => new { x.CaseId, x.Kind });
+        model.Entity<BankTestOperation>().HasOne<BankTestCase>().WithMany().HasForeignKey(x => x.CaseId);
         model.Entity<TestIssuerProfile>().HasIndex(x => x.Key).IsUnique();
         model.Entity<TestIssuerProfile>().Property(x => x.Version).IsConcurrencyToken();
         model.Entity<TestIssuerProfile>().Property(x => x.Name).HasMaxLength(200);

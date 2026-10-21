@@ -23,3 +23,7 @@ The migration plan is a historical proposal. Use the getting-started, build/runt
 When changing behavior or limitations, update both language versions and keep the language links working. Code identifiers, menu names, commands, version numbers, and paths remain unchanged between translations.
 
 เมื่อแก้พฤติกรรมหรือข้อจำกัด ให้อัปเดตคู่ภาษาพร้อมกันและตรวจลิงก์สลับภาษา ชื่อโค้ด เมนู คำสั่ง รุ่น และ path ใช้ค่าเดียวกันในทั้งสองภาษา
+
+คู่มือ Payment ภาษาไทยสำหรับผู้เริ่มต้น: [ระบบ MANGOs x TTB, คอนโซล TEST และวิธีดู log](TTB_PAYMENT_IMPLEMENTATION_AND_TEST_CONSOLE_TH.md)
+
+สารบัญไฟล์และชุดเอกสารส่งมอบ TTBPayment: [ตำแหน่งไฟล์และโครงสร้างโฟลเดอร์](TTB_FILE_ORGANIZATION_TH.md)

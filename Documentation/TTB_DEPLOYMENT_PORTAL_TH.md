@@ -1,6 +1,28 @@
 # TTB: BaseWorld และ Deployment Portal
 
-อัปเดต 20 ตุลาคม 2026 — รุ่นคำยืนยัน TTB, SSO และไทย–อังกฤษ
+อัปเดต 21 ตุลาคม 2026 — เปิดทดสอบ checkout หลัง TTB ลงทะเบียน public key
+
+## UAT หลังลงทะเบียน public key (21 ตุลาคม 2026)
+
+Verify จาก ntserver02 ผ่าน HTTP200/0002/NotFound พร้อม authenticatedBankReply=true. Backend release `20261021-uat-checkout-v1` ผ่าน CI279/279 และ deploy API/commerce worker/receipt worker ครบ; migration ไม่เพิ่ม schema. เปิด test checkout เฉพาะ UAT โดยใช้ชื่อแสดงผลชั่วคราว `inam cafe` ตามผู้ใช้ระบุ. Public config เป็น paymentsReady=true, Bank, mockSimulation=false; callbackValidated และ bankAcceptanceComplete ยังfalseจนกว่าจะมีหลักฐานจริง.
+
+Portal server `mangos/metaverse-server-ttb-uat` ผูก game identity UAT เดิมแล้ว และตรวจจาก network ของ Unity pod ไป private API ได้HTTP200. Helper `Infrastructure/TTB/uat/configure-portal-game.py` รองรับ dry-run/--apply สำหรับslugนี้เท่านั้น และต้องตรวจอีกครั้งหาก Portal redeploy ล้างenv. ไม่ต้อง Build Unity ใหม่สำหรับการเปิด checkout รอบนี้. รายละเอียดหลักฐาน/การส่งต่อ callback อยู่ใน [TTB_UAT_GATEWAY_ACCEPTANCE_20261021_TH.md](TTB_UAT_GATEWAY_ACCEPTANCE_20261021_TH.md). ข้อความ paymentsReady=false/ยังไม่ตั้งgame identityด้านล่างเป็นประวัติวันที่20ตุลาคม.
+
+อัปเดตตามคำยืนยันTTBเวลา11:02น.: callbackใช้profile `BankSourceIp` ซึ่งไม่ต้องส่งusername/passwordหรือAuthorization และยังตรวจต้นทางธนาคารผ่านHTTPS/allowlist/trustedproxyเดิม. ข้อมูลBasicที่เตรียมก่อนหน้าเลิกใช้ในUATหลังเปิดmodeนี้; ข้อมูลส่งต่อปัจจุบันอยู่ที่ [Provisioning/TTB_UAT_CALLBACK_HANDOFF_TH.md](Provisioning/TTB_UAT_CALLBACK_HANDOFF_TH.md). ไม่ต้องBuildUnityเพื่อเปลี่ยนauthenticationของcallbackฝั่งbackend.
+
+## การเข้าถึงจากทุกเครือข่าย (20 ตุลาคม 2026 ช่วงค่ำ)
+
+ผู้ใช้อนุญาตให้ปรับการเข้าถึงให้เหมาะกับเว็บที่เผยแพร่สาธารณะ หลังพบว่า IP ปัจจุบัน `27.130.101.22` ถูก ingress ปฏิเสธด้วย403 เพราะ preview เดิมอนุญาตเฉพาะ `58.11.26.155/32`.
+
+ใช้ `Infrastructure/TTB/uat/shopper-ingress.yaml` แยก Ingress `ttb-shopper-public-uat` สำหรับ shopper API บน `ttb-api-test.mangosgo.com`: config, catalog, session/logout/game-ticket, cart, checkout, orders, inventory และ documents. เส้นทางเหล่านี้ไม่ผูก IP ผู้ใช้ จึงเปลี่ยน Wi-Fi/เครือข่ายมือถือได้โดยไม่ต้องเพิ่ม IP หรือ Build Unity ใหม่. API ยังคงตรวจ MANGOs identity, ownership, trusted Origin และ CSRF สำหรับรายการที่ต้องเข้าสู่ระบบ รวมทั้งมี ingress rate/connection limits.
+
+Ingress `ttb-uat-world-preview` เดิมยังจำกัด IP สำหรับ preview, API admin, game-service และ local-session. Bank callback ยังใช้ ingress/allowlist ธนาคารเดิม. ไม่ใช้ regex/rewrite, ไม่เปลี่ยน shared ingress controller, TLS, CORS origins, namespace/network policy หรือ credentials. ข้อความด้านล่างที่กล่าวว่า shopper API ทั้งหมดจำกัด IP เดิมเป็นประวัติก่อนการเปลี่ยนครั้งนี้.
+
+ย้อนกลับโดยลบเฉพาะ `kubectl -n ttb-uat delete ingress ttb-shopper-public-uat`; เส้นทางจะกลับไปใช้ preview ingress และ allowlist เดิมโดยอัตโนมัติ. ห้ามใช้ตัวอย่าง ingress แบบเปิดทั้ง `/ttb-commerce-test/v1` แทน manifest นี้ เพราะจะเปิดเครือข่ายให้ route ผู้ดูแลและ game-service ไปด้วย.
+
+นำขึ้น ntserver02 แล้วและตรวจจาก PC กับ public egress ของ ntserver02 ผ่าน: config/catalog/session200, สินค้า3รายการ, OPTIONS204พร้อมcredentials/headersที่หน้าเว็บใช้, route ส่วนตัว401เมื่อไม่ลงชื่อเข้าใช้, Origin ที่ไม่อนุญาตถูกปฏิเสธ, admin/game/local-session/preview/bank callback403. ตรวจ path traversal ไปadminแล้วยัง403. UID/resourceVersion ของ12resourceเดิม (รวมcallback, proxy config, API policy, shared ingress Service/Deployment, KKU และ Unity Server) คงเดิมทั้งหมด.
+
+Edge headless ผ่านPlaywrightบน `https://plus.mangosgo.com/ttb-uat/` ที่1280×720และ390×844: headerไม่มีข้อความเชื่อมต่อไม่ได้, config/catalog200, nativeUnityรายงาน `MANGOS_CLIENT_STATE Started` ผ่านWSSจริง, กดประวัติแล้วแสดงMANGOs sign-in. ไม่มีcommerce request failureหรือruntime errorที่เกี่ยวข้อง; anonymous401เป็นผลปกติ และfaviconของrootโดเมน404เป็นข้อบกพร่องเดิมที่ไม่เกี่ยวกับPayment. ยังไม่ได้ยืนยันMANGOs sessionที่ลงชื่อเข้าใช้จริง, ข้อมูลข้ามบัญชีหรือการชำระเงินธนาคาร; `paymentsReady=false` คงเดิม. Game service identity ของServerจากPortalยังต้องตั้งตามหัวข้อด้านล่าง ไม่ได้เพิ่มสิทธิ์game backendในงานแก้public shopperครั้งนี้.
 
 ## Build เองหลังแก้ CDN/PWA (20 ตุลาคม 10:30 น.)
 

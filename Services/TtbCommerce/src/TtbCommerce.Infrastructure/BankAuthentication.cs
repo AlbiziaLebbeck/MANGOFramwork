@@ -25,6 +25,22 @@ public sealed class BankReadiness(CommerceOptions commerce, TtbOptions ttb, Repo
         if (Missing().Count > 0) throw new CommerceException(503, "bank_unavailable", "Bank payment setup is not yet complete. Please try again when payments are available.");
     }
 
+    public IReadOnlyList<string> MissingForCheckout()
+    {
+        var missing = Missing();
+        // Only first-callback acceptance may be pending in the explicitly
+        // enabled UAT test flow. Gateway/key/profile/beneficiary checks remain.
+        // Incoming callbacks always keep their bank-IP and Basic auth checks.
+        return commerce.Environment == CommerceEnvironment.Uat && ttb.UatTestCheckoutEnabled
+            ? missing.Where(x => x != "Ttb.CallbackSourceIpValidation").ToArray()
+            : missing;
+    }
+
+    public void AssertCheckoutReady()
+    {
+        if (MissingForCheckout().Count > 0) throw new CommerceException(503, "bank_unavailable", "Bank payment setup is not yet complete. Please try again when payments are available.");
+    }
+
     public void AssertOutgoing()
     {
         // Recovery/first acceptance queries remain possible before callback or gateway acceptance.

@@ -28,7 +28,7 @@ public static class CallbackEndpoints
 
     public static void MapCallbackEndpoints(this WebApplication app)
     {
-        app.MapPost("/ttb/v1/credit-notification", async (HttpContext http, CommerceOptions commerce, TtbOptions ttb, PaymentProcessor payments, TimeProvider clock) =>
+        app.MapPost("/ttb/v1/credit-notification", async (HttpContext http, CommerceOptions commerce, TtbOptions ttb, PaymentProcessor payments, BankTestConsoleService bankTests, TimeProvider clock) =>
         {
             Authorize(http, commerce, ttb);
             if (http.Request.ContentLength > 32768) return Results.StatusCode(413);
@@ -47,12 +47,13 @@ public static class CallbackEndpoints
                 var metadata = new EvidenceMetadata(EvidenceSource.Callback, Guid.NewGuid().ToString("D"), datetime.Length <= 80 ? datetime : null,
                     service.Length <= 80 ? service : null, http.Connection.RemoteIpAddress?.ToString());
                 var validHeaders = service == "credit-notification" && datetime.Length <= 40 && DateTimeOffset.TryParse(datetime, CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
-                var result = validHeaders ? await payments.NoticeAsync(bytes, metadata, http.RequestAborted) : await payments.InvalidAsync(bytes, metadata, http.RequestAborted);
+                var ack = await bankTests.NotificationAsync(bytes, metadata, validHeaders, http.RequestAborted);
+                ack ??= (validHeaders ? await payments.NoticeAsync(bytes, metadata, http.RequestAborted) : await payments.InvalidAsync(bytes, metadata, http.RequestAborted)).Ack;
                 http.Response.Headers["Service-Name"] = "credit-notification";
                 http.Response.Headers["Request-Datetime"] = TimeZoneInfo.ConvertTime(clock.GetUtcNow(), Numbering.Bangkok).ToString("yyyy-MM-dd'T'HH:mm:ss.fffzzz", CultureInfo.InvariantCulture);
                 // This ACK is emitted only after the processor's durable transaction has committed.
-                http.RequestServices.GetRequiredService<CallbackTelemetry>().CommittedAck(result.Ack.ResCode);
-                return Results.Text(JsonSerializer.Serialize(result.Ack, BankWire.Json), "application/json; charset=utf-8", statusCode: 200);
+                http.RequestServices.GetRequiredService<CallbackTelemetry>().CommittedAck(ack.ResCode);
+                return Results.Text(JsonSerializer.Serialize(ack, BankWire.Json), "application/json; charset=utf-8", statusCode: 200);
             }
         });
     }
@@ -61,14 +62,19 @@ public static class CallbackEndpoints
     {
         if (commerce.PaymentMode != PaymentMode.Bank || commerce.Environment == CommerceEnvironment.Local) throw new CommerceException(404, "not_found", "The callback is unavailable in this environment.");
         // Accept the first real bank callback to establish source/contract acceptance.
-        // Checkout still requires CallbackSourceIpValidated; IP + Basic checks below always apply.
-        if (!ttb.CallbackProfileApproved || ttb.CallbackAuthentication != "Basic" || string.IsNullOrEmpty(ttb.CallbackUsername) ||
-            string.IsNullOrEmpty(ttb.CallbackPassword) || ttb.MerchantId.Length != 3 || ttb.BillerNo.Length != 15)
+        // Production checkout still requires CallbackSourceIpValidated. An
+        // explicit UAT test checkout can bootstrap the first real callback;
+        // exact bank source IP checks below always apply in both cases.
+        if (!ttb.CallbackProfileReady() || ttb.MerchantId.Length != 3 || ttb.BillerNo.Length != 15)
             throw new CommerceException(503, "callback_unavailable", "The bank callback profile is not yet approved.");
         static IPAddress Normalize(IPAddress address) => address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address;
         var peer = http.Connection.RemoteIpAddress is { } address ? Normalize(address) : null;
         if (peer is null || !ttb.BankSourceIps.Any(x => IPAddress.TryParse(x, out var ip) && Normalize(ip).Equals(peer)))
             throw new CommerceException(403, "callback_source_rejected", "The callback source is not allowed.");
+        // TTB confirmed on 21 October 2026 that its common notification sender
+        // does not use username/password. This explicit profile relies on HTTPS,
+        // ingress + application source allowlists and the pinned trusted proxy.
+        if (ttb.CallbackAuthentication == "BankSourceIp") return;
         var authorization = http.Request.Headers.Authorization.ToString();
         var authorized = false;
         if (authorization.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase) && authorization.Length <= 2048)

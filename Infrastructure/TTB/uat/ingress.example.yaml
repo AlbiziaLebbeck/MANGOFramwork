@@ -1,30 +1,7 @@
-# Deployment gates: working TLS, tested source-IP preservation, approved callback auth.
-# Shopper and bank callbacks intentionally have separate ingress objects.
-# Prepare the owned certificate separately with provision-tls-certificate.ps1/tls-certificate.yaml.
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: ttb-shopper-uat
-  namespace: ttb-uat
-  annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: 256k
-    nginx.ingress.kubernetes.io/proxy-read-timeout: '30'
-spec:
-  ingressClassName: nginx
-  tls:
-    - hosts: [ttb-api-test.mangosgo.com]
-      secretName: ttb-api-test-tls
-  rules:
-    - host: ttb-api-test.mangosgo.com
-      http:
-        paths:
-          - path: /ttb-commerce-test/v1
-            pathType: Prefix
-            backend:
-              service:
-                name: ttb-commerce-api
-                port: { name: http }
----
+# Callback topology example only; use bank-callback.yaml for its owned live config.
+# Shopper routes are in shopper-ingress.yaml. Never expose the entire
+# /ttb-commerce-test/v1 prefix: admin/game-service/local-session stay restricted.
+# Prepare TLS separately with provision-tls-certificate.ps1/tls-certificate.yaml.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

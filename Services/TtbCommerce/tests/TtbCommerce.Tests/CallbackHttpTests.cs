@@ -14,7 +14,7 @@ using Xunit;
 
 namespace TtbCommerce.Tests;
 
-public sealed class BankCallbackApiFactory(string connection, bool approved = true, bool sourceValidated = true) : CommerceApiFactory(connection, environment: CommerceEnvironment.Uat)
+public sealed class BankCallbackApiFactory(string connection, bool approved = true, bool sourceValidated = true, bool testCheckout = false, string authentication = "Basic") : CommerceApiFactory(connection, environment: CommerceEnvironment.Uat)
 {
     public IPAddress Peer { get; set; } = IPAddress.Parse("203.148.143.101");
     public string[] TrustedProxyCidrs { get; set; } = [];
@@ -27,7 +27,10 @@ public sealed class BankCallbackApiFactory(string connection, bool approved = tr
             {
                 ["Ttb:MerchantId"] = "TST", ["Ttb:BillerNo"] = "111111111111111",
                 ["Ttb:CallbackProfileApproved"] = approved.ToString(), ["Ttb:CallbackSourceIpValidated"] = (approved && sourceValidated).ToString(),
-                ["Ttb:CallbackAuthentication"] = "Basic", ["Ttb:CallbackUsername"] = "unit-test-callback", ["Ttb:CallbackPassword"] = "unit-test-only-not-a-bank-secret"
+                ["Ttb:UatTestCheckoutEnabled"] = testCheckout.ToString(),
+                ["Ttb:CallbackAuthentication"] = authentication,
+                ["Ttb:CallbackUsername"] = authentication == "Basic" ? "unit-test-callback" : "",
+                ["Ttb:CallbackPassword"] = authentication == "Basic" ? "unit-test-only-not-a-bank-secret" : ""
             };
             for (var index = 0; index < TrustedProxyCidrs.Length; index++) settings[$"Ttb:TrustedProxyCidrs:{index}"] = TrustedProxyCidrs[index];
             config.AddInMemoryCollection(settings);
@@ -50,7 +53,7 @@ public sealed class CallbackHttpTests
     public async Task First_bank_callback_requires_source_and_auth_even_before_checkout_source_acceptance()
     {
         await using var database = await PgDatabase.CreateAsync();
-        await using var factory = new BankCallbackApiFactory(database.ConnectionString, sourceValidated: false);
+        await using var factory = new BankCallbackApiFactory(database.ConnectionString, sourceValidated: false, testCheckout: true);
         using var client = factory.ShopperClient();
         Assert.Contains("Ttb.CallbackSourceIpValidation", factory.Services.GetRequiredService<BankReadiness>().Missing());
         Assert.Equal(HttpStatusCode.Unauthorized, (await SendAsync(client, "{}"u8.ToArray())).StatusCode);

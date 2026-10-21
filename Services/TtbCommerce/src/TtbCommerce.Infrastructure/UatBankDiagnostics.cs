@@ -59,7 +59,8 @@ public static class UatBankDiagnostics
         return new { status = "uat-bank-diagnostic", runId = run, environment = "Uat", merchantId = bank.MerchantId, billerNo = bank.BillerNo,
             issuer = bank.Issuer, amountMinor = 100, currency = "THB", issuedAt = now, qr,
             warning = "BANK TEST NETWORK ONLY. TTB scans this diagnostic QR. It is not a customer order; any credit requires unmatched-payment review. No receipt or delivery is issued.",
-            checkoutReady = readiness.Missing().Count == 0, missingCheckoutRequirements = readiness.Missing(), probe,
+            checkoutReady = readiness.MissingForCheckout().Count == 0, missingCheckoutRequirements = readiness.MissingForCheckout(),
+            bankAcceptanceComplete = readiness.Missing().Count == 0, missingBankAcceptanceRequirements = readiness.Missing(), probe,
             financialRecordsCreated = false, sequenceAllocated = true, bankRequestCount = verify ? 1 : 0 };
     }
 }

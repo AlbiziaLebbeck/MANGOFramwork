@@ -5,7 +5,7 @@ using TtbCommerce.Core;
 
 namespace TtbCommerce.Infrastructure;
 
-public sealed class PaymentProcessor(CommerceDb db, CommerceOptions commerce, TtbOptions ttb, TimeProvider clock)
+public sealed class PaymentProcessor(CommerceDb db, CommerceOptions commerce, TtbOptions ttb, TimeProvider clock, BankTestOptions? bankTests = null)
 {
     public async Task<CreditApplication> NoticeAsync(byte[] raw, EvidenceMetadata metadata, CancellationToken cancellationToken)
     {
@@ -41,6 +41,8 @@ public sealed class PaymentProcessor(CommerceDb db, CommerceOptions commerce, Tt
     public async Task<CreditApplication> ApplyAsync(CreditEvidence evidence, byte[] raw, EvidenceMetadata metadata, CancellationToken cancellationToken)
     {
         CheckSource(metadata.Source);
+        if (commerce.Environment == CommerceEnvironment.Uat && evidence.Ref1 == (bankTests?.Reference1 ?? "TEST"))
+            throw new CommerceException(409, "bank_test_isolated", "Reserved UAT test references must use the bank test console, not the shopper ledger.");
         var successful = metadata.Source is EvidenceSource.Verify or EvidenceSource.MockVerify ? evidence.ResultCode == "0000" : evidence.ResultCode == "000";
         if (!successful || string.IsNullOrWhiteSpace(evidence.InstructionId) || evidence.InstructionId.Length > 50 || evidence.AmountMinor <= 0)
             return await InvalidAsync(raw, metadata, cancellationToken);
@@ -53,6 +55,9 @@ public sealed class PaymentProcessor(CommerceDb db, CommerceOptions commerce, Tt
         var instructionLock = $"bank:{commerce.Environment}:{merchant}:{evidence.InstructionId}";
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({instructionLock}, 0))", cancellationToken);
+        if (commerce.Environment == CommerceEnvironment.Uat && !IsMock(metadata.Source) &&
+            await db.BankTestCases.AnyAsync(x => x.InstructionId == evidence.InstructionId, cancellationToken))
+            throw new CommerceException(409, "bank_test_isolated", "This bank instruction belongs to an isolated UAT test.");
         var observation = Observation(raw, metadata); db.Observations.Add(observation);
         if (notification)
         {

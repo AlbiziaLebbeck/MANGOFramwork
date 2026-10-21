@@ -1,0 +1,67 @@
+# Public shopper routes for the deployed Portal client. No per-user IP allowlist.
+# Authentication, ownership checks, trusted Origin and CSRF remain enforced by the API.
+# The older ttb-uat-world-preview ingress retains its operator allowlist for all
+# other API routes, including admin/game-service/local-session, and the preview.
+# Rollback: delete ONLY ingress/ttb-shopper-public-uat in namespace ttb-uat.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ttb-shopper-public-uat
+  namespace: ttb-uat
+  labels:
+    app.kubernetes.io/part-of: ttb-commerce
+    mangosgo.com/environment: Uat
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/force-ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/proxy-body-size: 256k
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '30'
+    nginx.ingress.kubernetes.io/proxy-send-timeout: '30'
+    nginx.ingress.kubernetes.io/limit-rps: '20'
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: '5'
+    nginx.ingress.kubernetes.io/limit-connections: '20'
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [ttb-api-test.mangosgo.com]
+      secretName: ttb-api-test-tls
+  rules:
+    - host: ttb-api-test.mangosgo.com
+      http:
+        paths:
+          - path: /ttb-commerce-test/v1/storefront/config
+            pathType: Exact
+            backend: &api
+              service:
+                name: ttb-commerce-api
+                port: { name: http }
+          - path: /ttb-commerce-test/v1/catalog
+            pathType: Prefix
+            backend: *api
+          - path: /ttb-commerce-test/v1/session
+            pathType: Exact
+            backend: *api
+          - path: /ttb-commerce-test/v1/session/logout
+            pathType: Exact
+            backend: *api
+          - path: /ttb-commerce-test/v1/session/game-ticket
+            pathType: Exact
+            backend: *api
+          - path: /ttb-commerce-test/v1/cart
+            pathType: Prefix
+            backend: *api
+          - path: /ttb-commerce-test/v1/checkout/options
+            pathType: Exact
+            backend: *api
+          - path: /ttb-commerce-test/v1/checkout/quote
+            pathType: Exact
+            backend: *api
+          - path: /ttb-commerce-test/v1/orders
+            pathType: Prefix
+            backend: *api
+          - path: /ttb-commerce-test/v1/inventory
+            pathType: Prefix
+            backend: *api
+          - path: /ttb-commerce-test/v1/documents
+            pathType: Prefix
+            backend: *api

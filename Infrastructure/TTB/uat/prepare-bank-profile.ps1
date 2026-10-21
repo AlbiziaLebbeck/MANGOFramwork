@@ -11,25 +11,19 @@ if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect UAT readiness.' }
 $health = $healthJson | ConvertFrom-Json
 if ($health.paymentMode -ne 'Bank' -or $health.paymentsReady -or $health.recoveryFrozen) { throw 'Expected unfrozen UAT with checkout still closed.' }
 New-Item -ItemType Directory -Path $directory | Out-Null
-$username = 'ttb-uat-' + $RunId.Substring(0,12)
-$password = [Convert]::ToHexStringLower([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
-$handoff = @{ environment='Uat'; url='https://ttb-api-test.mangosgo.com/ttb/v1/credit-notification'; authentication='Basic over HTTPS'; username=$username; password=$password }
-$bytes = [Text.Encoding]::UTF8.GetBytes(($handoff | ConvertTo-Json -Compress))
-try {
-    $encrypted = [Security.Cryptography.ProtectedData]::Protect($bytes,[Text.Encoding]::UTF8.GetBytes('MANGOsTTB/UAT/Callback/v1'),[Security.Cryptography.DataProtectionScope]::CurrentUser)
-    [IO.File]::WriteAllBytes((Join-Path $directory 'handoff.dpapi'),$encrypted)
-} finally { [Security.Cryptography.CryptographicOperations]::ZeroMemory($bytes) }
-$state = @{ runId=$RunId; phase='secret-create-attempted'; environment='Uat'; merchantId='PYA'; billerNo='075555900002101'; issuer='jwt-key-pya'; bankCredentialHandoffConfirmed=$false; actualBankSourceValidated=$false; productionChanged=$false }
+# TTB confirmed its common sender does not use username/password on 21 October.
+# Exact bank source allowlists and trusted-proxy deployment checks remain required.
+$state = @{ runId=$RunId; phase='secret-create-attempted'; environment='Uat'; merchantId='PYA'; billerNo='075555900002101'; issuer='jwt-key-pya'; callbackAuthentication='BankSourceIp'; callbackRequiresCredentials=$false; actualBankSourceValidated=$false; productionChanged=$false }
 $state | ConvertTo-Json | Set-Content (Join-Path $directory 'state.json') -Encoding utf8
 $secret = @{ apiVersion='v1'; kind='Secret'; metadata=@{name='ttb-bank';namespace='ttb-uat';labels=@{'app.kubernetes.io/part-of'='ttb-commerce';'mangosgo.com/profile-run'=$RunId}};type='Opaque';stringData=@{
     Ttb__MerchantId='PYA'; Ttb__BillerNo='075555900002101'; Ttb__Issuer='jwt-key-pya'; Ttb__QrProfileApproved='true';
-    Ttb__CallbackAuthentication='Basic'; Ttb__CallbackProfileApproved='true'; Ttb__CallbackUsername=$username; Ttb__CallbackPassword=$password;
+    Ttb__CallbackAuthentication='BankSourceIp'; Ttb__CallbackProfileApproved='true';
     Ttb__CallbackSourceIpValidated='false'
 } }
 try {
     $created = $secret | ConvertTo-Json -Depth 8 -Compress | & ssh @sshArguments 'kubectl create -f - -o name'
-    if ($LASTEXITCODE -ne 0 -or ($created -join '').Trim() -ne 'secret/ttb-bank') { throw 'Secret creation is unconfirmed. Preserve the encrypted handoff and inspect the named Secret before retrying.' }
+    if ($LASTEXITCODE -ne 0 -or ($created -join '').Trim() -ne 'secret/ttb-bank') { throw 'Secret creation is unconfirmed. Preserve state.json and inspect the named Secret before retrying.' }
     $state.phase='created'; $state | ConvertTo-Json | Set-Content (Join-Path $directory 'state.json') -Encoding utf8
-} finally { $password=$null; $handoff=$null; $secret=$null }
-Write-Output "UAT profile prepared. Credentials are DPAPI encrypted for this PC account: $directory/handoff.dpapi"
+} finally { $secret=$null }
+Write-Output "UAT BankSourceIp profile prepared. No callback credentials were generated. State: $directory/state.json"
 Write-Output 'No Production settings, source-acceptance flag, checkout gate or public ingress was changed. Roll out the tested UAT release separately.'

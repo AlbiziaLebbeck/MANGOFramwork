@@ -34,6 +34,8 @@ spec:
             - secretRef: { name: ttb-commerce-runtime }
             - secretRef: { name: ttb-bank, optional: true }
             - secretRef: { name: ttb-reports, optional: true }
+            # Accepted non-secret UAT settings override the original closed defaults.
+            - configMapRef: { name: ttb-bank-acceptance, optional: true }
           ports: [{ name: http, containerPort: 8080 }]
           securityContext:
             allowPrivilegeEscalation: false
