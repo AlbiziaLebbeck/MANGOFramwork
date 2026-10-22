@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <ItemGroup>
     <EmbeddedResource Include="BankTestConsole.html" />
+    <Content Include="Dashboard/**/*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Update="release-compatibility.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <ProjectReference Include="../TtbCommerce.Infrastructure/TtbCommerce.Infrastructure.csproj" />
   </ItemGroup>

@@ -108,6 +108,7 @@ crashlytics-build.properties
 /Infrastructure/TTB/**/__pycache__/
 /WebCommerce/node_modules/
 /WebCommerce/dist/
+/Services/TtbCommerce/src/TtbCommerce.Api/Dashboard/
 /WebCommerce/test-results/
 /WebCommerce/playwright-report/
 /Assets/WebGLTemplates/MANGOsTTB/commerce/

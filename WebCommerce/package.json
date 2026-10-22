@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build && node scripts/standalone.mjs",
+    "build:dashboard": "tsc --noEmit && vite build --config vite.dashboard.config.ts && node scripts/dashboard.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
     "test:browser": "playwright test",

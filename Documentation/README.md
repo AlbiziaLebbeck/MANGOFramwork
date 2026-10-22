@@ -27,3 +27,5 @@ When changing behavior or limitations, update both language versions and keep th
 คู่มือ Payment ภาษาไทยสำหรับผู้เริ่มต้น: [ระบบ MANGOs x TTB, คอนโซล TEST และวิธีดู log](TTB_PAYMENT_IMPLEMENTATION_AND_TEST_CONSOLE_TH.md)
 
 สารบัญไฟล์และชุดเอกสารส่งมอบ TTBPayment: [ตำแหน่งไฟล์และโครงสร้างโฟลเดอร์](TTB_FILE_ORGANIZATION_TH.md)
+
+Admin Dashboard ที่ plus.mangosgo.com: [วิธีดู Notification และสถานะชำระเงินบนเว็บ](TTB_ADMIN_DASHBOARD_TH.md)

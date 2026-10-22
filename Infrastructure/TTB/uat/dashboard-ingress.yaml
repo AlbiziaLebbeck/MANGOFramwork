@@ -1,0 +1,29 @@
+# The plus.mangosgo.com virtual host already has its TLS certificate on the
+# existing mangos ingress. Reuse that host; do not copy its private TLS key or
+# introduce host-wide regex/rewrite settings. Verify the public certificate.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ttb-payment-dashboard-uat
+  namespace: ttb-uat
+  labels:
+    app.kubernetes.io/part-of: ttb-commerce
+    mangosgo.com/environment: Uat
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/force-ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/proxy-body-size: 32k
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '30'
+    nginx.ingress.kubernetes.io/limit-rps: '20'
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: plus.mangosgo.com
+      http:
+        paths:
+          - path: /mangoxttb/dashboard
+            pathType: Prefix
+            backend:
+              service:
+                name: ttb-commerce-api
+                port: { name: http }

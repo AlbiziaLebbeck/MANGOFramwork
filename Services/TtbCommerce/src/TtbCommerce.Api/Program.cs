@@ -52,6 +52,8 @@ builder.Services.AddHttpClient<IIdentityVerifier, MangosIdentityVerifier>(client
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false });
 builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<ShopperAccess>();
+builder.Services.AddSingleton(services => services.GetRequiredService<IConfiguration>().GetSection("Dashboard").Get<PaymentDashboardOptions>() ?? new());
+builder.Services.AddScoped<PaymentDashboardQueries>();
 builder.Services.AddScoped<DurableWork>();
 builder.Services.AddScoped<CatalogService>();
 builder.Services.AddScoped<LocalDemoSeeder>();
@@ -98,6 +100,10 @@ builder.Services.AddOptions<CorsOptions>().Configure<CommerceOptions>((options, 
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = 429;
+    options.AddPolicy("dashboard", context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new()
+    {
+        PermitLimit = 120, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true
+    }));
     options.AddPolicy("session", context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new()
     {
         PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true
@@ -198,6 +204,7 @@ app.MapGet(commerce.PathPrefix + "/storefront/config", (BankReadiness bank, TtbO
 }));
 app.MapCallbackEndpoints();
 app.MapBankTestConsole();
+app.MapPaymentDashboard();
 app.MapOperationsEndpoints();
 app.Run();
 
